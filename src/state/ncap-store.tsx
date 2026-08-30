@@ -292,15 +292,18 @@ export function NcapProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const setter = <K extends keyof StoreState>(key: K) =>
-    useCallback((next: StoreState[K]) => setState((s) => ({ ...s, [key]: next })), [key]);
-
-  const setLessons = setter("lessons");
-  const setArticles = setter("articles");
-  const setPosters = setter("posters");
-  const setQuestions = setter("questions");
-  const setAnnouncements = setter("announcements");
-  const setUsers = setter("users");
+  const setLessons = useCallback((next: Lesson[]) => setState((s) => ({ ...s, lessons: next })), []);
+  const setArticles = useCallback((next: Article[]) => setState((s) => ({ ...s, articles: next })), []);
+  const setPosters = useCallback((next: Poster[]) => setState((s) => ({ ...s, posters: next })), []);
+  const setQuestions = useCallback(
+    (next: QuizQuestion[]) => setState((s) => ({ ...s, questions: next })),
+    [],
+  );
+  const setAnnouncements = useCallback(
+    (next: Announcement[]) => setState((s) => ({ ...s, announcements: next })),
+    [],
+  );
+  const setUsers = useCallback((next: DemoUser[]) => setState((s) => ({ ...s, users: next })), []);
 
   const resetDemo = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY);
