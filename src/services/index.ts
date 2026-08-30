@@ -28,7 +28,7 @@ import {
 import { adminActivity, announcements, completionTrend, demoUsers, quizTrend, topicEngagement } from "@/data/admin";
 import type { QuizQuestion } from "@/data/types";
 
-const delay = <T>(value: T, ms = NCAP_CONFIG.mockLatencyMs): Promise<T> =>
+const delay = <T>(value: T, ms: number = NCAP_CONFIG.mockLatencyMs): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), ms));
 
 export const MockLearningService = {
@@ -70,7 +70,9 @@ function pickQuestions(moduleId: string, count: number): QuizQuestion[] {
   const copy = [...pool];
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+    const a = copy[i]!;
+    copy[i] = copy[j]!;
+    copy[j] = a;
   }
   return copy.slice(0, Math.min(count, copy.length));
 }
