@@ -78,14 +78,24 @@ declare
   requested_name text;
   requested_language text;
 begin
-  requested_name := nullif(btrim(new.raw_user_meta_data ->> 'display_name'), '');
+  requested_name := left(
+    coalesce(
+      nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''),
+      nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
+      'Learner'
+    ),
+    100
+  );
+  if char_length(requested_name) < 2 then
+    requested_name := 'Learner';
+  end if;
   requested_language := new.raw_user_meta_data ->> 'language';
 
   insert into public.profiles (id, email, display_name, language)
   values (
     new.id,
     coalesce(new.email, ''),
-    left(coalesce(requested_name, nullif(split_part(coalesce(new.email, ''), '@', 1), ''), 'Learner'), 100),
+    requested_name,
     case when requested_language in ('en', 'si', 'ta') then requested_language else 'en' end
   )
   on conflict (id) do nothing;
@@ -148,20 +158,23 @@ insert into public.profiles (id, email, display_name, language)
 select
   users.id,
   coalesce(users.email, ''),
-  left(
-    coalesce(
-      nullif(btrim(users.raw_user_meta_data ->> 'display_name'), ''),
-      nullif(split_part(coalesce(users.email, ''), '@', 1), ''),
-      'Learner'
-    ),
-    100
-  ),
+  case
+    when char_length(names.candidate) >= 2 then left(names.candidate, 100)
+    else 'Learner'
+  end,
   case
     when users.raw_user_meta_data ->> 'language' in ('en', 'si', 'ta')
       then users.raw_user_meta_data ->> 'language'
     else 'en'
   end
 from auth.users as users
+cross join lateral (
+  select coalesce(
+    nullif(btrim(users.raw_user_meta_data ->> 'display_name'), ''),
+    nullif(split_part(coalesce(users.email, ''), '@', 1), ''),
+    'Learner'
+  ) as candidate
+) as names
 on conflict (id) do nothing;
 
 comment on table public.profiles is 'Authoritative NCAP identity profiles and application roles.';
