@@ -154,8 +154,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as LanguageCode | null;
-    if (stored && stored in dictionaries) setLanguageState(stored);
+    if (stored && stored in dictionaries) {
+      setLanguageState(stored);
+      document.documentElement.lang = stored;
+    }
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = "ltr";
+  }, [language]);
 
   const setLanguage = useCallback((code: LanguageCode) => {
     setLanguageState(code);
@@ -163,10 +171,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = code;
   }, []);
 
-  const t = useCallback(
-    (key: Key) => dictionaries[language][key] ?? en[key],
-    [language],
-  );
+  const t = useCallback((key: Key) => dictionaries[language][key] ?? en[key], [language]);
 
   const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
