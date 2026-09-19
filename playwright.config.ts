@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnv } from "vite";
+
+const localEnv = loadEnv("development", process.cwd(), "");
 
 export default defineConfig({
   testDir: "./e2e",
@@ -15,6 +18,13 @@ export default defineConfig({
     // Never silently test a running development server instead of the built worker.
     reuseExistingServer: false,
     timeout: 120_000,
+    env: {
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true",
+      SUPABASE_URL: process.env.SUPABASE_URL ?? localEnv.SUPABASE_URL ?? "",
+      SUPABASE_PUBLISHABLE_KEY:
+        process.env.SUPABASE_PUBLISHABLE_KEY ?? localEnv.SUPABASE_PUBLISHABLE_KEY ?? "",
+      APP_URL: "http://127.0.0.1:4173",
+    },
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

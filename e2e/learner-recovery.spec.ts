@@ -1,9 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 test("lesson progress, bookmark state, and a quiz draft survive reload", async ({ page }) => {
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await loginAs(page, "learner");
 
   await page.goto("/learn/lessons/l-updates", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Bookmark lesson" }).click();

@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 const widths = [320, 375, 390, 768, 1024, 1366, 1440, 1920];
 
@@ -85,8 +86,7 @@ for (const width of widths) {
     );
     test.setTimeout(120_000);
     await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
-    await page.goto("/login", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Continue as Learner" }).click();
+    await loginAs(page, "learner");
     for (const route of learnerRoutes) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
       await expectNoDocumentOverflow(page, `${route} at ${width}px`);
@@ -102,8 +102,7 @@ for (const width of widths) {
     );
     test.setTimeout(120_000);
     await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
-    await page.goto("/login", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Continue as Administrator" }).click();
+    await loginAs(page, "admin");
     for (const route of adminRoutes) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
       await expectNoDocumentOverflow(page, `${route} at ${width}px`);
@@ -127,10 +126,9 @@ test("core public, auth, learner, and admin pages have no serious axe findings",
 
   await audit("/");
   await audit("/login");
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
+  await loginAs(page, "learner");
   await audit("/dashboard");
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
   await audit("/admin/topics");
 });
 
@@ -139,8 +137,7 @@ test("learner dashboard reflows at an effective 320px with 200 percent text", as
 }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "The text reflow audit runs once in Chromium.");
   await page.setViewportSize({ width: 640, height: 900 });
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
+  await loginAs(page, "learner");
   await page.evaluate(() => {
     document.documentElement.style.fontSize = "200%";
   });

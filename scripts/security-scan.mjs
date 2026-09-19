@@ -14,6 +14,11 @@ const rules = [
   ["AWS access key", /AKIA[0-9A-Z]{16}/],
   ["GitHub token", /gh[pousr]_[A-Za-z0-9_]{30,}/],
   ["Slack token", /xox[baprs]-[A-Za-z0-9-]{20,}/],
+  ["Supabase secret key", /\bsb_secret_[A-Za-z0-9_-]{20,}/],
+  [
+    "Supabase service-role assignment",
+    /SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["'`]?(?!your-|example|placeholder)[A-Za-z0-9._-]{20,}/i,
+  ],
   ["hard-coded bearer token", /Authorization\s*[:=]\s*["'`]Bearer\s+[A-Za-z0-9._-]{20,}/i],
 ];
 

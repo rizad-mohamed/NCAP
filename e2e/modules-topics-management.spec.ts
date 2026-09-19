@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 test("administered modules and topics drive the learner catalogue lifecycle", async ({
   page,
@@ -11,8 +12,7 @@ test("administered modules and topics drive the learner catalogue lifecycle", as
   const topic = "Community Digital Safety";
   const title = "Community Device Safety";
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Manage Modules & Topics" })).toBeVisible();
 

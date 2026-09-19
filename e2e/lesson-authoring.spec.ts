@@ -1,5 +1,6 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { loginAs } from "./helpers/auth";
 
 async function openWorkspaceLink(page: Page, role: "admin" | "learner", name: string) {
   if ((page.viewportSize()?.width ?? 1440) < 1024) {
@@ -36,9 +37,7 @@ test("administrator can add an optional video and author lesson blocks without J
   expect(policy).toContain("media-src 'self' blob: https:");
   expect(policy).toContain("object-src 'none'");
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
-  await page.waitForURL("**/admin");
+  await loginAs(page, "admin");
   await openWorkspaceLink(page, "admin", "Lessons");
 
   await page.getByRole("button", { name: `Edit ${lessonTitle}` }).click();
@@ -70,9 +69,7 @@ test("administrator can add an optional video and author lesson blocks without J
   await dialog.getByRole("button", { name: "Save record" }).click();
   await expect(dialog).not.toBeVisible();
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
-  await page.waitForURL("**/dashboard");
+  await loginAs(page, "learner");
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back, Demo" })).toBeVisible();
   await openRiskLesson(page);
 
@@ -99,9 +96,7 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   browserName,
 }) => {
   test.setTimeout(120_000);
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
-  await page.waitForURL("**/admin");
+  await loginAs(page, "admin");
   // Produce a real, silent WebM fixture locally; this test has no media-network dependency.
   // Windows WebKit lacks canvas recording. Generate its fixture in Chromium,
   // but validate, upload, and play that file in the target browser.
@@ -203,9 +198,7 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   await page.getByRole("button", { name: `Edit ${title}` }).click();
   await dialog.getByRole("button", { name: "Remove video" }).click();
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
-  await page.waitForURL("**/dashboard");
+  await loginAs(page, "learner");
   await expect(page.getByRole("heading", { level: 1, name: "Welcome back, Demo" })).toBeVisible();
   await openRiskLesson(page);
   const player = page.getByLabel(`${title} video`, { exact: true });

@@ -1,39 +1,34 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
-test("registration validates inputs and gates the learner workspace on demo verification", async ({
-  page,
-}) => {
+test("authentication forms validate locally and expose no demo access bypass", async ({ page }) => {
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: /Continue as/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByRole("alert")).toHaveCount(2);
+
   await page.goto("/register", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Create demo profile" }).click();
+  await expect(page.getByRole("button", { name: /demo/i })).toHaveCount(0);
+  await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("alert")).toHaveCount(4);
+  await page.getByRole("textbox", { name: /^Password / }).fill("SecretValue!2026");
+  expect(await page.evaluate(() => localStorage.getItem("ncap.demo.v2"))).not.toContain(
+    "SecretValue!2026",
+  );
+});
 
-  await page.getByLabel("Full name").fill("  Nadeesha Perera  ");
-  await page.getByLabel("Email address").fill("nadeesha@example.lk");
-  await page.getByRole("textbox", { name: /^Password / }).fill("Learning2026");
-  await page.getByRole("textbox", { name: /^Confirm password / }).fill("Learning2026");
-  await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Create demo profile" }).click();
+test("protected learner and administrator routes redirect anonymous visitors", async ({ page }) => {
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/login\?redirect=%2Fdashboard$/);
 
-  await expect(page).toHaveURL(/\/verify-email$/);
-  const pending = await page.evaluate(() => ({
-    profile: sessionStorage.getItem("ncap.verify.profile"),
-    storedState: localStorage.getItem("ncap.demo.v2"),
-  }));
-  expect(pending.profile).toContain("Nadeesha Perera");
-  expect(JSON.stringify(pending)).not.toContain("Learning2026");
-
-  await page.getByRole("button", { name: "Simulate verification" }).click();
-  await page.getByRole("link", { name: "Continue to dashboard" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Nadeesha");
+  await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/login\?redirect=%2Fadmin%2Ftopics$/);
 });
 
 test("administrator can create, reject a duplicate, delete a topic, and export a report", async ({
   page,
 }) => {
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
-  await expect(page).toHaveURL(/\/admin\/?$/);
+  await loginAs(page, "admin");
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "Create topic" }).click();

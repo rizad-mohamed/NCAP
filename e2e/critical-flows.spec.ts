@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 test("public navigation and responsive layout remain usable", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
@@ -19,17 +20,13 @@ test("public navigation and responsive layout remain usable", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Read, understand, act" })).toBeVisible();
 });
 
-test("learner and administrator demo boundaries route correctly", async ({ page }) => {
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+test("learner and administrator boundaries route correctly", async ({ page }) => {
+  await loginAs(page, "learner");
 
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Access unavailable" })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
-  await expect(page).toHaveURL(/\/admin\/?$/);
+  await loginAs(page, "admin");
 
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Topics" })).toBeVisible();

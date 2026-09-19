@@ -1,15 +1,22 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
-test("a newly administered awareness type completes the public publication lifecycle", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "chromium", "The repository lifecycle browser audit runs once.");
+test("a newly administered awareness type completes the public publication lifecycle", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "The repository lifecycle browser audit runs once.",
+  );
   const title = "Check unexpected verification requests";
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
   await page.goto("/admin/awareness/cyber-tips", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Add Cyber Tip" }).click();
   await page.getByLabel("Title *").fill(title);
-  await page.getByLabel("Tip text").fill("Confirm the request through a contact method you already trust.");
+  await page
+    .getByLabel("Tip text")
+    .fill("Confirm the request through a contact method you already trust.");
   await page.getByLabel("Status").selectOption("Published");
   await page.getByRole("button", { name: "Save record" }).click();
   await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
@@ -25,7 +32,9 @@ test("a newly administered awareness type completes the public publication lifec
   await page.getByLabel("Tip text").fill("Pause, then verify through a trusted contact method.");
   await page.getByRole("button", { name: "Save record" }).click();
   await page.goto("/awareness/tips", { waitUntil: "domcontentloaded" });
-  await expect(page.getByText("Pause, then verify through a trusted contact method.")).toBeVisible();
+  await expect(
+    page.getByText("Pause, then verify through a trusted contact method."),
+  ).toBeVisible();
 
   await page.goto("/admin/awareness/cyber-tips", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: `Unpublish ${title}` }).click();

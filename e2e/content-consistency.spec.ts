@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 test.describe.configure({ timeout: 60_000 });
 
@@ -7,8 +8,7 @@ test("administered article taxonomy is reflected on the public frontend", async 
 }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "The CRUD consistency audit runs once.");
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "Create topic" }).click();
@@ -25,7 +25,9 @@ test("administered article taxonomy is reflected on the public frontend", async 
   await page.getByLabel("Reading minutes").fill("4");
   await page
     .getByLabel("Article body *")
-    .fill("Pause when a message creates urgency.\n\nConfirm through a contact method you already trust.");
+    .fill(
+      "Pause when a message creates urgency.\n\nConfirm through a contact method you already trust.",
+    );
   await page.getByRole("button", { name: "Save record" }).click();
   await expect(
     page.getByRole("cell", { name: "Safer community messaging", exact: true }),
@@ -65,8 +67,7 @@ test("an uploaded poster is the same asset previewed and downloaded publicly", a
 }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "The IndexedDB media audit runs once.");
 
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
   await page.goto("/admin/posters", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Add poster" }).click();
   await page.getByLabel("Title *").fill("Secure messaging checklist");
@@ -81,9 +82,7 @@ test("an uploaded poster is the same asset previewed and downloaded publicly", a
       "base64",
     ),
   });
-  await page
-    .getByLabel("Alternative text *")
-    .fill("Three checks for safer community messages");
+  await page.getByLabel("Alternative text *").fill("Three checks for safer community messages");
   await page.getByRole("button", { name: "Use this image" }).click();
   await expect(page.getByText("secure-messaging.png")).toBeVisible();
   await page.getByLabel("Status").selectOption("Published");

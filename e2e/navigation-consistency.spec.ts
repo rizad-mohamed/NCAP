@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 const desktopNavigation = [
   "Awareness",
@@ -58,20 +59,22 @@ test("public pages share the Home mobile navigation structure", async ({ page })
   }
 });
 
-test("authenticated public navigation replaces redundant authentication actions", async ({ page }) => {
+test("authenticated public navigation replaces redundant authentication actions", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Learner" }).click();
+  await loginAs(page, "learner");
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("link", { name: "Sign In", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Sign Up", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Open dashboard", exact: true })).toBeVisible();
 });
 
-test("awareness administration follows the Modules and Topics section pattern", async ({ page }) => {
+test("awareness administration follows the Modules and Topics section pattern", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Continue as Administrator" }).click();
+  await loginAs(page, "admin");
 
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
   const topicsTab = page.getByRole("tab", { name: "topics", exact: true });
