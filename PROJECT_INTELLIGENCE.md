@@ -1,8 +1,10 @@
 # NCAP Project Intelligence, PRD, Architecture, and Gap Audit
 
-**Audit snapshot:** 2026-09-19  
-**Repository state reviewed:** `main` at `7e08fd4`, 12 local commits ahead of `origin/main`  
-**Primary evidence:** application source, routes, state, repository adapters, Supabase migration, tests, build/deployment configuration, seed data, and existing documentation  
+**Audit snapshot:** 2026-09-19
+
+**Repository state reviewed:** `main` at `7e08fd4`, 12 local commits ahead of `origin/main`
+
+**Primary evidence:** application source, routes, state, repository adapters, Supabase migration, tests, build/deployment configuration, seed data, and existing documentation
 **Status legend:** **Implemented**, **Partial**, **Frontend Only**, **Backend Only**, **Mocked**, **Hardcoded**, **Placeholder**, **Missing**, **Unverified**
 
 This is a point-in-time, code-based handoff document. “Implemented” means the inspected code supports the claim. It does not imply that an external service has been configured or that a production operation has been completed. In particular, the Supabase migration exists in source control but a read-only check against the configured project returned HTTP 404 for `public.profiles`; the live database installation is therefore **not complete at this snapshot**.
