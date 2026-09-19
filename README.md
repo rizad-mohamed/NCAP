@@ -1,8 +1,11 @@
 # NCAP — National Cybersecurity Awareness Platform
 
-NCAP is a Foundation Release demonstration of a national-scale cybersecurity awareness, learning, and assessment experience for Sri Lanka. It combines plain-language awareness resources, structured lessons, quizzes, learner progress, and administrative reporting in one accessible, responsive interface.
+NCAP is a Foundation Release of a national-scale cybersecurity awareness, learning, and assessment experience for Sri Lanka. It combines plain-language awareness resources, structured lessons, quizzes, learner progress, and administrative reporting in one accessible, responsive interface.
 
-The current release uses browser-based demo data and simulated roles. It is not an official incident-reporting channel, government policy source, or production identity system.
+The current release uses Supabase Auth with server-managed cookies, database-backed profiles, and
+authoritative learner/Super Admin roles. Learning and editorial content still uses the existing
+browser-based demonstration repositories. It is not an official incident-reporting channel or
+government policy source.
 
 ## Technology
 
@@ -11,6 +14,7 @@ The current release uses browser-based demo data and simulated roles. It is not 
 - Vite and Tailwind CSS
 - Radix UI primitives and Lucide icons
 - Typed file-based routes and TanStack Query-ready service boundaries
+- Supabase email/password authentication and PostgreSQL Row Level Security
 - Versioned, schema-validated local demo data and IndexedDB demo media
 - Vitest, Testing Library, and Playwright regression coverage
 
@@ -39,15 +43,24 @@ Run `npm run check` for the complete non-browser CI gate. Install Playwright bro
 `npx playwright install`, then run `npm run test:e2e` for the cross-browser critical flows.
 Browser tests start their own built worker on port 4173; the development server on port 8080 is not reused.
 
-## Demonstration and backend boundary
+Copy `.env.example` to `.env.local`, provide the Supabase URL and publishable key, and apply the
+database migration before starting the application. Full database and test-account setup is in
+[`supabase/README.md`](supabase/README.md).
 
-All locally editable records are demonstration data. Images and lesson videos selected in the admin experience are
+## Authentication and data boundary
+
+Identity, sessions, profile roles, email verification, and password recovery are handled by
+Supabase through server functions. The publishable key is read server-side, authentication cookies
+are HTTP-only, and administrator authorization comes from the protected `profiles.role` column.
+No service-role key is required by the application.
+
+All learning and editorial records remain demonstration data. Images and lesson videos selected in the admin experience are
 stored in IndexedDB rather than localStorage and are explicitly labelled local demo media. Password
 fields are never persisted or logged.
 
-Production deployment still requires a trusted backend for secure sessions, server-side RBAC,
-email verification and password reset tokens, durable database/object storage, server validation,
-rate limiting, audit logs, authoritative analytics, and cryptographically verifiable certificates.
+Production deployment still requires durable database/object storage for learning and editorial
+content, server validation for those records, rate limiting, audit logs, authoritative analytics,
+and cryptographically verifiable certificates.
 
 The interface targets WCAG 2.2 AA-conscious patterns, responsive layouts from small phones through large displays, and reduced-motion preferences.
 

@@ -6,6 +6,14 @@ Apply `migrations/202609190001_auth_profiles.sql` with the Supabase CLI or paste
 project SQL Editor. It creates the profile table, secure learner default, Super Admin role lookup,
 triggers, grants, and Row Level Security policies.
 
+Confirm installation in the SQL Editor before testing registration:
+
+```sql
+select to_regclass('public.profiles') as profiles_table;
+```
+
+The result must be `public.profiles`.
+
 The application intentionally does not use or require a service-role key.
 
 ## Provision the first Super Admin
@@ -32,3 +40,19 @@ Set the Supabase Auth **Site URL** to the deployed `APP_URL`. Add these redirect
 - The equivalent `/auth/callback` and `/reset-password` URLs for each deployed environment
 
 Production deployments must use HTTPS.
+
+## End-to-end test accounts
+
+Authenticated Playwright scenarios use real, disposable Supabase accounts. Set these only in the
+test runner environment; do not commit them:
+
+```text
+E2E_LEARNER_EMAIL
+E2E_LEARNER_PASSWORD
+E2E_ADMIN_EMAIL
+E2E_ADMIN_PASSWORD
+```
+
+The administrator account must have `profiles.role = 'super_admin'`. Without these variables,
+authenticated scenarios are skipped; public authentication validation and route-guard tests still
+run. Never use production user accounts for browser automation.
