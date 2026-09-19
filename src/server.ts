@@ -44,18 +44,53 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' blob: data:",
+  "font-src 'self' data:",
+  "media-src 'self' blob: https:",
+  "frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
+function withSecurityHeaders(response: Response, request: Request) {
+  const headers = new Headers(response.headers);
+  headers.set("x-content-type-options", "nosniff");
+  headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  headers.set("x-frame-options", "DENY");
+  headers.set("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  headers.set("content-security-policy", CONTENT_SECURITY_POLICY);
+  if (new URL(request.url).protocol === "https:") {
+    headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), request);
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return withSecurityHeaders(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+        request,
+      );
     }
   },
 };

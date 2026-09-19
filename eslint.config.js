@@ -32,9 +32,17 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // TanStack file routes and provider modules intentionally co-locate typed helpers.
+      "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
   eslintPluginPrettier,
+  {
+    rules: {
+      // Formatting is handled by the dedicated `npm run format` command. Keeping
+      // it out of lint avoids platform-specific CRLF/LF failures on Windows.
+      "prettier/prettier": "off",
+    },
+  },
 );
