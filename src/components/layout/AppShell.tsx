@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useNcap, useSessionPreferences } from "@/state/ncap-store";
+import { useAuth } from "@/auth/AuthProvider";
 import { LanguageSelector } from "@/components/common/LanguageSelector";
 import {
   Sheet,
@@ -148,7 +149,8 @@ const mobileAwarenessLinks = awarenessLinks.filter(
 
 function PublicHeader({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
-  const { session, signOut } = useSessionPreferences();
+  const { session } = useSessionPreferences();
+  const { signOut } = useAuth();
   const active = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
   const resourcesActive = active("/awareness/posters") || active("/awareness/infographics");
   const newsActive = active("/awareness/news");
@@ -349,7 +351,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                   <button
                     type="button"
                     onClick={() => {
-                      signOut();
+                      void signOut();
                       setOpen(false);
                     }}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl border font-bold hover:bg-muted"
@@ -412,7 +414,8 @@ function WorkspaceShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { resetDemo } = useNcap();
-  const { session, signOut } = useSessionPreferences();
+  const { session } = useSessionPreferences();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const nav = kind === "admin" ? adminNav : learnerNav;
   const active = (href: string) =>
@@ -452,16 +455,18 @@ function WorkspaceShell({
             {(session.name || "D").slice(0, 1)}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{session.name || `Demo ${kind}`}</p>
+            <p className="truncate text-sm font-semibold">{session.name || kind}</p>
             <p className="truncate text-xs text-white/55">
-              {kind === "admin" ? "Administrator" : "Learner demo"}
+              {kind === "admin" ? "Super Administrator" : "Learner"}
             </p>
           </div>
         </div>
         <button
           onClick={() => {
-            signOut();
-            void navigate({ to: "/" });
+            void signOut().then((signedOut) => {
+              if (signedOut) void navigate({ to: "/" });
+              else toast.error("Unable to sign out. Please try again.");
+            });
           }}
           className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-bold text-white/65 hover:bg-white/10 hover:text-white"
         >

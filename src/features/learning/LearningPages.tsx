@@ -59,6 +59,8 @@ import { useRepository } from "@/services/repository-provider";
 import { useRepositoryList } from "@/services/query-hooks";
 import { dashboardButton } from "@/components/common/dashboard-primitives";
 import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
+import { updateProfile as updateAccountProfile } from "@/auth/auth.functions";
+import { useAuth } from "@/auth/AuthProvider";
 
 const primary = dashboardButton.primary;
 const outline = dashboardButton.secondary;
@@ -1841,6 +1843,7 @@ export function CertificatesPage() {
 
 export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const store = useNcap();
+  const auth = useAuth();
   const { language: activeLanguage, setLanguage: setActiveLanguage } = useI18n();
   const navigate = useNavigate();
   const stats = useLearnerStats();
@@ -1849,7 +1852,8 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const [phone, setPhone] = useState(store.session.phone);
   const [interests, setInterests] = useState<string[]>(store.session.interests);
   const [notifications, setNotifications] = useState(store.session.notifications);
-  const save = (e: FormEvent) => {
+  const [saving, setSaving] = useState(false);
+  const save = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error("Full name is required");
@@ -1860,8 +1864,28 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
       toast.error(parsedPhone.error.issues[0]?.message ?? "Enter a valid phone number.");
       return;
     }
-    store.updateProfile({ name: name.trim(), phone: phone.trim(), interests, notifications });
+    setSaving(true);
+    const result = await updateAccountProfile({
+      data: {
+        displayName: name.trim(),
+        language,
+        phone: phone.trim(),
+        notifications,
+      },
+    });
+    setSaving(false);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    store.updateProfile({
+      name: result.data.displayName,
+      phone: result.data.phone,
+      interests,
+      notifications,
+    });
     setActiveLanguage(language);
+    await auth.refresh();
     toast.success("Profile updated");
     void navigate({ to: "/profile" as never });
   };
@@ -1872,7 +1896,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
         <PageHeader
           eyebrow="Profile settings"
           title="Edit your profile"
-          description="Email is read-only in this demo. Passwords and other sensitive credentials are never stored."
+          description="Your email is managed by your secure account and cannot be changed here."
         />
         <form onSubmit={save} className="mt-8 grid gap-6 rounded-xl border bg-white p-6">
           <label className="text-sm font-semibold">
@@ -1959,7 +1983,9 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             <AppLink href="/profile" className={outline}>
               Cancel
             </AppLink>
-            <button className={primary}>Save changes</button>
+            <button className={primary} disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </button>
           </div>
         </form>
       </div>

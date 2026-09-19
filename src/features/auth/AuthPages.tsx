@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -12,12 +12,17 @@ import {
 import { toast } from "sonner";
 import { AppLink, Brand, PublicFooter } from "@/components/layout/AppShell";
 import { LanguageSelector } from "@/components/common/LanguageSelector";
-import { useSessionPreferences } from "@/state/ncap-store";
 import { cn } from "@/lib/utils";
-import { DemoAuthService } from "@/services/auth";
 import { emailSchema, passwordSchema } from "@/domain/validation";
-import { useI18n } from "@/lib/i18n";
-import type { LanguageCode } from "@/data/types";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  register as registerAccount,
+  requestPasswordReset,
+  resendVerification,
+  signIn as signInAccount,
+  updatePassword,
+} from "@/auth/auth.functions";
+import { safeInternalPath } from "@/auth/redirect";
 
 const inputClass =
   "mt-1.5 h-12 w-full rounded-xl border bg-white px-4 text-base placeholder:text-muted-foreground focus:border-violet";
@@ -86,7 +91,7 @@ function AuthLayout({
             </ul>
           </div>
           <p className="relative text-xs text-white/50">
-            Frontend demonstration · No production authentication
+            Secure account access powered by Supabase
           </p>
         </aside>
         <main
@@ -184,12 +189,15 @@ function Field({
 }
 
 export function LoginPage() {
-  const { signIn, ready } = useSessionPreferences();
+  const { refresh } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { redirect?: string };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
-  const submit = (e: FormEvent) => {
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState("");
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const next: Errors = {};
     if (!email) next.email = "Email is required.";
@@ -198,22 +206,26 @@ export function LoginPage() {
     else if (password.length < 8) next.password = "Use at least 8 characters.";
     setErrors(next);
     if (Object.keys(next).length) return;
-    const normalizedEmail = email.trim();
-    signIn("learner", normalizedEmail.split("@")[0], normalizedEmail);
-    toast.success("Learner demo opened");
-    void navigate({ to: "/dashboard" as never });
-  };
-  const demo = (role: "learner" | "admin") => {
-    signIn(role);
-    void navigate({ to: (role === "admin" ? "/admin" : "/dashboard") as never });
+    setBusy(true);
+    setFormError("");
+    const result = await signInAccount({ data: { email: email.trim(), password } });
+    setBusy(false);
+    if (!result.ok) {
+      setFormError(result.message);
+      return;
+    }
+    await refresh();
+    toast.success("Signed in securely");
+    const fallback = result.data.role === "super_admin" ? "/admin" : "/dashboard";
+    void navigate({ to: safeInternalPath(search.redirect, fallback) as never });
   };
   return (
     <AuthLayout
       hideFooter
       title="Welcome back"
-      description="Log in to continue your learning. This form demonstrates validation and does not authenticate against a server."
+      description="Log in securely to continue your learning."
     >
-      <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
+      <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
         <Field
           label="Email address"
           name="email"
@@ -243,27 +255,19 @@ export function LoginPage() {
             Forgot password?
           </AppLink>
         </div>
-        <button className={primary} type="submit">
-          Log in
+        {formError && (
+          <p className="rounded-xl bg-destructive-soft p-3 text-sm text-destructive" role="alert">
+            {formError}
+          </p>
+        )}
+        <button className={primary} type="submit" disabled={busy}>
+          {busy ? "Signing in…" : "Log in"}
         </button>
       </form>
-      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        OR USE DEMO ACCESS
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button className={secondary} disabled={!ready} onClick={() => demo("learner")}>
-          Continue as Learner
-        </button>
-        <button className={secondary} disabled={!ready} onClick={() => demo("admin")}>
-          Continue as Administrator
-        </button>
-      </div>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New to NCAP?{" "}
         <AppLink href="/register" className="font-semibold text-primary">
-          Create a demo account
+          Create an account
         </AppLink>
       </p>
     </AuthLayout>
@@ -271,9 +275,16 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
+  const { refresh } = useAuth();
   const navigate = useNavigate();
-  const [hydrated, setHydrated] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    email: string;
+    password: string;
+    confirm: string;
+    language: "en" | "si" | "ta";
+    terms: boolean;
+  }>({
     name: "",
     email: "",
     password: "",
@@ -282,8 +293,9 @@ export function RegisterPage() {
     terms: false,
   });
   const [errors, setErrors] = useState<Errors>({});
-  useEffect(() => setHydrated(true), []);
-  const submit = (e: FormEvent) => {
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState("");
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     const n: Errors = {};
     if (form.name.trim().length < 2) n.name = "Enter your full name.";
@@ -295,22 +307,41 @@ export function RegisterPage() {
     if (!form.terms) n.terms = "Accept the terms of use and privacy notice to continue.";
     setErrors(n);
     if (Object.keys(n).length) return;
-    sessionStorage.setItem("ncap.verify.email", form.email.trim());
-    sessionStorage.setItem(
-      "ncap.verify.profile",
-      JSON.stringify({ name: form.name.trim(), email: form.email.trim(), language: form.language }),
-    );
+    setBusy(true);
+    setFormError("");
+    const result = await registerAccount({
+      data: {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        language: form.language,
+      },
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setFormError(result.message);
+      return;
+    }
     setForm((value) => ({ ...value, password: "", confirm: "" }));
-    void navigate({ to: "/verify-email" as never });
+    if (result.data.requiresEmailVerification) {
+      void navigate({
+        to: "/verify-email",
+        search: { email: form.email.trim() },
+      } as never);
+      return;
+    }
+    await refresh();
+    void navigate({ to: "/dashboard" as never });
   };
-  const set = (key: string, value: string | boolean) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <Key extends keyof typeof form>(key: Key, value: (typeof form)[Key]) =>
+    setForm((current) => ({ ...current, [key]: value }));
   return (
     <AuthLayout
       hideFooter
       title="Create your learning profile"
-      description="Registration is simulated in this frontend demo. Your password is validated in memory and never persisted."
+      description="Create a secure learner account. We will ask you to verify your email address."
     >
-      <form className="mt-7 grid gap-5" onSubmit={submit} noValidate>
+      <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
         <Field
           label="Full name"
           name="name"
@@ -369,7 +400,7 @@ export function RegisterPage() {
           Preferred language
           <select
             value={form.language}
-            onChange={(e) => set("language", e.target.value)}
+            onChange={(e) => set("language", e.target.value as "en" | "si" | "ta")}
             className={inputClass}
           >
             <option value="en">English</option>
@@ -397,8 +428,13 @@ export function RegisterPage() {
             )}
           </span>
         </label>
-        <button className={primary} disabled={!hydrated}>
-          Create demo profile
+        {formError && (
+          <p className="rounded-xl bg-destructive-soft p-3 text-sm text-destructive" role="alert">
+            {formError}
+          </p>
+        )}
+        <button className={primary} disabled={busy}>
+          {busy ? "Creating account…" : "Create account"}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
@@ -412,84 +448,61 @@ export function RegisterPage() {
 }
 
 export function VerifyEmailPage() {
-  const { session, signIn } = useSessionPreferences();
-  const { setLanguage } = useI18n();
-  const [verified, setVerified] = useState(false);
+  const search = useSearch({ strict: false }) as { email?: string; error?: "link_invalid" };
+  const email = search.email && validEmail(search.email) ? search.email : "your email address";
   const [resent, setResent] = useState(false);
-  const [email, setEmail] = useState(session.email || "your-address@example.lk");
-  useEffect(() => {
-    const stored = sessionStorage.getItem("ncap.verify.email");
-    if (stored) setEmail(stored);
-  }, []);
-  const verify = () => {
-    try {
-      const pending = JSON.parse(sessionStorage.getItem("ncap.verify.profile") ?? "{}") as {
-        name?: string;
-        email?: string;
-        language?: LanguageCode;
-      };
-      signIn("learner", pending.name, pending.email ?? email);
-      if (pending.language && ["en", "si", "ta"].includes(pending.language)) {
-        setLanguage(pending.language);
-      }
-    } catch {
-      signIn("learner", undefined, email);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const resend = async () => {
+    if (!validEmail(email)) return;
+    setBusy(true);
+    setError("");
+    const result = await resendVerification({ data: { email } });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
     }
-    sessionStorage.removeItem("ncap.verify.profile");
-    setVerified(true);
+    setResent(true);
+    toast.success("Verification email requested");
   };
   return (
     <AuthLayout
-      title={verified ? "Email verified in demo mode" : "Check your email"}
+      title={search.error ? "Verification link unavailable" : "Check your email"}
       description={
-        verified
-          ? "The demonstration verification step is complete."
-          : "A production version would send a secure verification link. No email has been sent by this frontend demo."
+        search.error
+          ? "This link is invalid or has expired. Request a new verification email."
+          : "Use the secure verification link sent by Supabase to activate your account."
       }
     >
       <div className="py-8 text-center">
-        <span
-          className={cn(
-            "mx-auto grid size-20 place-items-center rounded-full",
-            verified ? "bg-success-soft text-success" : "bg-primary-soft text-primary",
-          )}
-        >
-          {verified ? <CheckCircle2 className="size-9" /> : <MailCheck className="size-9" />}
+        <span className="mx-auto grid size-20 place-items-center rounded-full bg-primary-soft text-primary">
+          <MailCheck className="size-9" />
         </span>
         <p className="mt-5 font-semibold">{email}</p>
-        {verified ? (
-          <AppLink href="/dashboard" className={cn(primary, "mt-7 w-full")}>
-            Continue to dashboard
-          </AppLink>
-        ) : (
-          <>
-            <button onClick={verify} className={cn(primary, "mt-7 w-full")}>
-              Simulate verification
-            </button>
-            <button
-              onClick={() => {
-                setResent(true);
-                toast.success("Demo resend simulated — no email was sent");
-              }}
-              className={cn(secondary, "mt-3 w-full")}
-            >
-              {resent ? "Demo resend simulated" : "Resend verification (demo)"}
-            </button>
-            <p className="mt-5 text-xs text-muted-foreground">
-              Demo-only controls are intentionally explicit. No email service is connected.
-            </p>
-          </>
+        <button
+          onClick={() => void resend()}
+          disabled={busy || !validEmail(email)}
+          className={cn(secondary, "mt-7 w-full")}
+        >
+          {busy ? "Requesting…" : resent ? "Verification email requested" : "Resend verification"}
+        </button>
+        {error && (
+          <p className="mt-4 text-sm text-destructive" role="alert">
+            {error}
+          </p>
         )}
+        <p className="mt-5 text-xs text-muted-foreground">
+          The link expires automatically. Check your spam folder if it does not arrive.
+        </p>
       </div>
     </AuthLayout>
   );
 }
 
 export function ForgotPasswordPage() {
-  const [step, setStep] = useState<"email" | "confirm" | "reset" | "done">("email");
+  const [submitted, setSubmitted] = useState(false);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const submitEmail = async (e: FormEvent) => {
@@ -500,35 +513,20 @@ export function ForgotPasswordPage() {
     }
     setError("");
     setBusy(true);
-    await DemoAuthService.requestPasswordReset(email.trim());
+    const result = await requestPasswordReset({ data: { email: email.trim() } });
     setBusy(false);
-    setStep("confirm");
-  };
-  const submitReset = async (e: FormEvent) => {
-    e.preventDefault();
-    const parsed = passwordSchema.safeParse(password);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Choose a stronger password.");
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
-    setError("");
-    setBusy(true);
-    await DemoAuthService.resetPassword("demo-reset-contract", password);
-    setPassword("");
-    setConfirm("");
-    setBusy(false);
-    setStep("done");
+    setSubmitted(true);
   };
   return (
     <AuthLayout
-      title={step === "done" ? "Demo password reset complete" : "Reset your password"}
-      description="This complete demonstration flow does not send email or store your new password."
+      title="Reset your password"
+      description="We will send a time-limited password recovery link if an account exists."
     >
-      {step === "email" && (
+      {!submitted ? (
         <form className="mt-7 grid gap-5" onSubmit={(event) => void submitEmail(event)} noValidate>
           <Field
             label="Email address"
@@ -541,26 +539,62 @@ export function ForgotPasswordPage() {
             required
           />
           <button disabled={busy} className={primary}>
-            {busy ? "Submitting…" : "Continue"}
+            {busy ? "Sending…" : "Send reset link"}
           </button>
         </form>
-      )}
-      {step === "confirm" && (
+      ) : (
         <div className="mt-7 rounded-xl bg-primary-soft p-5">
           <MailCheck className="size-6 text-primary" />
-          <h2 className="mt-4 font-semibold">
-            If an account exists, reset instructions would be sent.
-          </h2>
+          <h2 className="mt-4 font-semibold">Check your email for reset instructions.</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            For privacy, the real experience would show this generic message for every address.
+            For privacy, this message is the same whether or not an account exists.
           </p>
-          <button className={cn(primary, "mt-5 w-full")} onClick={() => setStep("reset")}>
-            Continue demo reset
-          </button>
         </div>
       )}
-      {step === "reset" && (
-        <form className="mt-7 grid gap-5" onSubmit={(event) => void submitReset(event)}>
+    </AuthLayout>
+  );
+}
+
+export function ResetPasswordPage() {
+  const navigate = useNavigate();
+  const { refresh } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const parsed = passwordSchema.safeParse(password);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Choose a stronger password.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const result = await updatePassword({ data: { password } });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setPassword("");
+    setConfirm("");
+    setDone(true);
+    await refresh();
+  };
+
+  return (
+    <AuthLayout
+      title={done ? "Password updated" : "Choose a new password"}
+      description="Set a strong password for your NCAP account."
+    >
+      {!done ? (
+        <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
           <Field
             label="New password"
             name="new-password"
@@ -584,21 +618,21 @@ export function ForgotPasswordPage() {
             required
           />
           <button disabled={busy} className={primary}>
-            {busy ? "Submitting…" : "Simulate password reset"}
+            {busy ? "Updating…" : "Update password"}
           </button>
         </form>
-      )}
-      {step === "done" && (
+      ) : (
         <div className="py-8 text-center">
           <span className="mx-auto grid size-20 place-items-center rounded-full bg-success-soft text-success">
             <KeyRound className="size-9" />
           </span>
-          <p className="mt-5 text-muted-foreground">
-            No credentials were changed or persisted. The demo flow is complete.
-          </p>
-          <AppLink href="/login" className={cn(primary, "mt-7 w-full")}>
-            Return to login
-          </AppLink>
+          <p className="mt-5 text-muted-foreground">Your password has been changed securely.</p>
+          <button
+            className={cn(primary, "mt-7 w-full")}
+            onClick={() => void navigate({ to: "/dashboard" as never })}
+          >
+            Continue
+          </button>
         </div>
       )}
     </AuthLayout>

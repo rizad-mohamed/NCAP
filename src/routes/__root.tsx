@@ -14,6 +14,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { NcapProvider } from "@/state/ncap-store";
 import { I18nProvider } from "@/lib/i18n";
 import { NcapRepositoryProvider } from "@/services/repository-provider";
+import { AuthProvider, useAuth } from "@/auth/AuthProvider";
+import { getAuthState } from "@/auth/auth.functions";
+import type { AuthState } from "@/auth/types";
 
 import appCss from "../styles.css?url";
 
@@ -80,7 +83,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  auth: AuthState;
+}>()({
+  beforeLoad: async () => ({ auth: await getAuthState() }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -133,23 +140,32 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, auth } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <NcapProvider>
-          <NcapRepositoryProvider>
-            <TooltipProvider delayDuration={250}>
-              <a href="#main-content" className="skip-link">
-                Skip to main content
-              </a>
-              <Outlet />
-              <Toaster richColors position="top-right" />
-            </TooltipProvider>
-          </NcapRepositoryProvider>
-        </NcapProvider>
+        <AuthProvider state={auth}>
+          <AuthenticatedApplication />
+        </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
+  );
+}
+
+function AuthenticatedApplication() {
+  const auth = useAuth();
+  return (
+    <NcapProvider authUser={auth.user}>
+      <NcapRepositoryProvider>
+        <TooltipProvider delayDuration={250}>
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </TooltipProvider>
+      </NcapRepositoryProvider>
+    </NcapProvider>
   );
 }

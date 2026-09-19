@@ -70,7 +70,6 @@ import {
   normalizeTopicName,
   topicSlug,
 } from "@/domain/rules";
-import { DemoAuthService } from "@/services/auth";
 import { DemoMediaService, DemoVideoService } from "@/services/media";
 import {
   lessonBlocksSchema,
@@ -79,6 +78,11 @@ import {
   phoneSchema,
 } from "@/domain/validation";
 import { useI18n } from "@/lib/i18n";
+import {
+  changePassword as changeAccountPassword,
+  updateProfile as updateAccountProfile,
+} from "@/auth/auth.functions";
+import { useAuth } from "@/auth/AuthProvider";
 import {
   DashboardPagination,
   DashboardSearchInput,
@@ -2321,6 +2325,7 @@ function AnnouncementEditor({
 
 export function AdminProfilePage() {
   const store = useNcap();
+  const auth = useAuth();
   const { language, setLanguage } = useI18n();
   const [profile, setProfile] = useState({
     name: store.session.name || "Demo Administrator",
@@ -2331,8 +2336,9 @@ export function AdminProfilePage() {
     avatar: store.session.avatar,
   });
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
-  const saveProfile = (event: FormEvent) => {
+  const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
     if (profile.name.trim().length < 2) {
       toast.error("Enter your full name.");
@@ -2347,14 +2353,28 @@ export function AdminProfilePage() {
       toast.error(phone.error.issues[0]?.message ?? "Enter a valid phone number.");
       return;
     }
+    setSavingProfile(true);
+    const result = await updateAccountProfile({
+      data: {
+        displayName: profile.name.trim(),
+        language: profile.language,
+        phone: profile.phone.trim(),
+        notifications: profile.notifications,
+      },
+    });
+    setSavingProfile(false);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     store.updateProfile({
-      name: profile.name.trim(),
-      email: profile.email.trim(),
-      phone: profile.phone.trim(),
-      notifications: profile.notifications,
+      name: result.data.displayName,
+      phone: result.data.phone,
+      notifications: result.data.notifications,
       ...(profile.avatar ? { avatar: profile.avatar } : {}),
     });
     setLanguage(profile.language);
+    await auth.refresh();
     store.logActivity("admin", "Updated administrator profile settings");
     toast.success("Administrator profile updated");
   };
@@ -2371,9 +2391,12 @@ export function AdminProfilePage() {
     }
     setSavingPassword(true);
     try {
-      await DemoAuthService.changePassword(passwords.current, passwords.next);
+      const result = await changeAccountPassword({
+        data: { currentPassword: passwords.current, newPassword: passwords.next },
+      });
+      if (!result.ok) throw new Error(result.message);
       setPasswords({ current: "", next: "", confirm: "" });
-      toast.success("Password change request completed in demo mode; no password was stored.");
+      toast.success("Password changed securely.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The request could not be completed.");
     } finally {
@@ -2385,7 +2408,7 @@ export function AdminProfilePage() {
       <PageHeader
         eyebrow="Administration · Account"
         title="Profile and account settings"
-        description="Manage the local demonstration administrator profile. Production identity changes require the backend."
+        description="Manage your secure Super Administrator profile and password."
       />
       <div className="mt-7 grid gap-6 lg:grid-cols-2">
         <form
@@ -2415,10 +2438,8 @@ export function AdminProfilePage() {
             <input
               type="email"
               value={profile.email}
-              onChange={(event) => setProfile((value) => ({ ...value, email: event.target.value }))}
-              autoComplete="email"
-              maxLength={254}
-              className={field}
+              readOnly
+              className={cn(field, "bg-muted text-muted-foreground")}
             />
           </label>
           <label className="text-sm font-semibold">
@@ -2460,7 +2481,9 @@ export function AdminProfilePage() {
               className="size-5 accent-primary"
             />
           </label>
-          <button className={primary}>Save profile</button>
+          <button className={primary} disabled={savingProfile}>
+            {savingProfile ? "Saving…" : "Save profile"}
+          </button>
         </form>
         <form
           onSubmit={(event) => void changePassword(event)}
@@ -2468,8 +2491,8 @@ export function AdminProfilePage() {
         >
           <h2 className="text-xl font-semibold">Change password</h2>
           <p className="rounded-lg bg-warning-soft p-4 text-sm">
-            Demo contract only: values are submitted to an in-memory service adapter, immediately
-            cleared, and never persisted or logged.
+            Your current password is required. Password values are sent only to the protected
+            authentication endpoint and are never stored by NCAP.
           </p>
           <label className="text-sm font-semibold">
             Current password *

@@ -48,6 +48,7 @@ import type {
 import { persistedStateEnvelopeSchema, recoverPersistedSections } from "@/domain/validation";
 import { topicSlug } from "@/domain/rules";
 import { evaluateCertificateEligibility } from "@/domain/rules";
+import type { AuthUser } from "@/auth/types";
 
 export type Role = "guest" | "learner" | "admin";
 
@@ -249,8 +250,6 @@ const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2,
 
 interface StoreValue extends StoreState {
   ready: boolean;
-  signIn: (role: Exclude<Role, "guest">, name?: string, email?: string) => void;
-  signOut: () => void;
   updateProfile: (patch: Partial<Session>) => void;
   toggleBookmark: (lessonId: string) => boolean;
   completeLesson: (lessonId: string) => void;
@@ -281,14 +280,50 @@ const StoreContext = createContext<StoreValue | null>(null);
 interface SessionPreferencesValue {
   session: Session;
   ready: boolean;
-  signIn: StoreValue["signIn"];
-  signOut: StoreValue["signOut"];
   updateProfile: StoreValue["updateProfile"];
 }
 const SessionPreferencesContext = createContext<SessionPreferencesValue | null>(null);
 
-export function NcapProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<StoreState>(emptyState);
+function sessionFromAuth(user: AuthUser | null, previous: Session = GUEST): Session {
+  if (!user) return GUEST;
+  return {
+    role: user.role === "super_admin" ? "admin" : "learner",
+    name: user.displayName,
+    email: user.email,
+    joinedAt: user.createdAt.slice(0, 10),
+    interests: previous.interests.length ? previous.interests : ["Phishing", "Password Security"],
+    notifications: user.notifications,
+    phone: user.phone,
+    avatar: previous.avatar,
+  };
+}
+
+function withAuthenticatedDemoState(state: StoreState, user: AuthUser | null): StoreState {
+  const session = sessionFromAuth(user, state.session);
+  if (session.role !== "learner") return { ...state, session };
+  return {
+    ...state,
+    session,
+    completedLessons:
+      state.completedLessons.length === 0
+        ? seedDemoProgress.completedLessons
+        : state.completedLessons,
+    bookmarks: state.bookmarks.length === 0 ? seedDemoProgress.bookmarks : state.bookmarks,
+    attempts: state.attempts.length === 0 ? seedDemoProgress.attempts : state.attempts,
+    activities: state.activities.length === 0 ? seedDemoProgress.activities : state.activities,
+  };
+}
+
+export function NcapProvider({
+  children,
+  authUser,
+}: {
+  children: ReactNode;
+  authUser: AuthUser | null;
+}) {
+  const [state, setState] = useState<StoreState>(() =>
+    withAuthenticatedDemoState(emptyState(), authUser),
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -303,23 +338,38 @@ export function NcapProvider({ children }: { children: ReactNode }) {
           : typeof parsed === "object" && parsed !== null
             ? parsed
             : {};
-        setState(
-          recoverPersistedSections(
-            restored,
-            emptyState() as unknown as Record<string, unknown>,
-          ) as unknown as StoreState,
-        );
+        const recovered = recoverPersistedSections(
+          restored,
+          emptyState() as unknown as Record<string, unknown>,
+        ) as unknown as StoreState;
+        setState(withAuthenticatedDemoState(recovered, authUser));
         window.localStorage.removeItem(LEGACY_STORAGE_KEY);
       }
     } catch {
       /* ignore corrupt demo state */
     }
     setReady(true);
-  }, []);
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!ready) return;
+    setState((current) => withAuthenticatedDemoState(current, authUser));
+  }, [authUser, ready]);
 
   useLayoutEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, state }));
+    const persistedState = {
+      ...state,
+      session: {
+        ...state.session,
+        role: "guest" as const,
+        name: "",
+        email: "",
+        joinedAt: "",
+        phone: "",
+      },
+    };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, state: persistedState }));
   }, [state, ready]);
 
   const logActivity = useCallback((kind: ActivityItem["kind"], label: string) => {
@@ -327,39 +377,6 @@ export function NcapProvider({ children }: { children: ReactNode }) {
       ...s,
       activities: [{ id: uid("ac"), kind, label, at: now() }, ...s.activities].slice(0, 30),
     }));
-  }, []);
-
-  const signIn = useCallback<StoreValue["signIn"]>((role, name, email) => {
-    setState((s) => ({
-      ...s,
-      session: {
-        role,
-        name: name || (role === "admin" ? "Demo Administrator" : "Demo Learner"),
-        email: email || (role === "admin" ? "admin@ncap.demo" : "learner@ncap.demo"),
-        joinedAt: s.session.joinedAt || "2026-03-02",
-        interests: s.session.interests.length
-          ? s.session.interests
-          : ["Phishing", "Password Security"],
-        notifications: s.session.notifications,
-        phone: s.session.phone,
-      },
-      completedLessons:
-        role === "learner" && s.completedLessons.length === 0
-          ? seedDemoProgress.completedLessons
-          : s.completedLessons,
-      bookmarks:
-        role === "learner" && s.bookmarks.length === 0 ? seedDemoProgress.bookmarks : s.bookmarks,
-      attempts:
-        role === "learner" && s.attempts.length === 0 ? seedDemoProgress.attempts : s.attempts,
-      activities:
-        role === "learner" && s.activities.length === 0
-          ? seedDemoProgress.activities
-          : s.activities,
-    }));
-  }, []);
-
-  const signOut = useCallback(() => {
-    setState((s) => ({ ...s, session: GUEST }));
   }, []);
 
   const updateProfile = useCallback((patch: Partial<Session>) => {
@@ -526,15 +543,13 @@ export function NcapProvider({ children }: { children: ReactNode }) {
   const resetDemo = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY);
     window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-    setState(emptyState());
-  }, []);
+    setState(withAuthenticatedDemoState(emptyState(), authUser));
+  }, [authUser]);
 
   const value = useMemo<StoreValue>(
     () => ({
       ...state,
       ready,
-      signIn,
-      signOut,
       updateProfile,
       toggleBookmark,
       completeLesson,
@@ -563,8 +578,6 @@ export function NcapProvider({ children }: { children: ReactNode }) {
     [
       state,
       ready,
-      signIn,
-      signOut,
       updateProfile,
       toggleBookmark,
       completeLesson,
@@ -593,8 +606,8 @@ export function NcapProvider({ children }: { children: ReactNode }) {
   );
 
   const sessionPreferences = useMemo<SessionPreferencesValue>(
-    () => ({ session: state.session, ready, signIn, signOut, updateProfile }),
-    [state.session, ready, signIn, signOut, updateProfile],
+    () => ({ session: state.session, ready, updateProfile }),
+    [state.session, ready, updateProfile],
   );
 
   return (

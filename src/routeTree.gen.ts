@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AccessibilityRouteImport } from './routes/accessibility'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BookmarksRouteImport } from './routes/bookmarks'
 import { Route as CertificatesRouteImport } from './routes/certificates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,6 +20,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -33,6 +35,7 @@ import { Route as AdminQuestionsRouteImport } from './routes/admin.questions'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminTopicsRouteImport } from './routes/admin.topics'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
 import { Route as AwarenessKindRouteImport } from './routes/awareness.$kind'
 import { Route as LearnIndexRouteImport } from './routes/learn.index'
@@ -63,6 +66,11 @@ const SplatRoute = SplatRouteImport.update({
 const AccessibilityRoute = AccessibilityRouteImport.update({
   id: '/accessibility',
   path: '/accessibility',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookmarksRoute = BookmarksRouteImport.update({
@@ -100,6 +108,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -111,63 +124,68 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
-  id: '/admin/announcements',
-  path: '/admin/announcements',
-  getParentRoute: () => rootRouteImport,
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminArticlesRoute = AdminArticlesRouteImport.update({
-  id: '/admin/articles',
-  path: '/admin/articles',
-  getParentRoute: () => rootRouteImport,
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminCertificatesRoute = AdminCertificatesRouteImport.update({
-  id: '/admin/certificates',
-  path: '/admin/certificates',
-  getParentRoute: () => rootRouteImport,
+  id: '/certificates',
+  path: '/certificates',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminInfographicsRoute = AdminInfographicsRouteImport.update({
-  id: '/admin/infographics',
-  path: '/admin/infographics',
-  getParentRoute: () => rootRouteImport,
+  id: '/infographics',
+  path: '/infographics',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminLessonsRoute = AdminLessonsRouteImport.update({
-  id: '/admin/lessons',
-  path: '/admin/lessons',
-  getParentRoute: () => rootRouteImport,
+  id: '/lessons',
+  path: '/lessons',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminPostersRoute = AdminPostersRouteImport.update({
-  id: '/admin/posters',
-  path: '/admin/posters',
-  getParentRoute: () => rootRouteImport,
+  id: '/posters',
+  path: '/posters',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminProfileRoute = AdminProfileRouteImport.update({
-  id: '/admin/profile',
-  path: '/admin/profile',
-  getParentRoute: () => rootRouteImport,
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
-  id: '/admin/questions',
-  path: '/admin/questions',
-  getParentRoute: () => rootRouteImport,
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/admin/reports',
-  path: '/admin/reports',
-  getParentRoute: () => rootRouteImport,
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminTopicsRoute = AdminTopicsRouteImport.update({
-  id: '/admin/topics',
-  path: '/admin/topics',
-  getParentRoute: () => rootRouteImport,
+  id: '/topics',
+  path: '/topics',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AwarenessIndexRoute = AwarenessIndexRouteImport.update({
@@ -206,14 +224,14 @@ const QuizzesIndexRoute = QuizzesIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAwarenessIndexRoute = AdminAwarenessIndexRouteImport.update({
-  id: '/admin/awareness/',
-  path: '/admin/awareness/',
-  getParentRoute: () => rootRouteImport,
+  id: '/awareness/',
+  path: '/awareness/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminAwarenessKindRoute = AdminAwarenessKindRouteImport.update({
-  id: '/admin/awareness/$kind',
-  path: '/admin/awareness/$kind',
-  getParentRoute: () => rootRouteImport,
+  id: '/awareness/$kind',
+  path: '/awareness/$kind',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AwarenessArticlesIndexRoute = AwarenessArticlesIndexRouteImport.update({
   id: '/awareness/articles/',
@@ -255,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/accessibility': typeof AccessibilityRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bookmarks': typeof BookmarksRoute
   '/certificates': typeof CertificatesRoute
   '/dashboard': typeof DashboardRoute
@@ -262,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -275,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/awareness/$kind': typeof AwarenessKindRoute
   '/learn/search': typeof LearnSearchRoute
   '/profile/edit': typeof ProfileEditRoute
@@ -304,6 +325,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -317,6 +339,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/awareness/$kind': typeof AwarenessKindRoute
   '/learn/search': typeof LearnSearchRoute
   '/profile/edit': typeof ProfileEditRoute
@@ -340,6 +363,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/accessibility': typeof AccessibilityRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bookmarks': typeof BookmarksRoute
   '/certificates': typeof CertificatesRoute
   '/dashboard': typeof DashboardRoute
@@ -347,6 +371,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -360,6 +385,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/topics': typeof AdminTopicsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/awareness/$kind': typeof AwarenessKindRoute
   '/learn/search': typeof LearnSearchRoute
   '/profile/edit': typeof ProfileEditRoute
@@ -384,6 +410,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/accessibility'
+    | '/admin'
     | '/bookmarks'
     | '/certificates'
     | '/dashboard'
@@ -391,6 +418,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/verify-email'
     | '/admin/announcements'
@@ -404,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/topics'
     | '/admin/users'
+    | '/auth/callback'
     | '/awareness/$kind'
     | '/learn/search'
     | '/profile/edit'
@@ -433,6 +462,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/verify-email'
     | '/admin/announcements'
@@ -446,6 +476,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/topics'
     | '/admin/users'
+    | '/auth/callback'
     | '/awareness/$kind'
     | '/learn/search'
     | '/profile/edit'
@@ -468,6 +499,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/accessibility'
+    | '/admin'
     | '/bookmarks'
     | '/certificates'
     | '/dashboard'
@@ -475,6 +507,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/register'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/verify-email'
     | '/admin/announcements'
@@ -488,6 +521,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/topics'
     | '/admin/users'
+    | '/auth/callback'
     | '/awareness/$kind'
     | '/learn/search'
     | '/profile/edit'
@@ -511,6 +545,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   AccessibilityRoute: typeof AccessibilityRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BookmarksRoute: typeof BookmarksRoute
   CertificatesRoute: typeof CertificatesRoute
   DashboardRoute: typeof DashboardRoute
@@ -518,34 +553,22 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
-  AdminArticlesRoute: typeof AdminArticlesRoute
-  AdminCertificatesRoute: typeof AdminCertificatesRoute
-  AdminInfographicsRoute: typeof AdminInfographicsRoute
-  AdminLessonsRoute: typeof AdminLessonsRoute
-  AdminPostersRoute: typeof AdminPostersRoute
-  AdminProfileRoute: typeof AdminProfileRoute
-  AdminQuestionsRoute: typeof AdminQuestionsRoute
-  AdminReportsRoute: typeof AdminReportsRoute
-  AdminTopicsRoute: typeof AdminTopicsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AwarenessKindRoute: typeof AwarenessKindRoute
   LearnSearchRoute: typeof LearnSearchRoute
   ProfileEditRoute: typeof ProfileEditRoute
-  AdminIndexRoute: typeof AdminIndexRoute
   AwarenessIndexRoute: typeof AwarenessIndexRoute
   LearnIndexRoute: typeof LearnIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
   QuizzesIndexRoute: typeof QuizzesIndexRoute
-  AdminAwarenessKindRoute: typeof AdminAwarenessKindRoute
   AwarenessArticlesSlugRoute: typeof AwarenessArticlesSlugRoute
   LearnLessonsLessonIdRoute: typeof LearnLessonsLessonIdRoute
   LearnModulesModuleIdRoute: typeof LearnModulesModuleIdRoute
   QuizzesQuizIdResultsRoute: typeof QuizzesQuizIdResultsRoute
   QuizzesQuizIdRunRoute: typeof QuizzesQuizIdRunRoute
-  AdminAwarenessIndexRoute: typeof AdminAwarenessIndexRoute
   AwarenessArticlesIndexRoute: typeof AwarenessArticlesIndexRoute
   QuizzesQuizIdIndexRoute: typeof QuizzesQuizIdIndexRoute
 }
@@ -571,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/accessibility'
       fullPath: '/accessibility'
       preLoaderRoute: typeof AccessibilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bookmarks': {
@@ -622,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -638,86 +675,93 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/announcements': {
       id: '/admin/announcements'
-      path: '/admin/announcements'
+      path: '/announcements'
       fullPath: '/admin/announcements'
       preLoaderRoute: typeof AdminAnnouncementsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/articles': {
       id: '/admin/articles'
-      path: '/admin/articles'
+      path: '/articles'
       fullPath: '/admin/articles'
       preLoaderRoute: typeof AdminArticlesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/certificates': {
       id: '/admin/certificates'
-      path: '/admin/certificates'
+      path: '/certificates'
       fullPath: '/admin/certificates'
       preLoaderRoute: typeof AdminCertificatesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/infographics': {
       id: '/admin/infographics'
-      path: '/admin/infographics'
+      path: '/infographics'
       fullPath: '/admin/infographics'
       preLoaderRoute: typeof AdminInfographicsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/lessons': {
       id: '/admin/lessons'
-      path: '/admin/lessons'
+      path: '/lessons'
       fullPath: '/admin/lessons'
       preLoaderRoute: typeof AdminLessonsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/posters': {
       id: '/admin/posters'
-      path: '/admin/posters'
+      path: '/posters'
       fullPath: '/admin/posters'
       preLoaderRoute: typeof AdminPostersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/profile': {
       id: '/admin/profile'
-      path: '/admin/profile'
+      path: '/profile'
       fullPath: '/admin/profile'
       preLoaderRoute: typeof AdminProfileRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/questions': {
       id: '/admin/questions'
-      path: '/admin/questions'
+      path: '/questions'
       fullPath: '/admin/questions'
       preLoaderRoute: typeof AdminQuestionsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
       id: '/admin/reports'
-      path: '/admin/reports'
+      path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/topics': {
       id: '/admin/topics'
-      path: '/admin/topics'
+      path: '/topics'
       fullPath: '/admin/topics'
       preLoaderRoute: typeof AdminTopicsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/users': {
       id: '/admin/users'
-      path: '/admin/users'
+      path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/awareness/': {
@@ -771,17 +815,17 @@ declare module '@tanstack/react-router' {
     }
     '/admin/awareness/': {
       id: '/admin/awareness/'
-      path: '/admin/awareness'
+      path: '/awareness'
       fullPath: '/admin/awareness/'
       preLoaderRoute: typeof AdminAwarenessIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/awareness/$kind': {
       id: '/admin/awareness/$kind'
-      path: '/admin/awareness/$kind'
+      path: '/awareness/$kind'
       fullPath: '/admin/awareness/$kind'
       preLoaderRoute: typeof AdminAwarenessKindRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/awareness/articles/': {
       id: '/awareness/articles/'
@@ -835,19 +879,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
-  AccessibilityRoute: AccessibilityRoute,
-  BookmarksRoute: BookmarksRoute,
-  CertificatesRoute: CertificatesRoute,
-  DashboardRoute: DashboardRoute,
-  ForgotPasswordRoute: ForgotPasswordRoute,
-  LoginRoute: LoginRoute,
-  PrivacyRoute: PrivacyRoute,
-  RegisterRoute: RegisterRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
-  VerifyEmailRoute: VerifyEmailRoute,
+interface AdminRouteChildren {
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminArticlesRoute: typeof AdminArticlesRoute
+  AdminCertificatesRoute: typeof AdminCertificatesRoute
+  AdminInfographicsRoute: typeof AdminInfographicsRoute
+  AdminLessonsRoute: typeof AdminLessonsRoute
+  AdminPostersRoute: typeof AdminPostersRoute
+  AdminProfileRoute: typeof AdminProfileRoute
+  AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminTopicsRoute: typeof AdminTopicsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminAwarenessKindRoute: typeof AdminAwarenessKindRoute
+  AdminAwarenessIndexRoute: typeof AdminAwarenessIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminArticlesRoute: AdminArticlesRoute,
   AdminCertificatesRoute: AdminCertificatesRoute,
@@ -859,21 +908,41 @@ const rootRouteChildren: RootRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminTopicsRoute: AdminTopicsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminAwarenessKindRoute: AdminAwarenessKindRoute,
+  AdminAwarenessIndexRoute: AdminAwarenessIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
+  AccessibilityRoute: AccessibilityRoute,
+  AdminRoute: AdminRouteWithChildren,
+  BookmarksRoute: BookmarksRoute,
+  CertificatesRoute: CertificatesRoute,
+  DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   AwarenessKindRoute: AwarenessKindRoute,
   LearnSearchRoute: LearnSearchRoute,
   ProfileEditRoute: ProfileEditRoute,
-  AdminIndexRoute: AdminIndexRoute,
   AwarenessIndexRoute: AwarenessIndexRoute,
   LearnIndexRoute: LearnIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
   QuizzesIndexRoute: QuizzesIndexRoute,
-  AdminAwarenessKindRoute: AdminAwarenessKindRoute,
   AwarenessArticlesSlugRoute: AwarenessArticlesSlugRoute,
   LearnLessonsLessonIdRoute: LearnLessonsLessonIdRoute,
   LearnModulesModuleIdRoute: LearnModulesModuleIdRoute,
   QuizzesQuizIdResultsRoute: QuizzesQuizIdResultsRoute,
   QuizzesQuizIdRunRoute: QuizzesQuizIdRunRoute,
-  AdminAwarenessIndexRoute: AdminAwarenessIndexRoute,
   AwarenessArticlesIndexRoute: AwarenessArticlesIndexRoute,
   QuizzesQuizIdIndexRoute: QuizzesQuizIdIndexRoute,
 }

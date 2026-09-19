@@ -3,6 +3,7 @@ import { LockKeyhole, ShieldAlert } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { AppLink, AppShell, PublicFooter } from "@/components/layout/AppShell";
 import { useSessionPreferences, type Role } from "@/state/ncap-store";
+import { useAuth } from "@/auth/AuthProvider";
 
 export function RouteShell({
   children,
@@ -13,8 +14,9 @@ export function RouteShell({
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { session } = useSessionPreferences();
+  const { user } = useAuth();
   if (requiredRole && session.role !== requiredRole) {
-    const signedInWrongRole = session.role !== "guest";
+    const signedInWrongRole = user !== null;
     return (
       <>
         <main
@@ -34,8 +36,8 @@ export function RouteShell({
             </h1>
             <p className="mt-3 text-muted-foreground">
               {signedInWrongRole
-                ? `This local ${session.role} session cannot open the ${requiredRole} workspace. Frontend guards are a user-experience boundary; the future backend must enforce authorization.`
-                : `Sign in through the demonstration login to open the ${requiredRole} workspace.`}
+                ? `Your account is not authorized to open the ${requiredRole} workspace.`
+                : `Sign in to open the ${requiredRole} workspace.`}
             </p>
             <AppLink
               href={signedInWrongRole && session.role === "learner" ? "/dashboard" : "/login"}
