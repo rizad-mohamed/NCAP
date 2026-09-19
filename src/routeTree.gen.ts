@@ -10,33 +10,544 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as AccessibilityRouteImport } from './routes/accessibility'
+import { Route as BookmarksRouteImport } from './routes/bookmarks'
+import { Route as CertificatesRouteImport } from './routes/certificates'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
+import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
+import { Route as AdminCertificatesRouteImport } from './routes/admin.certificates'
+import { Route as AdminInfographicsRouteImport } from './routes/admin.infographics'
+import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
+import { Route as AdminPostersRouteImport } from './routes/admin.posters'
+import { Route as AdminProfileRouteImport } from './routes/admin.profile'
+import { Route as AdminQuestionsRouteImport } from './routes/admin.questions'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminTopicsRouteImport } from './routes/admin.topics'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
+import { Route as AwarenessKindRouteImport } from './routes/awareness.$kind'
+import { Route as LearnIndexRouteImport } from './routes/learn.index'
+import { Route as LearnSearchRouteImport } from './routes/learn.search'
+import { Route as ProfileIndexRouteImport } from './routes/profile.index'
+import { Route as ProfileEditRouteImport } from './routes/profile.edit'
+import { Route as QuizzesIndexRouteImport } from './routes/quizzes.index'
+import { Route as AdminAwarenessIndexRouteImport } from './routes/admin.awareness.index'
+import { Route as AdminAwarenessKindRouteImport } from './routes/admin.awareness.$kind'
+import { Route as AwarenessArticlesIndexRouteImport } from './routes/awareness.articles.index'
+import { Route as AwarenessArticlesSlugRouteImport } from './routes/awareness.articles.$slug'
+import { Route as LearnLessonsLessonIdRouteImport } from './routes/learn.lessons.$lessonId'
+import { Route as LearnModulesModuleIdRouteImport } from './routes/learn.modules.$moduleId'
+import { Route as QuizzesQuizIdIndexRouteImport } from './routes/quizzes.$quizId.index'
+import { Route as QuizzesQuizIdResultsRouteImport } from './routes/quizzes.$quizId.results'
+import { Route as QuizzesQuizIdRunRouteImport } from './routes/quizzes.$quizId.run'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessibilityRoute = AccessibilityRouteImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookmarksRoute = BookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CertificatesRoute = CertificatesRouteImport.update({
+  id: '/certificates',
+  path: '/certificates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin/announcements',
+  path: '/admin/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminArticlesRoute = AdminArticlesRouteImport.update({
+  id: '/admin/articles',
+  path: '/admin/articles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCertificatesRoute = AdminCertificatesRouteImport.update({
+  id: '/admin/certificates',
+  path: '/admin/certificates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminInfographicsRoute = AdminInfographicsRouteImport.update({
+  id: '/admin/infographics',
+  path: '/admin/infographics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLessonsRoute = AdminLessonsRouteImport.update({
+  id: '/admin/lessons',
+  path: '/admin/lessons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPostersRoute = AdminPostersRouteImport.update({
+  id: '/admin/posters',
+  path: '/admin/posters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/admin/profile',
+  path: '/admin/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
+  id: '/admin/questions',
+  path: '/admin/questions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTopicsRoute = AdminTopicsRouteImport.update({
+  id: '/admin/topics',
+  path: '/admin/topics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwarenessIndexRoute = AwarenessIndexRouteImport.update({
+  id: '/awareness/',
+  path: '/awareness/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwarenessKindRoute = AwarenessKindRouteImport.update({
+  id: '/awareness/$kind',
+  path: '/awareness/$kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnIndexRoute = LearnIndexRouteImport.update({
+  id: '/learn/',
+  path: '/learn/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnSearchRoute = LearnSearchRouteImport.update({
+  id: '/learn/search',
+  path: '/learn/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizzesIndexRoute = QuizzesIndexRouteImport.update({
+  id: '/quizzes/',
+  path: '/quizzes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAwarenessIndexRoute = AdminAwarenessIndexRouteImport.update({
+  id: '/admin/awareness/',
+  path: '/admin/awareness/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAwarenessKindRoute = AdminAwarenessKindRouteImport.update({
+  id: '/admin/awareness/$kind',
+  path: '/admin/awareness/$kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwarenessArticlesIndexRoute = AwarenessArticlesIndexRouteImport.update({
+  id: '/awareness/articles/',
+  path: '/awareness/articles/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwarenessArticlesSlugRoute = AwarenessArticlesSlugRouteImport.update({
+  id: '/awareness/articles/$slug',
+  path: '/awareness/articles/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnLessonsLessonIdRoute = LearnLessonsLessonIdRouteImport.update({
+  id: '/learn/lessons/$lessonId',
+  path: '/learn/lessons/$lessonId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearnModulesModuleIdRoute = LearnModulesModuleIdRouteImport.update({
+  id: '/learn/modules/$moduleId',
+  path: '/learn/modules/$moduleId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizzesQuizIdIndexRoute = QuizzesQuizIdIndexRouteImport.update({
+  id: '/quizzes/$quizId/',
+  path: '/quizzes/$quizId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizzesQuizIdResultsRoute = QuizzesQuizIdResultsRouteImport.update({
+  id: '/quizzes/$quizId/results',
+  path: '/quizzes/$quizId/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizzesQuizIdRunRoute = QuizzesQuizIdRunRouteImport.update({
+  id: '/quizzes/$quizId/run',
+  path: '/quizzes/$quizId/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/accessibility': typeof AccessibilityRoute
+  '/bookmarks': typeof BookmarksRoute
+  '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/articles': typeof AdminArticlesRoute
+  '/admin/certificates': typeof AdminCertificatesRoute
+  '/admin/infographics': typeof AdminInfographicsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/posters': typeof AdminPostersRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/topics': typeof AdminTopicsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/awareness/$kind': typeof AwarenessKindRoute
+  '/learn/search': typeof LearnSearchRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/admin/': typeof AdminIndexRoute
+  '/awareness/': typeof AwarenessIndexRoute
+  '/learn/': typeof LearnIndexRoute
+  '/profile/': typeof ProfileIndexRoute
+  '/quizzes/': typeof QuizzesIndexRoute
+  '/admin/awareness/$kind': typeof AdminAwarenessKindRoute
+  '/awareness/articles/$slug': typeof AwarenessArticlesSlugRoute
+  '/learn/lessons/$lessonId': typeof LearnLessonsLessonIdRoute
+  '/learn/modules/$moduleId': typeof LearnModulesModuleIdRoute
+  '/quizzes/$quizId/results': typeof QuizzesQuizIdResultsRoute
+  '/quizzes/$quizId/run': typeof QuizzesQuizIdRunRoute
+  '/admin/awareness/': typeof AdminAwarenessIndexRoute
+  '/awareness/articles/': typeof AwarenessArticlesIndexRoute
+  '/quizzes/$quizId/': typeof QuizzesQuizIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/accessibility': typeof AccessibilityRoute
+  '/bookmarks': typeof BookmarksRoute
+  '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/articles': typeof AdminArticlesRoute
+  '/admin/certificates': typeof AdminCertificatesRoute
+  '/admin/infographics': typeof AdminInfographicsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/posters': typeof AdminPostersRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/topics': typeof AdminTopicsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/awareness/$kind': typeof AwarenessKindRoute
+  '/learn/search': typeof LearnSearchRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/admin': typeof AdminIndexRoute
+  '/awareness': typeof AwarenessIndexRoute
+  '/learn': typeof LearnIndexRoute
+  '/profile': typeof ProfileIndexRoute
+  '/quizzes': typeof QuizzesIndexRoute
+  '/admin/awareness/$kind': typeof AdminAwarenessKindRoute
+  '/awareness/articles/$slug': typeof AwarenessArticlesSlugRoute
+  '/learn/lessons/$lessonId': typeof LearnLessonsLessonIdRoute
+  '/learn/modules/$moduleId': typeof LearnModulesModuleIdRoute
+  '/quizzes/$quizId/results': typeof QuizzesQuizIdResultsRoute
+  '/quizzes/$quizId/run': typeof QuizzesQuizIdRunRoute
+  '/admin/awareness': typeof AdminAwarenessIndexRoute
+  '/awareness/articles': typeof AwarenessArticlesIndexRoute
+  '/quizzes/$quizId': typeof QuizzesQuizIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/accessibility': typeof AccessibilityRoute
+  '/bookmarks': typeof BookmarksRoute
+  '/certificates': typeof CertificatesRoute
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/articles': typeof AdminArticlesRoute
+  '/admin/certificates': typeof AdminCertificatesRoute
+  '/admin/infographics': typeof AdminInfographicsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/posters': typeof AdminPostersRoute
+  '/admin/profile': typeof AdminProfileRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/topics': typeof AdminTopicsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/awareness/$kind': typeof AwarenessKindRoute
+  '/learn/search': typeof LearnSearchRoute
+  '/profile/edit': typeof ProfileEditRoute
+  '/admin/': typeof AdminIndexRoute
+  '/awareness/': typeof AwarenessIndexRoute
+  '/learn/': typeof LearnIndexRoute
+  '/profile/': typeof ProfileIndexRoute
+  '/quizzes/': typeof QuizzesIndexRoute
+  '/admin/awareness/$kind': typeof AdminAwarenessKindRoute
+  '/awareness/articles/$slug': typeof AwarenessArticlesSlugRoute
+  '/learn/lessons/$lessonId': typeof LearnLessonsLessonIdRoute
+  '/learn/modules/$moduleId': typeof LearnModulesModuleIdRoute
+  '/quizzes/$quizId/results': typeof QuizzesQuizIdResultsRoute
+  '/quizzes/$quizId/run': typeof QuizzesQuizIdRunRoute
+  '/admin/awareness/': typeof AdminAwarenessIndexRoute
+  '/awareness/articles/': typeof AwarenessArticlesIndexRoute
+  '/quizzes/$quizId/': typeof QuizzesQuizIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/accessibility'
+    | '/bookmarks'
+    | '/certificates'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/login'
+    | '/privacy'
+    | '/register'
+    | '/sitemap.xml'
+    | '/verify-email'
+    | '/admin/announcements'
+    | '/admin/articles'
+    | '/admin/certificates'
+    | '/admin/infographics'
+    | '/admin/lessons'
+    | '/admin/posters'
+    | '/admin/profile'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/topics'
+    | '/admin/users'
+    | '/awareness/$kind'
+    | '/learn/search'
+    | '/profile/edit'
+    | '/admin/'
+    | '/awareness/'
+    | '/learn/'
+    | '/profile/'
+    | '/quizzes/'
+    | '/admin/awareness/$kind'
+    | '/awareness/articles/$slug'
+    | '/learn/lessons/$lessonId'
+    | '/learn/modules/$moduleId'
+    | '/quizzes/$quizId/results'
+    | '/quizzes/$quizId/run'
+    | '/admin/awareness/'
+    | '/awareness/articles/'
+    | '/quizzes/$quizId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$'
+    | '/accessibility'
+    | '/bookmarks'
+    | '/certificates'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/login'
+    | '/privacy'
+    | '/register'
+    | '/sitemap.xml'
+    | '/verify-email'
+    | '/admin/announcements'
+    | '/admin/articles'
+    | '/admin/certificates'
+    | '/admin/infographics'
+    | '/admin/lessons'
+    | '/admin/posters'
+    | '/admin/profile'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/topics'
+    | '/admin/users'
+    | '/awareness/$kind'
+    | '/learn/search'
+    | '/profile/edit'
+    | '/admin'
+    | '/awareness'
+    | '/learn'
+    | '/profile'
+    | '/quizzes'
+    | '/admin/awareness/$kind'
+    | '/awareness/articles/$slug'
+    | '/learn/lessons/$lessonId'
+    | '/learn/modules/$moduleId'
+    | '/quizzes/$quizId/results'
+    | '/quizzes/$quizId/run'
+    | '/admin/awareness'
+    | '/awareness/articles'
+    | '/quizzes/$quizId'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/accessibility'
+    | '/bookmarks'
+    | '/certificates'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/login'
+    | '/privacy'
+    | '/register'
+    | '/sitemap.xml'
+    | '/verify-email'
+    | '/admin/announcements'
+    | '/admin/articles'
+    | '/admin/certificates'
+    | '/admin/infographics'
+    | '/admin/lessons'
+    | '/admin/posters'
+    | '/admin/profile'
+    | '/admin/questions'
+    | '/admin/reports'
+    | '/admin/topics'
+    | '/admin/users'
+    | '/awareness/$kind'
+    | '/learn/search'
+    | '/profile/edit'
+    | '/admin/'
+    | '/awareness/'
+    | '/learn/'
+    | '/profile/'
+    | '/quizzes/'
+    | '/admin/awareness/$kind'
+    | '/awareness/articles/$slug'
+    | '/learn/lessons/$lessonId'
+    | '/learn/modules/$moduleId'
+    | '/quizzes/$quizId/results'
+    | '/quizzes/$quizId/run'
+    | '/admin/awareness/'
+    | '/awareness/articles/'
+    | '/quizzes/$quizId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
+  AccessibilityRoute: typeof AccessibilityRoute
+  BookmarksRoute: typeof BookmarksRoute
+  CertificatesRoute: typeof CertificatesRoute
+  DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  RegisterRoute: typeof RegisterRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminArticlesRoute: typeof AdminArticlesRoute
+  AdminCertificatesRoute: typeof AdminCertificatesRoute
+  AdminInfographicsRoute: typeof AdminInfographicsRoute
+  AdminLessonsRoute: typeof AdminLessonsRoute
+  AdminPostersRoute: typeof AdminPostersRoute
+  AdminProfileRoute: typeof AdminProfileRoute
+  AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminTopicsRoute: typeof AdminTopicsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AwarenessKindRoute: typeof AwarenessKindRoute
+  LearnSearchRoute: typeof LearnSearchRoute
+  ProfileEditRoute: typeof ProfileEditRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AwarenessIndexRoute: typeof AwarenessIndexRoute
+  LearnIndexRoute: typeof LearnIndexRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
+  QuizzesIndexRoute: typeof QuizzesIndexRoute
+  AdminAwarenessKindRoute: typeof AdminAwarenessKindRoute
+  AwarenessArticlesSlugRoute: typeof AwarenessArticlesSlugRoute
+  LearnLessonsLessonIdRoute: typeof LearnLessonsLessonIdRoute
+  LearnModulesModuleIdRoute: typeof LearnModulesModuleIdRoute
+  QuizzesQuizIdResultsRoute: typeof QuizzesQuizIdResultsRoute
+  QuizzesQuizIdRunRoute: typeof QuizzesQuizIdRunRoute
+  AdminAwarenessIndexRoute: typeof AdminAwarenessIndexRoute
+  AwarenessArticlesIndexRoute: typeof AwarenessArticlesIndexRoute
+  QuizzesQuizIdIndexRoute: typeof QuizzesQuizIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +559,323 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accessibility': {
+      id: '/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof AccessibilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookmarks': {
+      id: '/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof BookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/certificates': {
+      id: '/certificates'
+      path: '/certificates'
+      fullPath: '/certificates'
+      preLoaderRoute: typeof CertificatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/articles': {
+      id: '/admin/articles'
+      path: '/admin/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof AdminArticlesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/certificates': {
+      id: '/admin/certificates'
+      path: '/admin/certificates'
+      fullPath: '/admin/certificates'
+      preLoaderRoute: typeof AdminCertificatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/infographics': {
+      id: '/admin/infographics'
+      path: '/admin/infographics'
+      fullPath: '/admin/infographics'
+      preLoaderRoute: typeof AdminInfographicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/lessons': {
+      id: '/admin/lessons'
+      path: '/admin/lessons'
+      fullPath: '/admin/lessons'
+      preLoaderRoute: typeof AdminLessonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/posters': {
+      id: '/admin/posters'
+      path: '/admin/posters'
+      fullPath: '/admin/posters'
+      preLoaderRoute: typeof AdminPostersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/admin/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/questions': {
+      id: '/admin/questions'
+      path: '/admin/questions'
+      fullPath: '/admin/questions'
+      preLoaderRoute: typeof AdminQuestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/topics': {
+      id: '/admin/topics'
+      path: '/admin/topics'
+      fullPath: '/admin/topics'
+      preLoaderRoute: typeof AdminTopicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awareness/': {
+      id: '/awareness/'
+      path: '/awareness'
+      fullPath: '/awareness/'
+      preLoaderRoute: typeof AwarenessIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awareness/$kind': {
+      id: '/awareness/$kind'
+      path: '/awareness/$kind'
+      fullPath: '/awareness/$kind'
+      preLoaderRoute: typeof AwarenessKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn/': {
+      id: '/learn/'
+      path: '/learn'
+      fullPath: '/learn/'
+      preLoaderRoute: typeof LearnIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn/search': {
+      id: '/learn/search'
+      path: '/learn/search'
+      fullPath: '/learn/search'
+      preLoaderRoute: typeof LearnSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/profile/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quizzes/': {
+      id: '/quizzes/'
+      path: '/quizzes'
+      fullPath: '/quizzes/'
+      preLoaderRoute: typeof QuizzesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/awareness/': {
+      id: '/admin/awareness/'
+      path: '/admin/awareness'
+      fullPath: '/admin/awareness/'
+      preLoaderRoute: typeof AdminAwarenessIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/awareness/$kind': {
+      id: '/admin/awareness/$kind'
+      path: '/admin/awareness/$kind'
+      fullPath: '/admin/awareness/$kind'
+      preLoaderRoute: typeof AdminAwarenessKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awareness/articles/': {
+      id: '/awareness/articles/'
+      path: '/awareness/articles'
+      fullPath: '/awareness/articles/'
+      preLoaderRoute: typeof AwarenessArticlesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awareness/articles/$slug': {
+      id: '/awareness/articles/$slug'
+      path: '/awareness/articles/$slug'
+      fullPath: '/awareness/articles/$slug'
+      preLoaderRoute: typeof AwarenessArticlesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn/lessons/$lessonId': {
+      id: '/learn/lessons/$lessonId'
+      path: '/learn/lessons/$lessonId'
+      fullPath: '/learn/lessons/$lessonId'
+      preLoaderRoute: typeof LearnLessonsLessonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learn/modules/$moduleId': {
+      id: '/learn/modules/$moduleId'
+      path: '/learn/modules/$moduleId'
+      fullPath: '/learn/modules/$moduleId'
+      preLoaderRoute: typeof LearnModulesModuleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quizzes/$quizId/': {
+      id: '/quizzes/$quizId/'
+      path: '/quizzes/$quizId'
+      fullPath: '/quizzes/$quizId/'
+      preLoaderRoute: typeof QuizzesQuizIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quizzes/$quizId/results': {
+      id: '/quizzes/$quizId/results'
+      path: '/quizzes/$quizId/results'
+      fullPath: '/quizzes/$quizId/results'
+      preLoaderRoute: typeof QuizzesQuizIdResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quizzes/$quizId/run': {
+      id: '/quizzes/$quizId/run'
+      path: '/quizzes/$quizId/run'
+      fullPath: '/quizzes/$quizId/run'
+      preLoaderRoute: typeof QuizzesQuizIdRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
+  AccessibilityRoute: AccessibilityRoute,
+  BookmarksRoute: BookmarksRoute,
+  CertificatesRoute: CertificatesRoute,
+  DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  RegisterRoute: RegisterRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
+  AdminArticlesRoute: AdminArticlesRoute,
+  AdminCertificatesRoute: AdminCertificatesRoute,
+  AdminInfographicsRoute: AdminInfographicsRoute,
+  AdminLessonsRoute: AdminLessonsRoute,
+  AdminPostersRoute: AdminPostersRoute,
+  AdminProfileRoute: AdminProfileRoute,
+  AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminTopicsRoute: AdminTopicsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AwarenessKindRoute: AwarenessKindRoute,
+  LearnSearchRoute: LearnSearchRoute,
+  ProfileEditRoute: ProfileEditRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AwarenessIndexRoute: AwarenessIndexRoute,
+  LearnIndexRoute: LearnIndexRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
+  QuizzesIndexRoute: QuizzesIndexRoute,
+  AdminAwarenessKindRoute: AdminAwarenessKindRoute,
+  AwarenessArticlesSlugRoute: AwarenessArticlesSlugRoute,
+  LearnLessonsLessonIdRoute: LearnLessonsLessonIdRoute,
+  LearnModulesModuleIdRoute: LearnModulesModuleIdRoute,
+  QuizzesQuizIdResultsRoute: QuizzesQuizIdResultsRoute,
+  QuizzesQuizIdRunRoute: QuizzesQuizIdRunRoute,
+  AdminAwarenessIndexRoute: AdminAwarenessIndexRoute,
+  AwarenessArticlesIndexRoute: AwarenessArticlesIndexRoute,
+  QuizzesQuizIdIndexRoute: QuizzesQuizIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -7,26 +7,34 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { Home, RefreshCw, ShieldAlert } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { NcapProvider } from "@/state/ncap-store";
+import { I18nProvider } from "@/lib/i18n";
+import { NcapRepositoryProvider } from "@/services/repository-provider";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+    <div className="grid-motif flex min-h-dvh items-center justify-center bg-background px-4 py-12">
+      <div className="panel max-w-lg p-8 text-center sm:p-12">
+        <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary-soft text-violet">
+          <ShieldAlert className="size-8" aria-hidden="true" />
+        </span>
+        <p className="meta mt-6 text-violet">Error 404</p>
+        <h1 className="mt-3 text-4xl font-bold text-foreground">Page not found</h1>
+        <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-violet"
           >
-            Go home
+            <Home className="size-4" aria-hidden="true" /> Go home
           </Link>
         </div>
       </div>
@@ -35,19 +43,19 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  void error;
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+    <div className="grid-motif flex min-h-dvh items-center justify-center bg-background px-4 py-12">
+      <div className="panel max-w-lg p-8 text-center sm:p-12">
+        <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-destructive-soft text-destructive">
+          <ShieldAlert className="size-8" aria-hidden="true" />
+        </span>
+        <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-3 text-base leading-7 text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -56,15 +64,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-violet"
           >
-            Try again
+            <RefreshCw className="size-4" aria-hidden="true" /> Try again
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-input bg-background px-5 text-sm font-bold text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            <Home className="size-4" aria-hidden="true" /> Go home
           </a>
         </div>
       </div>
@@ -77,14 +85,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "NCAP — National Cybersecurity Awareness Platform" },
+      {
+        name: "description",
+        content:
+          "Learn practical cybersecurity skills, test your knowledge, and track your progress with NCAP.",
+      },
+      { name: "author", content: "NCAP" },
+      { name: "application-name", content: "NCAP" },
+      { name: "theme-color", content: "#0f172a" },
+      { name: "color-scheme", content: "light" },
+      { property: "og:title", content: "NCAP — Learn safer digital habits" },
+      {
+        property: "og:description",
+        content:
+          "A demonstration national cybersecurity awareness and learning platform for Sri Lanka.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -119,8 +137,19 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <I18nProvider>
+        <NcapProvider>
+          <NcapRepositoryProvider>
+            <TooltipProvider delayDuration={250}>
+              <a href="#main-content" className="skip-link">
+                Skip to main content
+              </a>
+              <Outlet />
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </NcapRepositoryProvider>
+        </NcapProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
