@@ -3,13 +3,21 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { NCAP_CONFIG } from "@/lib/config";
-import { lessons as seedLessons, lessonsForModule, modules } from "@/data/learning";
-import { articles as seedArticles, posters as seedPosters } from "@/data/awareness";
+import { lessons as seedLessons, modules as seedModules } from "@/data/learning";
+import {
+  articles as seedArticles,
+  bestPractices as seedBestPractices,
+  infographics as seedInfographics,
+  news as seedNewsUpdates,
+  posters as seedPosters,
+  tips as seedCyberTips,
+  videos as seedVideos,
+} from "@/data/awareness";
 import { questions as seedQuestions } from "@/data/quizzes";
 import {
   announcements as seedAnnouncements,
@@ -20,12 +28,26 @@ import type {
   ActivityItem,
   Announcement,
   Article,
+  BestPractice,
+  CertificateRecord,
+  CertificateTemplate,
+  CyberTip,
   DemoUser,
+  Infographic,
   Lesson,
+  LearningModule,
+  NewsUpdate,
   Poster,
   QuizAttempt,
+  QuizDraftAttempt,
   QuizQuestion,
+  Topic,
+  TopicRecord,
+  VideoResource,
 } from "@/data/types";
+import { persistedStateEnvelopeSchema, recoverPersistedSections } from "@/domain/validation";
+import { topicSlug } from "@/domain/rules";
+import { evaluateCertificateEligibility } from "@/domain/rules";
 
 export type Role = "guest" | "learner" | "admin";
 
@@ -36,6 +58,8 @@ export interface Session {
   joinedAt: string;
   interests: string[];
   notifications: boolean;
+  phone: string;
+  avatar?: import("@/data/types").MediaAsset | undefined;
 }
 
 interface StoreState {
@@ -46,11 +70,21 @@ interface StoreState {
   activities: ActivityItem[];
   issuedCertificates: { moduleId: string; issuedAt: string; reference: string }[];
   lessons: Lesson[];
+  modules: LearningModule[];
   articles: Article[];
+  cyberTips: CyberTip[];
+  newsUpdates: NewsUpdate[];
+  bestPractices: BestPractice[];
   posters: Poster[];
   questions: QuizQuestion[];
+  infographics: Infographic[];
+  videos: VideoResource[];
+  topics: TopicRecord[];
   announcements: Announcement[];
   users: DemoUser[];
+  quizDrafts: Record<string, QuizDraftAttempt>;
+  certificateTemplate: CertificateTemplate;
+  certificateRecords: CertificateRecord[];
 }
 
 const GUEST: Session = {
@@ -60,6 +94,40 @@ const GUEST: Session = {
   joinedAt: "",
   interests: [],
   notifications: true,
+  phone: "",
+};
+
+const topicNames: Topic[] = [
+  "Password Security",
+  "MFA",
+  "Phishing",
+  "Social Engineering",
+  "Device Security",
+  "Mobile Security",
+  "Safe Browsing",
+  "Privacy",
+  "Social Media",
+  "Online Banking",
+  "Backups",
+];
+
+const seedTopics: TopicRecord[] = topicNames.map((name, index) => ({
+  id: `topic-${String(index + 1).padStart(2, "0")}`,
+  name,
+  slug: topicSlug(name),
+  status: "Active",
+  createdAt: "2026-01-01",
+  updatedAt: "2026-08-31",
+}));
+
+const seedCertificateTemplate: CertificateTemplate = {
+  title: "Certificate of Completion",
+  subtitle: "National Cybersecurity Awareness Platform · Foundation Release",
+  issuer: "NCAP Sri Lanka",
+  body: "This recognises the successful completion of the learning module and its assessment.",
+  signatoryName: "Programme Director",
+  signatoryTitle: "National Cybersecurity Awareness Platform",
+  theme: "navy",
 };
 
 const seedDemoProgress = {
@@ -106,11 +174,36 @@ const seedDemoProgress = {
     },
   ] as QuizAttempt[],
   activities: [
-    { id: "ac-1", kind: "quiz", label: "Completed the Passwords & MFA quiz — 70%", at: "2026-08-26 08:12" },
-    { id: "ac-2", kind: "bookmark", label: "Bookmarked “Choosing the right second factor”", at: "2026-08-25 21:04" },
-    { id: "ac-3", kind: "lesson", label: "Completed “Spotting a phishing message”", at: "2026-08-24 18:30" },
-    { id: "ac-4", kind: "badge", label: "Earned the Phishing Spotter badge", at: "2026-08-22 19:45" },
-    { id: "ac-5", kind: "quiz", label: "Completed the Digital Safety Fundamentals quiz — 90%", at: "2026-08-22 19:41" },
+    {
+      id: "ac-1",
+      kind: "quiz",
+      label: "Completed the Passwords & MFA quiz — 70%",
+      at: "2026-08-26 08:12",
+    },
+    {
+      id: "ac-2",
+      kind: "bookmark",
+      label: "Bookmarked “Choosing the right second factor”",
+      at: "2026-08-25 21:04",
+    },
+    {
+      id: "ac-3",
+      kind: "lesson",
+      label: "Completed “Spotting a phishing message”",
+      at: "2026-08-24 18:30",
+    },
+    {
+      id: "ac-4",
+      kind: "badge",
+      label: "Earned the Phishing Spotter badge",
+      at: "2026-08-22 19:45",
+    },
+    {
+      id: "ac-5",
+      kind: "quiz",
+      label: "Completed the Digital Safety Fundamentals quiz — 90%",
+      at: "2026-08-22 19:41",
+    },
   ] as ActivityItem[],
 };
 
@@ -122,14 +215,29 @@ const emptyState = (): StoreState => ({
   activities: [],
   issuedCertificates: [],
   lessons: seedLessons,
+  modules: seedModules.map((module, order) => ({ ...module, order: order + 1 })),
   articles: seedArticles,
+  cyberTips: seedCyberTips.map((item, order) => ({ ...item, status: "Published", order })),
+  newsUpdates: seedNewsUpdates.map((item, order) => ({ ...item, status: "Published", order })),
+  bestPractices: seedBestPractices.map((item, order) => ({ ...item, status: "Published", order })),
   posters: seedPosters,
   questions: seedQuestions,
+  infographics: seedInfographics.map((item) => ({ ...item, status: item.status ?? "Published" })),
+  videos: seedVideos.map((item, order) => ({ ...item, status: "Published", order })),
+  topics: seedTopics,
   announcements: seedAnnouncements,
-  users: seedUsers,
+  users: seedUsers.map((user, index) => ({
+    ...user,
+    roles: index === 0 ? ["learner", "admin"] : ["learner"],
+    phone: "",
+  })),
+  quizDrafts: {},
+  certificateTemplate: seedCertificateTemplate,
+  certificateRecords: [],
 });
 
-const STORAGE_KEY = "ncap.state.v1";
+const STORAGE_KEY = "ncap.demo.v2";
+const LEGACY_STORAGE_KEY = "ncap.state.v1";
 
 const now = () => {
   const d = new Date();
@@ -150,15 +258,34 @@ interface StoreValue extends StoreState {
   issueCertificate: (moduleId: string) => void;
   logActivity: (kind: ActivityItem["kind"], label: string) => void;
   setLessons: (next: Lesson[]) => void;
+  setModules: (next: LearningModule[]) => void;
   setArticles: (next: Article[]) => void;
+  setCyberTips: (next: CyberTip[]) => void;
+  setNewsUpdates: (next: NewsUpdate[]) => void;
+  setBestPractices: (next: BestPractice[]) => void;
   setPosters: (next: Poster[]) => void;
   setQuestions: (next: QuizQuestion[]) => void;
+  setInfographics: (next: Infographic[]) => void;
+  setVideos: (next: VideoResource[]) => void;
+  setTopics: (next: TopicRecord[]) => void;
   setAnnouncements: (next: Announcement[]) => void;
   setUsers: (next: DemoUser[]) => void;
+  saveQuizDraft: (draft: QuizDraftAttempt) => void;
+  clearQuizDraft: (quizId: string) => void;
+  setCertificateTemplate: (next: CertificateTemplate) => void;
+  setCertificateRecords: (next: CertificateRecord[]) => void;
   resetDemo: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
+interface SessionPreferencesValue {
+  session: Session;
+  ready: boolean;
+  signIn: StoreValue["signIn"];
+  signOut: StoreValue["signOut"];
+  updateProfile: StoreValue["updateProfile"];
+}
+const SessionPreferencesContext = createContext<SessionPreferencesValue | null>(null);
 
 export function NcapProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StoreState>(emptyState);
@@ -166,21 +293,33 @@ export function NcapProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...emptyState(), ...(JSON.parse(raw) as StoreState) });
+      const raw =
+        window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        const envelope = persistedStateEnvelopeSchema.safeParse(parsed);
+        const restored = envelope.success
+          ? envelope.data.state
+          : typeof parsed === "object" && parsed !== null
+            ? parsed
+            : {};
+        setState(
+          recoverPersistedSections(
+            restored,
+            emptyState() as unknown as Record<string, unknown>,
+          ) as unknown as StoreState,
+        );
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
     } catch {
       /* ignore corrupt demo state */
     }
     setReady(true);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!ready) return;
-    const { lessons, articles, posters, questions, announcements, users, ...rest } = state;
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ ...rest, lessons, articles, posters, questions, announcements, users }),
-    );
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, state }));
   }, [state, ready]);
 
   const logActivity = useCallback((kind: ActivityItem["kind"], label: string) => {
@@ -198,8 +337,11 @@ export function NcapProvider({ children }: { children: ReactNode }) {
         name: name || (role === "admin" ? "Demo Administrator" : "Demo Learner"),
         email: email || (role === "admin" ? "admin@ncap.demo" : "learner@ncap.demo"),
         joinedAt: s.session.joinedAt || "2026-03-02",
-        interests: s.session.interests.length ? s.session.interests : ["Phishing", "Password Security"],
+        interests: s.session.interests.length
+          ? s.session.interests
+          : ["Phishing", "Password Security"],
         notifications: s.session.notifications,
+        phone: s.session.phone,
       },
       completedLessons:
         role === "learner" && s.completedLessons.length === 0
@@ -207,9 +349,12 @@ export function NcapProvider({ children }: { children: ReactNode }) {
           : s.completedLessons,
       bookmarks:
         role === "learner" && s.bookmarks.length === 0 ? seedDemoProgress.bookmarks : s.bookmarks,
-      attempts: role === "learner" && s.attempts.length === 0 ? seedDemoProgress.attempts : s.attempts,
+      attempts:
+        role === "learner" && s.attempts.length === 0 ? seedDemoProgress.attempts : s.attempts,
       activities:
-        role === "learner" && s.activities.length === 0 ? seedDemoProgress.activities : s.activities,
+        role === "learner" && s.activities.length === 0
+          ? seedDemoProgress.activities
+          : s.activities,
     }));
   }, []);
 
@@ -230,7 +375,12 @@ export function NcapProvider({ children }: { children: ReactNode }) {
       const activities = has
         ? s.activities
         : [
-            { id: uid("ac"), kind: "bookmark" as const, label: `Bookmarked “${lesson?.title ?? lessonId}”`, at: now() },
+            {
+              id: uid("ac"),
+              kind: "bookmark" as const,
+              label: `Bookmarked “${lesson?.title ?? lessonId}”`,
+              at: now(),
+            },
             ...s.activities,
           ].slice(0, 30);
       return {
@@ -250,7 +400,12 @@ export function NcapProvider({ children }: { children: ReactNode }) {
         ...s,
         completedLessons: [...s.completedLessons, lessonId],
         activities: [
-          { id: uid("ac"), kind: "lesson" as const, label: `Completed “${lesson?.title ?? lessonId}”`, at: now() },
+          {
+            id: uid("ac"),
+            kind: "lesson" as const,
+            label: `Completed “${lesson?.title ?? lessonId}”`,
+            at: now(),
+          },
           ...s.activities,
         ].slice(0, 30),
       };
@@ -283,20 +438,65 @@ export function NcapProvider({ children }: { children: ReactNode }) {
       )}`;
       return {
         ...s,
-        issuedCertificates: [...s.issuedCertificates, { moduleId, issuedAt: now().slice(0, 10), reference }],
+        issuedCertificates: [
+          ...s.issuedCertificates,
+          { moduleId, issuedAt: now().slice(0, 10), reference },
+        ],
         activities: [
-          { id: uid("ac"), kind: "certificate" as const, label: `Certificate issued for ${modules.find((m) => m.id === moduleId)?.title ?? moduleId}`, at: now() },
+          {
+            id: uid("ac"),
+            kind: "certificate" as const,
+            label: `Certificate issued for ${s.modules.find((m) => m.id === moduleId)?.title ?? moduleId}`,
+            at: now(),
+          },
           ...s.activities,
         ].slice(0, 30),
       };
     });
   }, []);
 
-  const setLessons = useCallback((next: Lesson[]) => setState((s) => ({ ...s, lessons: next })), []);
-  const setArticles = useCallback((next: Article[]) => setState((s) => ({ ...s, articles: next })), []);
-  const setPosters = useCallback((next: Poster[]) => setState((s) => ({ ...s, posters: next })), []);
+  const setLessons = useCallback(
+    (next: Lesson[]) => setState((s) => ({ ...s, lessons: next })),
+    [],
+  );
+  const setModules = useCallback(
+    (next: LearningModule[]) => setState((s) => ({ ...s, modules: next })),
+    [],
+  );
+  const setArticles = useCallback(
+    (next: Article[]) => setState((s) => ({ ...s, articles: next })),
+    [],
+  );
+  const setCyberTips = useCallback(
+    (next: CyberTip[]) => setState((s) => ({ ...s, cyberTips: next })),
+    [],
+  );
+  const setNewsUpdates = useCallback(
+    (next: NewsUpdate[]) => setState((s) => ({ ...s, newsUpdates: next })),
+    [],
+  );
+  const setBestPractices = useCallback(
+    (next: BestPractice[]) => setState((s) => ({ ...s, bestPractices: next })),
+    [],
+  );
+  const setPosters = useCallback(
+    (next: Poster[]) => setState((s) => ({ ...s, posters: next })),
+    [],
+  );
   const setQuestions = useCallback(
     (next: QuizQuestion[]) => setState((s) => ({ ...s, questions: next })),
+    [],
+  );
+  const setInfographics = useCallback(
+    (next: Infographic[]) => setState((s) => ({ ...s, infographics: next })),
+    [],
+  );
+  const setVideos = useCallback(
+    (next: VideoResource[]) => setState((s) => ({ ...s, videos: next })),
+    [],
+  );
+  const setTopics = useCallback(
+    (next: TopicRecord[]) => setState((s) => ({ ...s, topics: next })),
     [],
   );
   const setAnnouncements = useCallback(
@@ -304,9 +504,28 @@ export function NcapProvider({ children }: { children: ReactNode }) {
     [],
   );
   const setUsers = useCallback((next: DemoUser[]) => setState((s) => ({ ...s, users: next })), []);
+  const saveQuizDraft = useCallback((draft: QuizDraftAttempt) => {
+    setState((s) => ({ ...s, quizDrafts: { ...s.quizDrafts, [draft.quizId]: draft } }));
+  }, []);
+  const clearQuizDraft = useCallback((quizId: string) => {
+    setState((s) => {
+      const quizDrafts = { ...s.quizDrafts };
+      delete quizDrafts[quizId];
+      return { ...s, quizDrafts };
+    });
+  }, []);
+  const setCertificateTemplate = useCallback(
+    (next: CertificateTemplate) => setState((s) => ({ ...s, certificateTemplate: next })),
+    [],
+  );
+  const setCertificateRecords = useCallback(
+    (next: CertificateRecord[]) => setState((s) => ({ ...s, certificateRecords: next })),
+    [],
+  );
 
   const resetDemo = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     setState(emptyState());
   }, []);
 
@@ -323,11 +542,22 @@ export function NcapProvider({ children }: { children: ReactNode }) {
       issueCertificate,
       logActivity,
       setLessons,
+      setModules,
       setArticles,
+      setCyberTips,
+      setNewsUpdates,
+      setBestPractices,
       setPosters,
       setQuestions,
+      setInfographics,
+      setVideos,
+      setTopics,
       setAnnouncements,
       setUsers,
+      saveQuizDraft,
+      clearQuizDraft,
+      setCertificateTemplate,
+      setCertificateRecords,
       resetDemo,
     }),
     [
@@ -342,18 +572,45 @@ export function NcapProvider({ children }: { children: ReactNode }) {
       issueCertificate,
       logActivity,
       setLessons,
+      setModules,
       setArticles,
+      setCyberTips,
+      setNewsUpdates,
+      setBestPractices,
       setPosters,
       setQuestions,
+      setInfographics,
+      setVideos,
+      setTopics,
       setAnnouncements,
       setUsers,
+      saveQuizDraft,
+      clearQuizDraft,
+      setCertificateTemplate,
+      setCertificateRecords,
       resetDemo,
     ],
   );
 
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  const sessionPreferences = useMemo<SessionPreferencesValue>(
+    () => ({ session: state.session, ready, signIn, signOut, updateProfile }),
+    [state.session, ready, signIn, signOut, updateProfile],
+  );
+
+  return (
+    <SessionPreferencesContext.Provider value={sessionPreferences}>
+      <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+    </SessionPreferencesContext.Provider>
+  );
 }
 
+export function useSessionPreferences() {
+  const ctx = useContext(SessionPreferencesContext);
+  if (!ctx) throw new Error("useSessionPreferences must be used inside NcapProvider");
+  return ctx;
+}
+
+/** @deprecated Prefer focused session or repository hooks for new components. */
 export function useNcap() {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error("useNcap must be used inside NcapProvider");
@@ -362,10 +619,14 @@ export function useNcap() {
 
 /** Derived learner statistics used by the dashboard, certificates and profile. */
 export function useLearnerStats() {
-  const { completedLessons, attempts, lessons } = useNcap();
+  const { completedLessons, attempts, lessons, modules } = useNcap();
 
   return useMemo(() => {
-    const publishedLessons = lessons.filter((l) => l.status === "Published");
+    const publishedLessons = lessons.filter(
+      (lesson) =>
+        lesson.status === "Published" &&
+        modules.some((module) => module.id === lesson.moduleId && module.status === "Published"),
+    );
     const completed = publishedLessons.filter((l) => completedLessons.includes(l.id));
     const overall = publishedLessons.length
       ? Math.round((completed.length / publishedLessons.length) * 100)
@@ -374,22 +635,33 @@ export function useLearnerStats() {
       ? Math.round(attempts.reduce((sum, a) => sum + a.scorePercent, 0) / attempts.length)
       : 0;
     const minutes = completed.reduce((sum, l) => sum + l.minutes, 0);
-    const moduleProgress = modules.map((m) => {
-      const all = lessonsForModule(m.id);
-      const done = all.filter((l) => completedLessons.includes(l.id));
-      return {
-        module: m,
-        total: all.length,
-        completed: done.length,
-        percent: all.length ? Math.round((done.length / all.length) * 100) : 0,
-      };
-    });
+    const moduleProgress = modules
+      .filter((module) => module.status === "Published")
+      .map((m) => {
+        const all = lessons.filter(
+          (lesson) => lesson.moduleId === m.id && lesson.status === "Published",
+        );
+        const done = all.filter((l) => completedLessons.includes(l.id));
+        return {
+          module: m,
+          total: all.length,
+          completed: done.length,
+          percent: all.length ? Math.round((done.length / all.length) * 100) : 0,
+        };
+      });
     const best = (quizId: string) =>
-      attempts.filter((a) => a.quizId === quizId).reduce((max, a) => Math.max(max, a.scorePercent), 0);
+      attempts
+        .filter((a) => a.quizId === quizId)
+        .reduce((max, a) => Math.max(max, a.scorePercent), 0);
     const certificateEligible = modules.filter(
-      (m) =>
-        moduleProgress.find((p) => p.module.id === m.id)?.percent === 100 &&
-        best(m.quizId) >= NCAP_CONFIG.certificateThresholdPercent,
+      (module) =>
+        evaluateCertificateEligibility({
+          moduleId: module.id,
+          quizId: module.quizId,
+          lessons,
+          completedLessonIds: completedLessons,
+          attempts,
+        }).eligible,
     );
     const earnedBadges = new Set<string>();
     if (completed.length >= 1) earnedBadges.add("b-first-lesson");
@@ -410,5 +682,5 @@ export function useLearnerStats() {
       certificateEligible,
       badges: badgeCatalogue.map((b) => ({ ...b, earned: earnedBadges.has(b.id) })),
     };
-  }, [completedLessons, attempts, lessons]);
+  }, [completedLessons, attempts, lessons, modules]);
 }

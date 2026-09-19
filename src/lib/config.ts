@@ -10,7 +10,7 @@ export const NCAP_CONFIG = {
   quizTimeLimitSeconds: 10 * 60,
   quizLowTimeWarningSeconds: 60,
   passingScorePercent: 70,
-  certificateThresholdPercent: 80,
+  certificateThresholdPercent: CERTIFICATE_POLICY.minimumBestQuizScore,
   mockLatencyMs: 320,
   pageSize: 8,
   adminPageSize: 8,
@@ -18,3 +18,4 @@ export const NCAP_CONFIG = {
 
 export const DEMO_DISCLAIMER =
   "Demo data — this Foundation Release runs entirely in the browser with mock services.";
+import { CERTIFICATE_POLICY } from "@/domain/rules";

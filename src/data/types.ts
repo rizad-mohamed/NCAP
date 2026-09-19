@@ -1,22 +1,71 @@
 export type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
-export type Topic =
-  | "Password Security"
-  | "MFA"
-  | "Phishing"
-  | "Social Engineering"
-  | "Device Security"
-  | "Mobile Security"
-  | "Safe Browsing"
-  | "Privacy"
-  | "Social Media"
-  | "Online Banking"
-  | "Backups";
+/** Human-readable demo taxonomy label. Production APIs will use TopicRecord.id as the stable key. */
+export type Topic = string;
 
 export type ContentStatus = "Published" | "Draft";
 
+export type UserRole = "learner" | "admin";
+export type TopicStatus = "Active" | "Inactive";
+
+export interface TopicRecord {
+  id: string;
+  name: Topic;
+  slug: string;
+  status: TopicStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaAsset {
+  id: string;
+  fileName: string;
+  mimeType: "image/jpeg" | "image/png" | "image/webp";
+  sizeBytes: number;
+  width: number;
+  height: number;
+  altText: string;
+  storageKey: string;
+  status: "local-demo" | "ready";
+}
+
+export interface VideoAsset {
+  id: string;
+  fileName: string;
+  mimeType: "video/mp4" | "video/webm";
+  sizeBytes: number;
+  width: number;
+  height: number;
+  durationSeconds: number;
+  storageKey: string;
+  status: "local-demo" | "ready";
+}
+
+export type LessonVideo =
+  | {
+      kind: "external";
+      url: string;
+      transcript: string;
+    }
+  | {
+      kind: "upload";
+      asset: VideoAsset;
+      transcript: string;
+    };
+
 export type LessonBlock =
-  | { kind: "paragraph"; text: string }
+  | {
+      kind: "paragraph";
+      text: string;
+      format?:
+        | {
+            bold?: boolean | undefined;
+            italic?: boolean | undefined;
+            underline?: boolean | undefined;
+            align?: "left" | "center" | "right" | undefined;
+          }
+        | undefined;
+    }
   | { kind: "heading"; text: string }
   | { kind: "list"; items: string[] }
   | { kind: "callout"; tone: "tip" | "warning" | "note"; title: string; text: string }
@@ -42,6 +91,7 @@ export interface Lesson {
   updatedAt: string;
   objectives: string[];
   blocks: LessonBlock[];
+  video?: LessonVideo;
 }
 
 export interface LearningModule {
@@ -54,6 +104,8 @@ export interface LearningModule {
   status: ContentStatus;
   objectives: string[];
   quizId: string;
+  order?: number;
+  image?: MediaAsset | undefined;
 }
 
 export interface QuizQuestion {
@@ -88,57 +140,102 @@ export interface Article {
   publishedAt: string;
   status: ContentStatus;
   body: string[];
+  image?: MediaAsset | undefined;
+  imageUrl?: string | undefined;
+  tags?: string[];
+  order?: number;
 }
 
 export interface CyberTip {
   id: string;
+  slug?: string;
   title: string;
   topic: Topic;
   text: string;
+  status?: ContentStatus;
+  author?: string;
+  publishedAt?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface NewsUpdate {
   id: string;
+  slug?: string;
   title: string;
   date: string;
   summary: string;
   tag: string;
+  body?: string[];
+  status?: ContentStatus;
+  author?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface BestPractice {
   id: string;
+  slug?: string;
   title: string;
   topic: Topic;
   steps: string[];
+  summary?: string;
+  status?: ContentStatus;
+  author?: string;
+  publishedAt?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface Poster {
   id: string;
+  slug?: string;
   title: string;
   topic: Topic;
   description: string;
-  format: "SVG";
+  format: "SVG" | "PNG" | "JPEG" | "WEBP";
   file: string;
   status: ContentStatus;
+  image?: MediaAsset | undefined;
+  author?: string;
+  publishedAt?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface Infographic {
   id: string;
+  slug?: string;
   title: string;
   category: Topic;
   alt: string;
   points: string[];
   file: string;
+  status?: ContentStatus;
+  image?: MediaAsset | undefined;
+  author?: string;
+  publishedAt?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface VideoResource {
   id: string;
+  slug?: string;
   title: string;
   category: Topic;
   durationLabel: string;
   description: string;
   chapters: { label: string; at: string }[];
   transcript: string[];
+  sourceUrl?: string;
+  posterUrl?: string;
+  poster?: MediaAsset | undefined;
+  status?: ContentStatus;
+  author?: string;
+  publishedAt?: string;
+  tags?: string[];
+  order?: number;
 }
 
 export interface Announcement {
@@ -167,6 +264,9 @@ export interface DemoUser {
   certificates: number;
   lastActivity: string;
   joinedAt: string;
+  roles?: UserRole[];
+  phone?: string;
+  avatar?: MediaAsset | undefined;
 }
 
 export interface QuizAttempt {
@@ -193,4 +293,41 @@ export interface Badge {
   name: string;
   description: string;
   icon: string;
+}
+
+export interface QuizDraftAttempt {
+  quizId: string;
+  moduleId: string;
+  questionIds: string[];
+  answers: Record<string, number>;
+  currentIndex: number;
+  submittedQuestionIds: string[];
+  startedAt: number;
+  deadlineAt: number;
+}
+
+export interface CertificatePolicy {
+  completionPercent: 100;
+  minimumBestQuizScore: number;
+}
+
+export interface CertificateTemplate {
+  title: string;
+  subtitle: string;
+  issuer: string;
+  body: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  theme: "navy" | "blue" | "teal";
+  logo?: MediaAsset | undefined;
+}
+
+export interface CertificateRecord {
+  id: string;
+  userId: string;
+  moduleId: string;
+  status: "Issued" | "Revoked";
+  issuedAt: string;
+  revokedAt?: string;
+  reference: string;
 }
