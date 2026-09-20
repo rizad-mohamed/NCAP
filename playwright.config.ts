@@ -2,6 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 import { loadEnv } from "vite";
 
 const localEnv = loadEnv("development", process.cwd(), "");
+const testSupabaseUrl =
+  process.env.SUPABASE_URL || localEnv.SUPABASE_URL || "http://127.0.0.1:54321";
+const testSupabasePublishableKey =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  localEnv.SUPABASE_PUBLISHABLE_KEY ||
+  "playwright-local-placeholder-key";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,9 +26,8 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       CLOUDFLARE_INCLUDE_PROCESS_ENV: "true",
-      SUPABASE_URL: process.env.SUPABASE_URL ?? localEnv.SUPABASE_URL ?? "",
-      SUPABASE_PUBLISHABLE_KEY:
-        process.env.SUPABASE_PUBLISHABLE_KEY ?? localEnv.SUPABASE_PUBLISHABLE_KEY ?? "",
+      SUPABASE_URL: testSupabaseUrl,
+      SUPABASE_PUBLISHABLE_KEY: testSupabasePublishableKey,
       APP_URL: "http://127.0.0.1:4173",
     },
   },
