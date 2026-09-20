@@ -60,7 +60,7 @@ For the complete implementation inventory, architecture assessment, requirements
 
 ## Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22 or newer
 - npm
 - A Supabase project for authentication
 - Supabase CLI, SQL Editor access, or another approved migration workflow
