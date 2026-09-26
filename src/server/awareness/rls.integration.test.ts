@@ -92,10 +92,12 @@ describe.skipIf(!enabled)(
         expect(
           (await anonymous.from("awareness_resources").select("id").eq("id", id)).data,
         ).toHaveLength(1);
-        expect(
-          (await admin.rpc("save_awareness_resource", { payload, expected_version: 1 })).error
-            ?.code,
-        ).toBe("40001");
+        const conflict = await admin.rpc("save_awareness_resource", {
+          payload,
+          expected_version: 1,
+        });
+        expect(conflict.error?.code).toBe("PT409");
+        expect(conflict.status).toBe(409);
         expect(
           (await admin.rpc("save_awareness_resource", { payload, expected_version: 2 })).error,
         ).toBeNull();
@@ -172,20 +174,18 @@ describe.skipIf(!enabled)(
       try {
         expect(
           (
-            await admin
-              .from("awareness_media_assets")
-              .insert({
-                id: asset,
-                path,
-                role: "image",
-                file_name: "poster.png",
-                mime_type: "image/png",
-                size_bytes: png.length,
-                width: 1,
-                height: 1,
-                alt_text: "Test",
-                uploaded_by: login.data.user!.id,
-              })
+            await admin.from("awareness_media_assets").insert({
+              id: asset,
+              path,
+              role: "image",
+              file_name: "poster.png",
+              mime_type: "image/png",
+              size_bytes: png.length,
+              width: 1,
+              height: 1,
+              alt_text: "Test",
+              uploaded_by: login.data.user!.id,
+            })
           ).error,
         ).toBeNull();
         for (const client of [anonymous, learner])

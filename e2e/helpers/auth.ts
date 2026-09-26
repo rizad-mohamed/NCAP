@@ -23,9 +23,11 @@ export async function loginAs(page: Page, role: TestRole) {
   );
 
   await page.context().clearCookies();
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  // The SSR form is visible before hydration; wait for its initial session request
+  // to settle so React does not replace values entered into the unhydrated form.
+  await page.goto("/login", { waitUntil: "networkidle" });
   await page.getByLabel("Email address").fill(account.email!);
-  await page.getByLabel("Password").fill(account.password!);
+  await page.locator('input[name="password"]').fill(account.password!);
   await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL(account.destination);
+  await expect(page).toHaveURL(account.destination, { timeout: 20000 });
 }

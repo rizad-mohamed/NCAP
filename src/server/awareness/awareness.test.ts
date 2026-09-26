@@ -112,7 +112,7 @@ describe("Awareness reads and authorization", () => {
       code: "server",
       message: "Awareness is temporarily unavailable. Please try again.",
     });
-    expect(await awarenessResult(async () => databaseError({ code: "40001" }))).toMatchObject({
+    expect(await awarenessResult(async () => databaseError({ code: "PT409" }))).toMatchObject({
       ok: false,
       code: "conflict",
     });

@@ -4,7 +4,7 @@ export type AwarenessResult<T> =
   { ok: true; data: T } | { ok: false; code: RepositoryErrorCode; message: string };
 export function databaseError(error: { code?: string } | null) {
   if (!error) return;
-  if (error.code === "40001" || error.code === "23505")
+  if (error.code === "PT409" || error.code === "40001" || error.code === "23505")
     throw new RepositoryError(
       "conflict",
       "This record changed or its slug is already used. Reload and try again.",

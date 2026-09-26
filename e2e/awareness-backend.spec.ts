@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
+
+// Wait for initial SSR hydration before interacting with the live backend.
+test.describe.configure({ timeout: 120000 });
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -25,7 +28,7 @@ test("Awareness reports a backend failure without falling back to local demo rec
   page,
 }) => {
   await page.route("**/_serverFn/**", (route) => route.abort());
-  await page.goto("/awareness", { waitUntil: "domcontentloaded" });
+  await page.goto("/awareness", { waitUntil: "networkidle" });
   await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeVisible({
     timeout: 20000,
   });
@@ -38,8 +41,71 @@ test.describe("Awareness on migrated Supabase", () => {
     process.env.AWARENESS_E2E !== "1",
     "Set AWARENESS_E2E=1 after applying the Awareness migration and seed import.",
   );
+  test("managed video uploads, plays and retains its transcript and chapters", async ({
+    page,
+    browser,
+  }) => {
+    test.skip(
+      !process.env.AWARENESS_VIDEO_FIXTURE,
+      "Set AWARENESS_VIDEO_FIXTURE to a licensed MP4/WebM test file.",
+    );
+    test.setTimeout(120000);
+    await loginAs(page, "admin");
+    const title = `Managed video verification ${Date.now()}`;
+    await page.goto("/admin/awareness/videos", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Create video", exact: true }).click();
+    await page.getByLabel("Title *").fill(title);
+    await page
+      .getByLabel("Summary *", { exact: true })
+      .fill("Managed video playback verification.");
+    await page.getByLabel("Upload video").setInputFiles(process.env.AWARENESS_VIDEO_FIXTURE!);
+    await expect(page.getByText("Video uploaded. Save the record to attach it.")).toBeVisible({
+      timeout: 30000,
+    });
+    await page.getByLabel("Duration (m:ss)").fill("0:05");
+    await page
+      .getByLabel("Chapters (timestamp | label)")
+      .fill("0:00 | Introduction\n0:02 | Review");
+    await page
+      .getByLabel("Transcript (separate paragraphs with blank lines) *")
+      .fill("A short licensed video verifies secure media playback.");
+    await page.getByRole("combobox", { name: "Status", exact: true }).selectOption("Published");
+    await page.getByRole("button", { name: "Save record" }).click();
+    await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
+    const guest = await browser.newContext();
+    try {
+      const publicPage = await guest.newPage();
+      await publicPage.goto("/awareness/videos", { waitUntil: "networkidle" });
+      await publicPage.getByRole("searchbox").fill(title);
+      await publicPage.getByRole("button", { name: `Open video ${title}`, exact: true }).click();
+      const video = publicPage.locator("video");
+      await expect
+        .poll(() => video.evaluate((element) => (element as HTMLVideoElement).readyState), {
+          timeout: 20000,
+        })
+        .toBeGreaterThanOrEqual(2);
+      await video.evaluate(async (element) => {
+        const player = element as HTMLVideoElement;
+        player.muted = true;
+        await player.play();
+      });
+      await expect
+        .poll(() => video.evaluate((element) => (element as HTMLVideoElement).currentTime))
+        .toBeGreaterThan(0);
+      await expect(
+        publicPage.getByText("A short licensed video verifies secure media playback."),
+      ).toBeVisible();
+      await expect(publicPage.getByText("Introduction", { exact: true })).toBeVisible();
+      await expect(publicPage.getByText("Review", { exact: true })).toBeVisible();
+    } finally {
+      await guest.close();
+      await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
+      await page.getByRole("button", { name: "Delete content" }).click();
+      await expect(page.getByRole("cell", { name: title, exact: true })).toHaveCount(0);
+    }
+  });
   test("seeded public articles, filters, details, downloads and transcripts", async ({ page }) => {
-    await page.goto("/awareness/articles");
+    await page.goto("/awareness/articles", { waitUntil: "networkidle" });
     await page.getByRole("searchbox").fill("phishing message");
     await expect(
       page.getByRole("heading", { name: "How a phishing message is built" }),
@@ -49,20 +115,20 @@ test.describe("Awareness on migrated Supabase", () => {
       .getByRole("link")
       .click();
     await expect(page.getByText(/Phishing messages are assembled from parts/)).toBeVisible();
-    await page.goto("/awareness/posters");
+    await page.goto("/awareness/posters", { waitUntil: "networkidle" });
     const download = page.waitForEvent("download");
     await page
       .getByRole("link", { name: /Download/ })
       .first()
       .click();
     expect((await download).suggestedFilename()).toMatch(/\.png$/);
-    await page.goto("/awareness/infographics");
+    await page.goto("/awareness/infographics", { waitUntil: "networkidle" });
     await page
       .getByRole("button", { name: /Open|View/ })
       .first()
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.goto("/awareness/videos");
+    await page.goto("/awareness/videos", { waitUntil: "networkidle" });
     await page
       .getByRole("button", { name: /Open transcript preview/ })
       .first()
@@ -92,8 +158,8 @@ test.describe("Awareness on migrated Supabase", () => {
         }, color),
         "base64",
       );
-    await page.goto("/admin/awareness/posters");
-    await page.getByRole("button", { name: "Add Poster" }).click();
+    await page.goto("/admin/awareness/posters", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Create poster" }).click();
     await page.getByLabel("Title *").fill(title);
     await page
       .getByLabel("Description / accessible alt-text basis *", { exact: true })
@@ -106,11 +172,11 @@ test.describe("Awareness on migrated Supabase", () => {
     await expect(page.getByText("Image uploaded. Save the record to attach it.")).toBeVisible();
     await page.getByRole("button", { name: "Save record" }).click();
     await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
-    await publicPage.goto("/awareness/posters");
+    await publicPage.goto("/awareness/posters", { waitUntil: "networkidle" });
     await publicPage.getByRole("searchbox").fill(title);
     await expect(publicPage.getByRole("heading", { name: title })).toHaveCount(0);
     await page.getByRole("button", { name: `Publish ${title}`, exact: true }).click();
-    await publicPage.reload();
+    await publicPage.reload({ waitUntil: "networkidle" });
     await publicPage.getByRole("searchbox").fill(title);
     await expect(publicPage.getByRole("heading", { name: title })).toBeVisible();
     await page.getByRole("button", { name: `Edit ${title}`, exact: true }).click();
@@ -120,9 +186,9 @@ test.describe("Awareness on migrated Supabase", () => {
     await page.getByRole("button", { name: "Use this image" }).click();
     await expect(page.getByText("Image uploaded. Save the record to attach it.")).toBeVisible();
     await page.getByRole("button", { name: "Save record" }).click();
-    await page.reload();
+    await page.reload({ waitUntil: "networkidle" });
     await page.getByRole("button", { name: `Unpublish ${title}`, exact: true }).click();
-    await publicPage.reload();
+    await publicPage.reload({ waitUntil: "networkidle" });
     await publicPage.getByRole("searchbox").fill(title);
     await expect(publicPage.getByRole("heading", { name: title })).toHaveCount(0);
     await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
