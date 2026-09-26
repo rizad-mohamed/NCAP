@@ -161,3 +161,6 @@ against your Storage deployment. No migration, seed upload, or hosted database c
 performed by a build or by the default unit suite.
 
 See [the deployment verification report](AWARENESS_VERIFICATION.md) for the latest live results.
+The [final readiness review](AWARENESS_READINESS.md) records closure checks and remaining
+public-release gates. The [reference architecture](AWARENESS_REFERENCE_ARCHITECTURE.md) describes
+the implementation pattern for future modules.

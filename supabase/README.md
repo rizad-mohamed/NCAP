@@ -3,6 +3,10 @@
 For the persistent Awareness module, follow [Awareness deployment and operations](AWARENESS.md)
 after applying the authentication migration below.
 
+See the [final Awareness readiness decision](AWARENESS_READINESS.md) for release gates and
+verification evidence, and the [backend reference architecture](AWARENESS_REFERENCE_ARCHITECTURE.md)
+for future NCAP modules.
+
 ## Apply the migration
 
 Apply `migrations/202609190001_auth_profiles.sql` with the Supabase CLI or paste it into the

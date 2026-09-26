@@ -2,6 +2,10 @@
 
 ## Result and scope
 
+For subsequent read-only closure checks, the drained cleanup queue and the public-release
+decision, see [the final readiness review](AWARENESS_READINESS.md). The results below retain
+the original deployment verification scope.
+
 The Awareness backend is deployed and verified on the configured Supabase project
 `zsaefnfgauqvstptetdw` (ap-south-1). The built application was tested locally against that live
 backend. Cloudflare/public frontend deployment was explicitly deferred by the owner.
