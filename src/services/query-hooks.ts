@@ -59,6 +59,8 @@ export function useSaveRepositoryRecord<K extends CollectionName>(
     mutationFn: (record: CollectionRecord<K>) =>
       collection.save(record).catch((error) => Promise.reject(normalizeRepositoryError(error))),
     onSuccess: () => {
+      if (["modules", "lessons", "topics"].includes(name))
+        void queryClient.invalidateQueries({ queryKey: ["repository"] });
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
       void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },
@@ -81,6 +83,8 @@ export function useRemoveRepositoryRecord<K extends CollectionName>(
         )
         .catch((error) => Promise.reject(normalizeRepositoryError(error))),
     onSuccess: () => {
+      if (["modules", "lessons", "topics"].includes(name))
+        void queryClient.invalidateQueries({ queryKey: ["repository"] });
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
       void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },

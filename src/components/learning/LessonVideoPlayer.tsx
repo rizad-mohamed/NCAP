@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Gauge, RotateCcw } from "lucide-react";
 import type { LessonVideo } from "@/data/types";
 import { lessonVideoPlayback } from "@/lib/lesson-video";
+import { useNcap } from "@/state/ncap-store";
 import { useMediaUrl } from "@/components/common/MediaField";
 
 const speeds = [0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -31,71 +32,49 @@ export function LessonVideoPlayer({
   const directUrl = external?.kind === "direct" ? external.url : undefined;
   const sourceUrl = useMediaUrl(video.kind === "upload" ? video.asset : undefined, directUrl);
   const sourceKey = video.kind === "upload" ? video.asset.storageKey : external?.url;
-  const storageKey = `ncap-video-progress:${encodeURIComponent(learnerKey)}:${lessonId}`;
+  const { resume, saveResume, session } = useNcap();
+  const authenticated = session.role !== "guest";
+  const saver = useRef(saveResume);
+  saver.current = saveResume;
+  const loadedSource = useRef("");
   useEffect(() => {
+    loadedSource.current = "";
+    lastStoredSecond.current = -1;
     const player = element.current;
     return () => {
-      if (!player || player.ended || !Number.isFinite(player.currentTime)) return;
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ source: sourceKey, seconds: player.currentTime }),
-        );
-      } catch {
-        /* Resume is optional when browser storage is unavailable. */
+      if (authenticated && player && !player.ended && Number.isFinite(player.currentTime)) {
+        void saver.current(lessonId, sourceKey ?? "", player.currentTime).catch(() => undefined);
       }
     };
-  }, [storageKey, sourceKey, sourceUrl]);
-
+  }, [lessonId, learnerKey, sourceKey, authenticated]);
   const loadProgress = () => {
     const player = element.current;
     if (!player) return;
     player.playbackRate = speed;
-    try {
-      const progress: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "null");
-      if (
-        !progress ||
-        typeof progress !== "object" ||
-        !("source" in progress) ||
-        progress.source !== sourceKey ||
-        !("seconds" in progress)
-      )
-        return;
-      const saved = progress.seconds;
-      if (
-        typeof saved === "number" &&
-        Number.isFinite(saved) &&
-        saved > 0 &&
-        saved < player.duration - 0.5
-      ) {
-        player.currentTime = saved;
-        setResumedAt(saved);
-      }
-    } catch {
-      // Playback still works when browser storage is unavailable.
+    const key = lessonId + sourceKey;
+    if (loadedSource.current === key) return;
+    loadedSource.current = key;
+    const saved = resume[lessonId];
+    if (
+      saved &&
+      saved.source === sourceKey &&
+      saved.seconds > 0 &&
+      saved.seconds < player.duration - 0.5
+    ) {
+      player.currentTime = saved.seconds;
+      setResumedAt(saved.seconds);
     }
   };
   const rememberProgress = (force = false) => {
     const player = element.current;
-    if (!player || player.ended || !Number.isFinite(player.currentTime)) return;
+    if (!authenticated || !player || player.ended || !Number.isFinite(player.currentTime)) return;
     const second = Math.floor(player.currentTime);
     if (!force && Math.abs(second - lastStoredSecond.current) < 5) return;
     lastStoredSecond.current = second;
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ source: sourceKey, seconds: player.currentTime }),
-      );
-    } catch {
-      // Local resume is an enhancement, not a playback requirement.
-    }
+    void saver.current(lessonId, sourceKey ?? "", player.currentTime).catch(() => undefined);
   };
   const complete = () => {
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // Ignore unavailable browser storage.
-    }
+    if (authenticated) void saver.current(lessonId, sourceKey ?? "", 0).catch(() => undefined);
     onComplete?.();
   };
 
@@ -134,7 +113,7 @@ export function LessonVideoPlayer({
         ) : (
           <div className="grid size-full place-items-center p-6 text-center text-sm text-white/75">
             {video.kind === "upload"
-              ? "This locally stored video is unavailable in this browser."
+              ? "This video is currently unavailable."
               : "This video link is not supported."}{" "}
             You can still read the lesson and transcript below.
           </div>

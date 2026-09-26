@@ -3,6 +3,8 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } 
 import {
   Activity,
   ArrowDownUp,
+  ArrowUp,
+  ArrowDown,
   BookOpen,
   Check,
   CircleUserRound,
@@ -25,6 +27,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNcap } from "@/state/ncap-store";
 import { quizzes } from "@/data/quizzes";
 import { adminActivity } from "@/data/admin";
@@ -71,7 +74,10 @@ import {
   normalizeTopicName,
   topicSlug,
 } from "@/domain/rules";
-import { DemoMediaService, DemoVideoService } from "@/services/media";
+import { DemoMediaService } from "@/services/media";
+import { LearningMediaService } from "@/services/learning-media";
+import { useRepository } from "@/services/repository-provider";
+import { useSaveRepositoryRecord, useRemoveRepositoryRecord } from "@/services/query-hooks";
 import {
   lessonBlocksSchema,
   lessonVideoSchema,
@@ -670,6 +676,32 @@ export function AdminTopicsPage() {
 type ContentKind = "lessons" | "articles" | "posters" | "infographics" | "questions";
 export function AdminContentPage({ kind }: { kind: ContentKind }) {
   const s = useNcap();
+  const repository = useRepository();
+  const saveLesson = useSaveRepositoryRecord(repository, "lessons");
+  const deleteLesson = useRemoveRepositoryRecord(repository, "lessons");
+  const queryClient = useQueryClient();
+  const [reordering, setReordering] = useState(false);
+  const moveLesson = async (lesson: Lesson, direction: -1 | 1) => {
+    const siblings = s.lessons
+      .filter((l) => l.moduleId === lesson.moduleId)
+      .sort((a, b) => a.order - b.order);
+    const index = siblings.findIndex((l) => l.id === lesson.id);
+    const other = siblings[index + direction];
+    if (!other) return;
+    setReordering(true);
+    try {
+      await repository.lessons.replace([
+        { ...lesson, order: other.order },
+        { ...other, order: lesson.order },
+      ]);
+      await queryClient.invalidateQueries({ queryKey: ["repository", "lessons"] });
+      toast.success("Lesson order updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Lesson order could not be updated.");
+    } finally {
+      setReordering(false);
+    }
+  };
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [editing, setEditing] = useState<
@@ -710,6 +742,15 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         .includes(search.toLowerCase()),
   );
   const remove = (id: string) => {
+    if (kind === "lessons") {
+      if (!window.confirm("Delete this lesson and its saved progress?")) return;
+      const lesson = s.lessons.find((l) => l.id === id);
+      void deleteLesson
+        .mutateAsync({ id, version: lesson?.version })
+        .then(() => toast.success("Lesson deleted"))
+        .catch((error) => toast.error(error.message));
+      return;
+    }
     if (!window.confirm("Delete this demo record? This action updates browser state only.")) return;
     const record = config.items.find((item) => item.id === id);
     if (record && "image" in record && record.image?.status === "local-demo") {
@@ -723,9 +764,8 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
           lesson.video?.kind === "upload" &&
           lesson.video.asset.id === videoAsset.id,
       );
-      if (!usedElsewhere) void DemoVideoService.remove(videoAsset).catch(() => undefined);
+      if (!usedElsewhere) void LearningMediaService.remove(videoAsset).catch(() => undefined);
     }
-    if (kind === "lessons") s.setLessons(s.lessons.filter((x) => x.id !== id));
     if (kind === "articles") s.setArticles(s.articles.filter((x) => x.id !== id));
     if (kind === "posters") s.setPosters(s.posters.filter((x) => x.id !== id));
     if (kind === "infographics") s.setInfographics(s.infographics.filter((x) => x.id !== id));
@@ -746,8 +786,13 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
       ...item,
       status: nextStatus,
     } as typeof item;
-    if (kind === "lessons")
-      s.setLessons(s.lessons.map((x) => (x.id === item.id ? (next as Lesson) : x)));
+    if (kind === "lessons") {
+      void saveLesson
+        .mutateAsync(next as Lesson)
+        .then(() => toast.success(`Lesson ${nextStatus.toLowerCase()}`))
+        .catch((error) => toast.error(error.message));
+      return;
+    }
     if (kind === "articles")
       s.setArticles(s.articles.map((x) => (x.id === item.id ? (next as Article) : x)));
     if (kind === "posters")
@@ -759,16 +804,19 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
     toast.success(`Record ${nextStatus.toLowerCase()}`);
   };
   const duplicate = (item: Lesson) => {
-    s.setLessons([
-      ...s.lessons,
-      {
+    const order =
+      Math.max(0, ...s.lessons.filter((l) => l.moduleId === item.moduleId).map((l) => l.order)) + 1;
+    void saveLesson
+      .mutateAsync({
         ...item,
-        id: `${item.id}-copy-${Date.now()}`,
-        title: `${item.title} (Copy)`,
+        id: `l-${crypto.randomUUID()}`,
+        version: undefined,
+        title: `${item.title.slice(0, 153)} (Copy)`,
+        order,
         status: "Draft",
-      },
-    ]);
-    toast.success("Lesson duplicated as draft");
+      })
+      .then(() => toast.success("Lesson duplicated as draft"))
+      .catch((error) => toast.error(error.message));
   };
   return (
     <div className="container-ncap max-w-[1400px] py-2">
@@ -865,13 +913,45 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                         <Check className="size-4" />
                       </button>
                       {kind === "lessons" && (
-                        <button
-                          className={iconBtn}
-                          onClick={() => duplicate(item as Lesson)}
-                          aria-label={`Duplicate ${title}`}
-                        >
-                          <FileText className="size-4" />
-                        </button>
+                        <>
+                          <button
+                            className={iconBtn}
+                            disabled={
+                              reordering ||
+                              !s.lessons.some(
+                                (l) =>
+                                  l.moduleId === (item as Lesson).moduleId &&
+                                  l.order < (item as Lesson).order,
+                              )
+                            }
+                            onClick={() => void moveLesson(item as Lesson, -1)}
+                            aria-label={`Move ${title} up`}
+                          >
+                            <ArrowUp className="size-4" />
+                          </button>
+                          <button
+                            className={iconBtn}
+                            disabled={
+                              reordering ||
+                              !s.lessons.some(
+                                (l) =>
+                                  l.moduleId === (item as Lesson).moduleId &&
+                                  l.order > (item as Lesson).order,
+                              )
+                            }
+                            onClick={() => void moveLesson(item as Lesson, 1)}
+                            aria-label={`Move ${title} down`}
+                          >
+                            <ArrowDown className="size-4" />
+                          </button>
+                          <button
+                            className={iconBtn}
+                            onClick={() => duplicate(item as Lesson)}
+                            aria-label={`Duplicate ${title}`}
+                          >
+                            <FileText className="size-4" />
+                          </button>
+                        </>
                       )}
                       <button
                         className={cn(iconBtn, "hover:border-destructive hover:text-destructive")}
@@ -916,13 +996,19 @@ function ContentEditor({
   onClose: () => void;
 }) {
   const s = useNcap();
+  const repository = useRepository();
+  const saveLesson = useSaveRepositoryRecord(repository, "lessons");
   const original = value === "new" ? null : value;
   const [title, setTitle] = useState(
     original ? ("title" in original ? original.title : original.prompt) : "",
   );
   const [summary, setSummary] = useState(original && "summary" in original ? original.summary : "");
   const [topic, setTopic] = useState<Topic>(
-    original && "topic" in original ? original.topic : "Phishing",
+    original && "topic" in original
+      ? original.topic
+      : kind === "lessons"
+        ? (s.topics.find((t) => t.status === "Active")?.name ?? "")
+        : "Phishing",
   );
   const [status, setStatus] = useState<"Published" | "Draft">(original?.status ?? "Draft");
   const [moduleId, setModuleId] = useState(
@@ -937,7 +1023,12 @@ function ContentEditor({
   const [lessonOrder, setLessonOrder] = useState(
     original && "order" in original
       ? original.order
-      : s.lessons.filter((lesson) => lesson.moduleId === s.modules[0]?.id).length + 1,
+      : Math.max(
+          0,
+          ...s.lessons
+            .filter((lesson) => lesson.moduleId === s.modules[0]?.id)
+            .map((lesson) => lesson.order),
+        ) + 1,
   );
   const [author, setAuthor] = useState(
     original && "author" in original ? original.author : "NCAP Editorial Team",
@@ -1010,10 +1101,10 @@ function ContentEditor({
       if (
         !committed.current &&
         pending?.kind === "upload" &&
-        pending.asset.status === "local-demo" &&
+        pending.asset.status === "ready" &&
         pending.asset.id !== originalVideoAsset?.id
       ) {
-        void DemoVideoService.remove(pending.asset).catch(() => undefined);
+        void LearningMediaService.remove(pending.asset).catch(() => undefined);
       }
     },
     [originalVideoAsset?.id],
@@ -1028,16 +1119,16 @@ function ContentEditor({
     const currentAsset = lessonVideo?.kind === "upload" ? lessonVideo.asset : undefined;
     const nextAsset = next?.kind === "upload" ? next.asset : undefined;
     if (
-      currentAsset?.status === "local-demo" &&
+      currentAsset?.status === "ready" &&
       currentAsset.id !== originalVideoAsset?.id &&
       currentAsset.id !== nextAsset?.id
     ) {
-      void DemoVideoService.remove(currentAsset).catch(() => undefined);
+      void LearningMediaService.remove(currentAsset).catch(() => undefined);
     }
     setLessonVideo(next);
     lessonVideoRef.current = next;
   };
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (videoBusy) {
       toast.error("Wait for the video to finish preparing before saving.");
@@ -1072,7 +1163,9 @@ function ContentEditor({
       toast.error("Add the article body before publishing.");
       return;
     }
-    const id = original?.id ?? `${kind.slice(0, 2)}-${Date.now()}`;
+    const id =
+      original?.id ??
+      `${kind.slice(0, 2)}-${kind === "lessons" ? crypto.randomUUID() : Date.now()}`;
     if (kind === "lessons") {
       const parsedBlocks = lessonBlocksSchema.safeParse(lessonBlocks);
       if (!parsedBlocks.success) {
@@ -1095,6 +1188,8 @@ function ContentEditor({
         return;
       }
       const item: Lesson = {
+        version: original && "version" in original ? original.version : undefined,
+        topicId: s.topics.find((t) => t.name === topic)?.id,
         id,
         moduleId,
         title,
@@ -1112,9 +1207,15 @@ function ContentEditor({
         blocks: parsedBlocks.data,
         ...(parsedVideo?.data ? { video: parsedVideo.data } : {}),
       };
-      s.setLessons(
-        original ? s.lessons.map((x) => (x.id === id ? item : x)) : [...s.lessons, item],
-      );
+      try {
+        await saveLesson.mutateAsync(item);
+        committed.current = true;
+        toast.success(original ? "Lesson updated" : "Lesson created");
+        onClose();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Lesson could not be saved.");
+      }
+      return;
     }
     if (kind === "articles") {
       const baseSlug = title
@@ -1233,7 +1334,7 @@ function ContentEditor({
     }
     const savedVideoAsset = lessonVideo?.kind === "upload" ? lessonVideo.asset : undefined;
     if (
-      originalVideoAsset?.status === "local-demo" &&
+      originalVideoAsset?.status === "ready" &&
       originalVideoAsset.id !== savedVideoAsset?.id &&
       !s.lessons.some(
         (lesson) =>
@@ -1242,7 +1343,7 @@ function ContentEditor({
           lesson.video.asset.storageKey === originalVideoAsset.storageKey,
       )
     ) {
-      void DemoVideoService.remove(originalVideoAsset).catch(() => undefined);
+      void LearningMediaService.remove(originalVideoAsset).catch(() => undefined);
     }
     toast.success(original ? "Demo record updated" : "Demo record created");
     onClose();
@@ -1260,7 +1361,9 @@ function ContentEditor({
             {original ? "Edit" : "Add"} {kind === "questions" ? "question" : kind.slice(0, -1)}
           </DialogTitle>
           <DialogDescription>
-            Changes remain in browser-local demonstration state.
+            {kind === "lessons"
+              ? "Changes are saved securely to the Learning catalogue."
+              : "Changes remain in browser-local demonstration state."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="grid min-w-0 gap-4">
@@ -1499,7 +1602,7 @@ function ContentEditor({
             <button type="button" className={outline} onClick={onClose}>
               Cancel
             </button>
-            <button className={primary} disabled={videoBusy}>
+            <button className={primary} disabled={videoBusy || saveLesson.isPending}>
               Save {kind === "questions" ? "question" : "record"}
             </button>
           </DialogFooter>

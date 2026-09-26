@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { LockKeyhole, ShieldAlert } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { AppLink, AppShell, PublicFooter } from "@/components/layout/AppShell";
-import { useSessionPreferences, type Role } from "@/state/ncap-store";
+import { useSessionPreferences, useNcap, type Role } from "@/state/ncap-store";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 
 export function RouteShell({
@@ -15,6 +16,8 @@ export function RouteShell({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { session } = useSessionPreferences();
   const { user } = useAuth();
+  const { learningPending, learningError } = useNcap();
+  const queryClient = useQueryClient();
   if (requiredRole && session.role !== requiredRole) {
     const signedInWrongRole = user !== null;
     return (
@@ -53,5 +56,29 @@ export function RouteShell({
       </>
     );
   }
-  return <AppShell pathname={pathname}>{children}</AppShell>;
+  const learningPage =
+    pathname.startsWith("/learn") ||
+    ["/dashboard", "/bookmarks", "/admin/topics", "/admin/lessons"].includes(pathname);
+  return (
+    <AppShell pathname={pathname}>
+      {learningPage && (learningPending || learningError) ? (
+        <div className="container-ncap py-12" role={learningError ? "alert" : "status"}>
+          <p>{learningError?.message ?? "Loading learning content…"}</p>
+          {learningError && (
+            <button
+              className="mt-4 rounded-lg border px-4 py-3"
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ["repository"] });
+                void queryClient.invalidateQueries({ queryKey: ["learning-state"] });
+              }}
+            >
+              Try again
+            </button>
+          )}
+        </div>
+      ) : (
+        children
+      )}
+    </AppShell>
+  );
 }

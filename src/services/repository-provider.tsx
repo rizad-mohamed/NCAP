@@ -9,6 +9,7 @@ import { useNcap } from "@/state/ncap-store";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRouterState } from "@tanstack/react-router";
 import { withAwarenessRepository } from "./awareness-repository";
+import { withLearningRepository } from "./learning-repository";
 
 const RepositoryContext = createContext<NcapRepository | null>(null);
 
@@ -18,6 +19,10 @@ export function NcapRepositoryProvider({ children }: { children: ReactNode }) {
   const admin = useRouterState({ select: (state) => state.location.pathname.startsWith("/admin") });
   const awareness = useMemo(
     () => withAwarenessRepository({} as NcapRepository, admin, user?.id),
+    [admin, user?.id],
+  );
+  const learning = useMemo(
+    () => withLearningRepository({} as NcapRepository, admin, user?.id),
     [admin, user?.id],
   );
   const repository = useMemo(() => {
@@ -59,8 +64,8 @@ export function NcapRepositoryProvider({ children }: { children: ReactNode }) {
       setCertificateTemplate: store.setCertificateTemplate,
       setCertificateRecords: store.setCertificateRecords,
     };
-    return { ...createLocalDemoRepository(() => snapshot, mutations), ...awareness };
-  }, [store, awareness]);
+    return { ...createLocalDemoRepository(() => snapshot, mutations), ...awareness, ...learning };
+  }, [store, awareness, learning]);
 
   return <RepositoryContext.Provider value={repository}>{children}</RepositoryContext.Provider>;
 }

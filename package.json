@@ -21,7 +21,9 @@
     "security:scan": "node scripts/security-scan.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run security:scan && npm run build",
     "awareness:seed": "node scripts/seed-awareness.mjs",
-    "awareness:cleanup": "node scripts/cleanup-awareness.mjs"
+    "awareness:cleanup": "node scripts/cleanup-awareness.mjs",
+    "learning:seed": "node scripts/seed-learning.mjs",
+    "learning:cleanup": "node scripts/cleanup-learning.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -84,6 +86,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^9.32.0",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.1",

@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { lessons as seedLessons, modules as seedModules } from "@/data/learning";
 import { questions as seedQuestions } from "@/data/quizzes";
 import {
   announcements as seedAnnouncements,
@@ -32,14 +31,14 @@ import type {
   QuizAttempt,
   QuizDraftAttempt,
   QuizQuestion,
-  Topic,
   TopicRecord,
   VideoResource,
 } from "@/data/types";
 import { persistedStateEnvelopeSchema, recoverPersistedSections } from "@/domain/validation";
-import { topicSlug } from "@/domain/rules";
 import { evaluateCertificateEligibility } from "@/domain/rules";
 import type { AuthUser } from "@/auth/types";
+import { useLearningStore } from "@/services/learning-hooks";
+import { useRouterState } from "@tanstack/react-router";
 
 export type Role = "guest" | "learner" | "admin";
 
@@ -88,29 +87,6 @@ const GUEST: Session = {
   notifications: true,
   phone: "",
 };
-
-const topicNames: Topic[] = [
-  "Password Security",
-  "MFA",
-  "Phishing",
-  "Social Engineering",
-  "Device Security",
-  "Mobile Security",
-  "Safe Browsing",
-  "Privacy",
-  "Social Media",
-  "Online Banking",
-  "Backups",
-];
-
-const seedTopics: TopicRecord[] = topicNames.map((name, index) => ({
-  id: `topic-${String(index + 1).padStart(2, "0")}`,
-  name,
-  slug: topicSlug(name),
-  status: "Active",
-  createdAt: "2026-01-01",
-  updatedAt: "2026-08-31",
-}));
 
 const seedCertificateTemplate: CertificateTemplate = {
   title: "Certificate of Completion",
@@ -206,8 +182,8 @@ const emptyState = (): StoreState => ({
   attempts: [],
   activities: [],
   issuedCertificates: [],
-  lessons: seedLessons,
-  modules: seedModules.map((module, order) => ({ ...module, order: order + 1 })),
+  lessons: [],
+  modules: [],
   articles: [],
   cyberTips: [],
   newsUpdates: [],
@@ -216,7 +192,7 @@ const emptyState = (): StoreState => ({
   questions: seedQuestions,
   infographics: [],
   videos: [],
-  topics: seedTopics,
+  topics: [],
   announcements: seedAnnouncements,
   users: seedUsers.map((user, index) => ({
     ...user,
@@ -240,10 +216,16 @@ const now = () => {
 const uid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 
 interface StoreValue extends StoreState {
+  statistics?: import("@/domain/learning").LearningState["statistics"];
+  learningPending: boolean;
+  learningError: Error | null;
+  learningSaving: boolean;
+  resume: Record<string, { source: string; seconds: number }>;
+  saveResume: (lessonId: string, source: string, seconds: number) => Promise<void>;
   ready: boolean;
   updateProfile: (patch: Partial<Session>) => void;
-  toggleBookmark: (lessonId: string) => boolean;
-  completeLesson: (lessonId: string) => void;
+  toggleBookmark: (lessonId: string) => Promise<boolean>;
+  completeLesson: (lessonId: string) => Promise<void>;
   recordAttempt: (attempt: Omit<QuizAttempt, "id" | "completedAt">) => QuizAttempt;
   issueCertificate: (moduleId: string) => void;
   logActivity: (kind: ActivityItem["kind"], label: string) => void;
@@ -295,13 +277,13 @@ function withAuthenticatedDemoState(state: StoreState, user: AuthUser | null): S
   return {
     ...state,
     session,
-    completedLessons:
-      state.completedLessons.length === 0
-        ? seedDemoProgress.completedLessons
-        : state.completedLessons,
-    bookmarks: state.bookmarks.length === 0 ? seedDemoProgress.bookmarks : state.bookmarks,
+    completedLessons: [],
+    bookmarks: [],
+    lessons: [],
+    modules: [],
+    topics: [],
     attempts: state.attempts.length === 0 ? seedDemoProgress.attempts : state.attempts,
-    activities: state.activities.length === 0 ? seedDemoProgress.activities : state.activities,
+    activities: [],
   };
 }
 
@@ -312,6 +294,8 @@ export function NcapProvider({
   children: ReactNode;
   authUser: AuthUser | null;
 }) {
+  const admin = useRouterState({ select: (s) => s.location.pathname.startsWith("/admin") });
+  const learning = useLearningStore(authUser, admin);
   const [state, setState] = useState<StoreState>(() =>
     withAuthenticatedDemoState(emptyState(), authUser),
   );
@@ -363,7 +347,21 @@ export function NcapProvider({
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ version: 2, state: persistedState }, (key, value) =>
-        ["articles", "cyberTips", "newsUpdates", "bestPractices", "posters", "infographics", "videos"].includes(key)
+        [
+          "modules",
+          "lessons",
+          "topics",
+          "completedLessons",
+          "bookmarks",
+          "activities",
+          "articles",
+          "cyberTips",
+          "newsUpdates",
+          "bestPractices",
+          "posters",
+          "infographics",
+          "videos",
+        ].includes(key)
           ? undefined
           : value,
       ),
@@ -379,52 +377,6 @@ export function NcapProvider({
 
   const updateProfile = useCallback((patch: Partial<Session>) => {
     setState((s) => ({ ...s, session: { ...s.session, ...patch } }));
-  }, []);
-
-  const toggleBookmark = useCallback((lessonId: string) => {
-    let added = false;
-    setState((s) => {
-      const has = s.bookmarks.includes(lessonId);
-      added = !has;
-      const lesson = s.lessons.find((l) => l.id === lessonId);
-      const activities = has
-        ? s.activities
-        : [
-            {
-              id: uid("ac"),
-              kind: "bookmark" as const,
-              label: `Bookmarked “${lesson?.title ?? lessonId}”`,
-              at: now(),
-            },
-            ...s.activities,
-          ].slice(0, 30);
-      return {
-        ...s,
-        bookmarks: has ? s.bookmarks.filter((b) => b !== lessonId) : [...s.bookmarks, lessonId],
-        activities,
-      };
-    });
-    return added;
-  }, []);
-
-  const completeLesson = useCallback((lessonId: string) => {
-    setState((s) => {
-      if (s.completedLessons.includes(lessonId)) return s;
-      const lesson = s.lessons.find((l) => l.id === lessonId);
-      return {
-        ...s,
-        completedLessons: [...s.completedLessons, lessonId],
-        activities: [
-          {
-            id: uid("ac"),
-            kind: "lesson" as const,
-            label: `Completed “${lesson?.title ?? lessonId}”`,
-            at: now(),
-          },
-          ...s.activities,
-        ].slice(0, 30),
-      };
-    });
   }, []);
 
   const recordAttempt = useCallback<StoreValue["recordAttempt"]>((attempt) => {
@@ -549,8 +501,6 @@ export function NcapProvider({
       ...state,
       ready,
       updateProfile,
-      toggleBookmark,
-      completeLesson,
       recordAttempt,
       issueCertificate,
       logActivity,
@@ -572,13 +522,12 @@ export function NcapProvider({
       setCertificateTemplate,
       setCertificateRecords,
       resetDemo,
+      ...learning,
     }),
     [
       state,
       ready,
       updateProfile,
-      toggleBookmark,
-      completeLesson,
       recordAttempt,
       issueCertificate,
       logActivity,
@@ -600,6 +549,7 @@ export function NcapProvider({
       setCertificateTemplate,
       setCertificateRecords,
       resetDemo,
+      learning,
     ],
   );
 
@@ -630,7 +580,7 @@ export function useNcap() {
 
 /** Derived learner statistics used by the dashboard, certificates and profile. */
 export function useLearnerStats() {
-  const { completedLessons, attempts, lessons, modules } = useNcap();
+  const { completedLessons, attempts, lessons, modules, statistics } = useNcap();
 
   return useMemo(() => {
     const publishedLessons = lessons.filter(
@@ -683,15 +633,15 @@ export function useLearnerStats() {
     if (attempts.length >= 2 && completed.length >= 5) earnedBadges.add("b-streak");
 
     return {
-      overall,
+      overall: statistics?.overall ?? overall,
       quizAverage,
-      completedCount: completed.length,
-      totalLessons: publishedLessons.length,
-      hours: Math.round((minutes / 60) * 10) / 10,
+      completedCount: statistics?.completedCount ?? completed.length,
+      totalLessons: statistics?.totalLessons ?? publishedLessons.length,
+      hours: Math.round(((statistics?.minutes ?? minutes) / 60) * 10) / 10,
       moduleProgress,
       bestScore: best,
       certificateEligible,
       badges: badgeCatalogue.map((b) => ({ ...b, earned: earnedBadges.has(b.id) })),
     };
-  }, [completedLessons, attempts, lessons, modules]);
+  }, [completedLessons, attempts, lessons, modules, statistics]);
 }

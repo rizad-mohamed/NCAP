@@ -7,7 +7,8 @@ import { EmptyState, PageHeader } from "@/components/common/primitives";
 import { MediaField, useMediaUrl } from "@/components/common/MediaField";
 import { cn } from "@/lib/utils";
 import { isDuplicateTopic, normalizeTopicName, topicSlug } from "@/domain/rules";
-import { DemoMediaService } from "@/services/media";
+import { LearningMediaService } from "@/services/learning-media";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRepository } from "@/services/repository-provider";
 import {
   useRemoveRepositoryRecord,
@@ -85,6 +86,7 @@ export function AdminModulesTopicsPage() {
 
 function ModulesPanel() {
   const repository = useRepository();
+  const queryClient = useQueryClient();
   const { data: modules = [], isPending, error } = useRepositoryList(repository, "modules");
   const { data: topics = [] } = useRepositoryList(repository, "topics");
   const { data: lessons = [] } = useRepositoryList(repository, "lessons");
@@ -129,6 +131,7 @@ function ModulesPanel() {
     );
     try {
       await repository.modules.replace(next);
+      await queryClient.invalidateQueries({ queryKey: ["repository", "modules"] });
       toast.success("Module order updated");
     } catch (reason) {
       toast.error(reason instanceof Error ? reason.message : "Module order could not be updated.");
@@ -335,8 +338,7 @@ function ModulesPanel() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{deleting?.title}”?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the unreferenced module from local demo state and the
-              learning catalogue.
+              This permanently removes the unreferenced module from the learning catalogue.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -348,10 +350,10 @@ function ModulesPanel() {
                 const module = deleting;
                 setDeleting(null);
                 void removeMutation
-                  .mutateAsync(module.id)
+                  .mutateAsync({ id: module.id, version: module.version })
                   .then(async () => {
-                    if (module.image?.status === "local-demo")
-                      await DemoMediaService.remove(module.image).catch(() => undefined);
+                    if (module.image?.status === "ready")
+                      await LearningMediaService.remove(module.image).catch(() => undefined);
                     toast.success("Module deleted");
                   })
                   .catch((reason: unknown) =>
@@ -405,18 +407,14 @@ function ModuleEditor({
   useEffect(
     () => () => {
       const pending = imageRef.current;
-      if (
-        !committed.current &&
-        pending?.status === "local-demo" &&
-        pending.id !== original?.image?.id
-      )
-        void DemoMediaService.remove(pending).catch(() => undefined);
+      if (!committed.current && pending?.status === "ready" && pending.id !== original?.image?.id)
+        void LearningMediaService.remove(pending).catch(() => undefined);
     },
     [original?.image?.id],
   );
   const changeImage = (next: MediaAsset | undefined) => {
-    if (image?.status === "local-demo" && image.id !== original?.image?.id && image.id !== next?.id)
-      void DemoMediaService.remove(image).catch(() => undefined);
+    if (image?.status === "ready" && image.id !== original?.image?.id && image.id !== next?.id)
+      void LearningMediaService.remove(image).catch(() => undefined);
     setImage(next);
   };
   const submit = async (event: FormEvent) => {
@@ -429,7 +427,7 @@ function ModuleEditor({
       toast.error("Title, description, topic, and at least one objective are required.");
       return;
     }
-    const id = original?.id ?? `m-${topicSlug(title)}-${Date.now().toString().slice(-5)}`;
+    const id = original?.id ?? `m-${crypto.randomUUID()}`;
     if (
       modules.some(
         (module) =>
@@ -441,6 +439,8 @@ function ModuleEditor({
       return;
     }
     const module: LearningModule = {
+      version: original?.version,
+      topicId: topics.find((t) => t.name === topic)?.id,
       id,
       title: title.trim(),
       description: description.trim(),
@@ -457,8 +457,8 @@ function ModuleEditor({
     try {
       await onSave(module);
       committed.current = true;
-      if (original?.image?.status === "local-demo" && original.image.id !== image?.id)
-        await DemoMediaService.remove(original.image).catch(() => undefined);
+      if (original?.image?.status === "ready" && original.image.id !== image?.id)
+        await LearningMediaService.remove(original.image).catch(() => undefined);
       toast.success(original ? "Module updated" : "Module created");
       onClose();
     } catch (reason) {
@@ -586,10 +586,11 @@ function ModuleEditor({
             />
           </label>
           <MediaField
+            storage="learning"
             label="Module image"
             asset={image}
             initialAlt={original?.image?.altText ?? title}
-            guidance="A landscape image is recommended. This exact local asset appears on public featured-learning cards."
+            guidance="A landscape image is recommended. This image appears on public featured-learning cards."
             onChange={changeImage}
           />
           <DialogFooter>
@@ -663,6 +664,7 @@ function ModulePreviewContent({
 
 function TopicsPanel() {
   const repository = useRepository();
+  const queryClient = useQueryClient();
   const store = useNcap();
   const { data: topics = [], isPending, error } = useRepositoryList(repository, "topics");
   const saveMutation = useSaveRepositoryRecord(repository, "topics");
@@ -683,15 +685,6 @@ function TopicsPanel() {
   const references = (name: string) => ({
     modules: store.modules.some((item) => item.topic === name),
     lessons: store.lessons.some((item) => item.topic === name),
-    questions: store.questions.some((item) => item.topic === name),
-    quizzes: quizzes.some((item) => item.topic === name),
-    awareness:
-      store.articles.some((item) => item.category === name) ||
-      store.cyberTips.some((item) => item.topic === name) ||
-      store.bestPractices.some((item) => item.topic === name) ||
-      store.posters.some((item) => item.topic === name) ||
-      store.infographics.some((item) => item.category === name) ||
-      store.videos.some((item) => item.category === name),
   });
   const isReferenced = (name: string) => Object.values(references(name)).some(Boolean);
   const submit = async (event: FormEvent) => {
@@ -711,18 +704,9 @@ function TopicsPanel() {
       toast.error("Choose a topic name with a unique URL slug.");
       return;
     }
-    if (
-      original &&
-      original.name !== nextName &&
-      quizzes.some((quiz) => quiz.topic === original.name)
-    ) {
-      toast.error(
-        "This topic is assigned to a configured quiz and cannot be renamed safely in this frontend release.",
-      );
-      return;
-    }
     const now = new Date().toISOString().slice(0, 10);
     const record: TopicRecord = {
+      version: original?.version,
       id: original?.id ?? `topic-${crypto.randomUUID()}`,
       name: nextName,
       slug,
@@ -732,50 +716,7 @@ function TopicsPanel() {
     };
     try {
       await saveMutation.mutateAsync(record);
-      if (original && original.name !== nextName) {
-        const old = original.name;
-        await Promise.all([
-          repository.modules.replace(
-            store.modules.map((item) => (item.topic === old ? { ...item, topic: nextName } : item)),
-          ),
-          repository.lessons.replace(
-            store.lessons.map((item) => (item.topic === old ? { ...item, topic: nextName } : item)),
-          ),
-          repository.questions.replace(
-            store.questions.map((item) =>
-              item.topic === old ? { ...item, topic: nextName } : item,
-            ),
-          ),
-          repository.articles.replace(
-            store.articles.map((item) =>
-              item.category === old ? { ...item, category: nextName } : item,
-            ),
-          ),
-          repository.cyberTips.replace(
-            store.cyberTips.map((item) =>
-              item.topic === old ? { ...item, topic: nextName } : item,
-            ),
-          ),
-          repository.bestPractices.replace(
-            store.bestPractices.map((item) =>
-              item.topic === old ? { ...item, topic: nextName } : item,
-            ),
-          ),
-          repository.posters.replace(
-            store.posters.map((item) => (item.topic === old ? { ...item, topic: nextName } : item)),
-          ),
-          repository.infographics.replace(
-            store.infographics.map((item) =>
-              item.category === old ? { ...item, category: nextName } : item,
-            ),
-          ),
-          repository.videos.replace(
-            store.videos.map((item) =>
-              item.category === old ? { ...item, category: nextName } : item,
-            ),
-          ),
-        ]);
-      }
+      await queryClient.invalidateQueries({ queryKey: ["repository"] });
       toast.success(original ? "Topic updated" : "Topic created");
       setEditing(null);
     } catch (reason) {
@@ -788,7 +729,7 @@ function TopicsPanel() {
         <div>
           <h2 className="text-2xl font-semibold">Topics</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared taxonomy for modules, lessons, quizzes, and awareness resources.
+            Manage Learning topics and their publication visibility.
           </p>
         </div>
         <button className={primary} onClick={() => open("new")}>
@@ -861,6 +802,7 @@ function TopicsPanel() {
                                 topic.status === "Active" ? "Topic deactivated" : "Topic activated",
                               ),
                             )
+                            .catch((error: Error) => toast.error(error.message))
                         }
                         aria-label={`${topic.status === "Active" ? "Deactivate" : "Activate"} ${topic.name}`}
                       >
@@ -878,8 +820,9 @@ function TopicsPanel() {
                           if (!window.confirm(`Delete the unreferenced topic “${topic.name}”?`))
                             return;
                           void removeMutation
-                            .mutateAsync(topic.id)
-                            .then(() => toast.success("Topic deleted"));
+                            .mutateAsync({ id: topic.id, version: topic.version })
+                            .then(() => toast.success("Topic deleted"))
+                            .catch((error: Error) => toast.error(error.message));
                         }}
                         aria-label={`Delete ${topic.name}`}
                       >

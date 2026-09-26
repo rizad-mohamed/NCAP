@@ -156,8 +156,11 @@ export function LearningCataloguePage() {
                       (l) => l.moduleId === m.id && l.status === "Published",
                     );
                     if (first) {
-                      const added = toggleBookmark(first.id);
-                      toast.success(added ? "First lesson bookmarked" : "Bookmark removed");
+                      void toggleBookmark(first.id)
+                        .then((added) =>
+                          toast.success(added ? "First lesson bookmarked" : "Bookmark removed"),
+                        )
+                        .catch(() => undefined);
                     }
                   }}
                   aria-label={`${bookmarks.some((id) => lessons.find((l) => l.id === id)?.moduleId === m.id) ? "Remove" : "Bookmark"} ${m.title}`}
@@ -307,8 +310,11 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          const added = toggleBookmark(lesson.id);
-                          toast.success(added ? "Lesson bookmarked" : "Bookmark removed");
+                          void toggleBookmark(lesson.id)
+                            .then((added) =>
+                              toast.success(added ? "Lesson bookmarked" : "Bookmark removed"),
+                            )
+                            .catch(() => undefined);
                         }}
                         className="grid size-11 place-items-center rounded-lg border"
                         aria-label={`${bookmarks.includes(lesson.id) ? "Remove bookmark from" : "Bookmark"} ${lesson.title}`}
@@ -388,10 +394,13 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
     next = siblings[index + 1];
   const done = completedLessons.includes(lesson.id);
   const finish = () => {
-    completeLesson(lesson.id);
-    toast.success("Lesson marked complete", {
-      description: "Your dashboard and module progress are updated.",
-    });
+    void completeLesson(lesson.id)
+      .then(() =>
+        toast.success("Lesson marked complete", {
+          description: "Your dashboard and module progress are updated.",
+        }),
+      )
+      .catch(() => undefined);
   };
   return (
     <div className="container-ncap max-w-[1400px] py-2">
@@ -418,8 +427,9 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
         </div>
         <button
           onClick={() => {
-            const added = toggleBookmark(lesson.id);
-            toast.success(added ? "Lesson bookmarked" : "Bookmark removed");
+            void toggleBookmark(lesson.id)
+              .then((added) => toast.success(added ? "Lesson bookmarked" : "Bookmark removed"))
+              .catch(() => undefined);
           }}
           className="grid size-11 place-items-center rounded-lg border"
           aria-label={bookmarks.includes(lesson.id) ? "Remove bookmark" : "Bookmark lesson"}
@@ -873,8 +883,9 @@ export function BookmarksPage() {
                 <span className="meta text-violet">{l.topic}</span>
                 <button
                   onClick={() => {
-                    toggleBookmark(l.id);
-                    toast.success("Bookmark removed");
+                    void toggleBookmark(l.id)
+                      .then(() => toast.success("Bookmark removed"))
+                      .catch(() => undefined);
                   }}
                   className="grid size-11 place-items-center rounded-lg border"
                   aria-label={`Remove bookmark from ${l.title}`}

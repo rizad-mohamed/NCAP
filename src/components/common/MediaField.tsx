@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { MediaAsset, VideoAsset } from "@/data/types";
 import { DemoMediaService, MEDIA_LIMITS } from "@/services/media";
 import { AwarenessMediaService } from "@/services/awareness-media";
+import { LearningMediaService } from "@/services/learning-media";
 import { cn } from "@/lib/utils";
 
 export function useMediaUrl(asset?: MediaAsset | VideoAsset, fallback?: string) {
@@ -16,7 +17,12 @@ export function useMediaUrl(asset?: MediaAsset | VideoAsset, fallback?: string) 
       setUrl(fallback ?? "");
       return;
     }
-    const service = asset.status === "ready" ? AwarenessMediaService : DemoMediaService;
+    const service =
+      asset.status === "ready"
+        ? asset.storageKey.startsWith("learning-media/")
+          ? LearningMediaService
+          : AwarenessMediaService
+        : DemoMediaService;
     const refresh = () =>
       service
         .objectUrl(asset)
@@ -68,7 +74,7 @@ export function MediaField({
   initialAlt?: string;
   guidance?: string;
   onChange: (asset: MediaAsset | undefined) => void;
-  storage?: "demo" | "awareness";
+  storage?: "demo" | "awareness" | "learning";
 }) {
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -102,13 +108,15 @@ export function MediaField({
     setBusy(true);
     try {
       const saved =
-        storage === "awareness"
-          ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
-          : await DemoMediaService.save(file, altText);
+        storage === "learning"
+          ? ((await LearningMediaService.save(file, altText)) as MediaAsset)
+          : storage === "awareness"
+            ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
+            : await DemoMediaService.save(file, altText);
       onChange(saved);
       setFile(null);
       toast.success(
-        storage === "awareness"
+        storage !== "demo"
           ? "Image uploaded. Save the record to attach it."
           : "Image stored in local demo media storage",
       );
@@ -141,7 +149,7 @@ export function MediaField({
             {asset && (
               <p className="text-xs text-muted-foreground">
                 {asset.width} × {asset.height} · {(asset.sizeBytes / 1024).toFixed(0)} KiB ·{" "}
-                {storage === "awareness" ? "Uploaded media" : "Local demo media"}
+                {storage !== "demo" ? "Uploaded media" : "Local demo media"}
               </p>
             )}
             <div className="flex flex-wrap gap-2">

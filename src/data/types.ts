@@ -9,6 +9,7 @@ export type UserRole = "learner" | "admin";
 export type TopicStatus = "Active" | "Inactive";
 
 export interface TopicRecord {
+  version?: number | undefined;
   id: string;
   name: Topic;
   slug: string;
@@ -79,6 +80,8 @@ export type LessonBlock =
     };
 
 export interface Lesson {
+  version?: number | undefined;
+  topicId?: string | undefined;
   id: string;
   moduleId: string;
   title: string;
@@ -95,6 +98,8 @@ export interface Lesson {
 }
 
 export interface LearningModule {
+  version?: number | undefined;
+  topicId?: string | undefined;
   id: string;
   title: string;
   description: string;

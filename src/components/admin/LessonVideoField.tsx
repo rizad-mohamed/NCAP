@@ -3,7 +3,9 @@ import { Film, Link2, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { LessonVideo } from "@/data/types";
 import { lessonVideoPlayback } from "@/lib/lesson-video";
-import { DemoVideoService, VIDEO_LIMITS } from "@/services/media";
+import { VIDEO_LIMITS } from "@/services/media";
+import { LearningMediaService } from "@/services/learning-media";
+import type { VideoAsset } from "@/data/types";
 import { useMediaUrl } from "@/components/common/MediaField";
 import { dashboardButton, dashboardSelect } from "@/components/common/dashboard-primitives";
 import { cn } from "@/lib/utils";
@@ -50,14 +52,14 @@ export function LessonVideoField({
     setBusy(true);
     onBusyChange(true);
     try {
-      const asset = await DemoVideoService.save(file);
+      const asset = (await LearningMediaService.save(file)) as VideoAsset;
       if (!active.current) {
-        await DemoVideoService.remove(asset);
+        await LearningMediaService.remove(asset);
         return;
       }
       onChange({ kind: "upload", asset, transcript: value?.transcript ?? "" });
       setFile(null);
-      toast.success("Video stored in local demo media storage");
+      toast.success("Video uploaded. Save the lesson to attach it.");
     } catch (error) {
       if (active.current)
         toast.error(error instanceof Error ? error.message : "The video could not be prepared.");
@@ -73,7 +75,7 @@ export function LessonVideoField({
     <fieldset className="min-w-0 rounded-xl border p-4" disabled={busy} aria-busy={busy}>
       <legend className="px-1 text-sm font-semibold">Lesson video (optional)</legend>
       <p className="text-sm text-muted-foreground">
-        Add a secure video link or upload a local demo video. Text-only lessons can leave this off.
+        Add a secure video link or upload a video. Text-only lessons can leave this off.
       </p>
       <label className="mt-4 block text-sm font-semibold">
         Video source
@@ -161,9 +163,7 @@ export function LessonVideoField({
               <p className="mt-2 text-sm font-semibold">
                 {file?.name ?? "Choose an MP4 or WebM video"}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Up to 100 MiB and four hours. Files stay in this browser demo.
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Up to 100 MiB and four hours.</p>
               <label
                 htmlFor={inputId}
                 className={cn(dashboardButton.secondary, "mt-3 cursor-pointer")}
