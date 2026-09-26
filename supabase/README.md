@@ -1,5 +1,8 @@
 # Supabase authentication setup
 
+For the persistent Awareness module, follow [Awareness deployment and operations](AWARENESS.md)
+after applying the authentication migration below.
+
 ## Apply the migration
 
 Apply `migrations/202609190001_auth_profiles.sql` with the Supabase CLI or paste it into the
