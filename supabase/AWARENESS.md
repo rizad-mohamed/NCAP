@@ -9,6 +9,7 @@ remain `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `APP_URL`; no runtime ser
 Run commands from `ncap_v1.0`. Install project dependencies with `npm ci` first if needed.
 
 1. Apply the existing auth migration first. Apply `migrations/202609200001_awareness.sql`
+   and `migrations/202609260001_awareness_conflicts.sql`
    in the Supabase SQL Editor, **or**, with an installed Supabase CLI and a linked project:
 
    ```sh
@@ -16,7 +17,7 @@ Run commands from `ncap_v1.0`. Install project dependencies with `npm ci` first 
    supabase db push
    ```
 
-   If this checkout has not been initialized with the CLI, run `supabase init` before linking.
+   The checked-in `config.toml` initializes this checkout for CLI deployments.
    The migration creates the two tables, private bucket, policies, indexes, and functions.
    It does not publish seed data. Apply it before deploying the frontend; there is deliberately
    no fallback to browser demo data when the database is unavailable.
@@ -24,6 +25,12 @@ Run commands from `ncap_v1.0`. Install project dependencies with `npm ci` first 
 2. In Supabase Storage settings ensure the project-wide upload size limit allows **100 MiB**
    (or the maximum supported by your plan). The migration sets `awareness-media` private with
    a 100 MiB bucket limit and JPEG, PNG, WebP, MP4 and WebM MIME allowlist. Do not make it public.
+
+   **Current deployment:** the owner chose to retain the free plan, whose project-wide limit is
+   **50 MiB per upload**. Images remain limited to 5 MiB by the application. Video uploads must
+   stay below 50 MiB on this project even though the product/bucket validation ceiling is 100 MiB.
+   Supabase rejects larger files. Raising the project limit requires an owner-managed plan upgrade;
+   no billing changes were made during deployment.
 
 3. Install the operator script's browser if missing:
 
@@ -66,8 +73,30 @@ Run commands from `ncap_v1.0`. Install project dependencies with `npm ci` first 
 
 ## Cleanup job (required)
 
-Run `npm run awareness:cleanup` **hourly** in a trusted operator environment with the same
-operator-only variables. Retry failures and alert on its nonzero exit code. It expires unattached
+The Supabase-hosted `awareness-cleanup` maintenance function runs **hourly at minute 17 UTC**
+through `pg_cron` and `pg_net`. It uses the same cleanup implementation as the operator script.
+The function accepts only POST requests authenticated by a dedicated random maintenance token;
+that token is stored in Edge secrets and Vault, never in the browser or checked-in configuration.
+The function's gateway JWT check is disabled because the handler authenticates this maintenance
+token; unauthenticated invocations return 401. The scheduling SQL function is private and its
+execution is revoked from public, anonymous and authenticated application roles.
+
+To provision another project (or rotate the maintenance token), deploy and then configure:
+
+```sh
+supabase functions deploy awareness-cleanup --use-api
+node scripts/setup-awareness-cleanup.mjs
+```
+
+The setup script requires operator-only `SUPABASE_URL` and `SUPABASE_ACCESS_TOKEN`, and installs
+`supabase/operations/awareness-cleanup.sql`. It never prints the generated token. The hosted
+function uses Supabase's server-only built-in credentials, processes at most 100 objects / 90 seconds
+per invocation, and leaves any remaining queue for a later run. Inspect Edge function logs and
+`net._http_response` for HTTP 500 responses; the next hourly invocation retries retained entries.
+`cron.job_run_details` confirms dispatch but does not by itself prove the HTTP request succeeded.
+
+For an immediate manual retry, run `npm run awareness:cleanup` with the operator-only URL and
+service-role variables. Retry failures and alert on its nonzero exit code. Cleanup expires unattached
 pending/ready uploads after 24 hours and retries retired-object deletion. Successful resource
 replacement/deletion also attempts immediate cleanup. Database records are never removed
 before Storage removal succeeds. Recently retired upload metadata is retained for 125 minutes:
@@ -89,7 +118,8 @@ through Admin retires its assets normally.
   Article search matches title/summary; other resource search includes structured content,
   topics, authors and tags. Admin tabs use shared repository lists and existing client filters.
 - Save/publish/unpublish and delete compare the version originally viewed. Stale operations
-  return a conflict and require reloading. Republishing preserves the selected publication date.
+  return HTTP 409 (`PT409`) and require reloading. The follow-up migration avoids PostgREST's
+  serialization retry behavior for `40001`. Republishing preserves the selected publication date.
 - Assets upload directly to randomized immutable Storage paths. Finalization verifies stored
   byte size/MIME, extension, dimensions and video duration from bounded container inspection.
   Images: JPEG/PNG/WebP, 5 MiB, 4096 × 4096, alternative text required. Videos: MP4/WebM,
@@ -121,8 +151,13 @@ Live tests use a **disposable, migrated** project and existing confirmed test us
 `AWARENESS_INTEGRATION=1` for `npm test -- src/server/awareness/rls.integration.test.ts`.
 Set `AWARENESS_E2E=1` for browser seed/media scenarios after the import. Without the flags and
 credentials, those tests are **SKIPPED**, not evidence of live database or Storage correctness.
+Set `AWARENESS_VIDEO_FIXTURE` to a local licensed MP4/WebM file to include actual upload/playback
+verification; without it, only that additional scenario is skipped. The deployment audit used
+MDN's CC0 `flower.mp4` fixture in ignored local files, never as permanent seed content.
 The schema security tests are static contract checks; service tests use injected Supabase mocks.
 
 After deployment, run the live tests and manually verify media playback and cleanup-job logs
 against your Storage deployment. No migration, seed upload, or hosted database changes are
 performed by a build or by the default unit suite.
+
+See [the deployment verification report](AWARENESS_VERIFICATION.md) for the latest live results.

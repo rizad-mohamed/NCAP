@@ -1,0 +1,14 @@
+# Supabase CLI deployment configuration. Runtime application settings stay in the host environment.
+project_id = "ncap_v1.0"
+
+[db]
+major_version = 17
+
+[db.seed]
+# Awareness is imported explicitly through scripts/seed-awareness.mjs.
+enabled = false
+
+[functions.awareness-cleanup]
+# The handler validates a dedicated maintenance secret; this is not a public function.
+verify_jwt = false
+entrypoint = "./functions/awareness-cleanup/index.js"

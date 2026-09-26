@@ -22,6 +22,7 @@ test-results
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+supabase/.temp/
 
 # Editor directories and files
 .agents/
