@@ -12,3 +12,7 @@ enabled = false
 # The handler validates a dedicated maintenance secret; this is not a public function.
 verify_jwt = false
 entrypoint = "./functions/awareness-cleanup/index.js"
+
+[functions.learning-cleanup]
+verify_jwt = false
+entrypoint = "./functions/learning-cleanup/index.js"
