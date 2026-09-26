@@ -1,27 +1,29 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-test.describe.configure({ timeout: 60_000 });
+test.describe.configure({ timeout: 60000 });
+test.beforeEach(async ({ browserName }, testInfo) => {
+  test.skip(
+    browserName !== "chromium" || testInfo.project.name.startsWith("mobile") || process.env.AWARENESS_E2E !== "1",
+    "Set AWARENESS_E2E=1 on a migrated test project to run persistence checks.",
+  );
+});
 
-test("administered article taxonomy is reflected on the public frontend", async ({
+test("article content and topic edits persist across independent browsers", async ({
   page,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== "chromium", "The CRUD consistency audit runs once.");
-
+  browser,
+}) => {
   await loginAs(page, "admin");
-  await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
-
-  await page.getByRole("button", { name: "Create topic" }).click();
-  await page.getByLabel("Topic name").fill("Secure Messaging");
-  await page.getByRole("button", { name: "Save topic" }).click();
-
-  await page.goto("/admin/articles", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Add article" }).click();
-  await page.getByLabel("Title *").fill("Safer community messaging");
-  await page.getByLabel("Summary").fill("Verify unusual requests before sharing a code.");
-  await page.getByLabel("Topic").selectOption({ label: "Secure Messaging" });
-  await page.getByLabel("Status").selectOption("Published");
-  await page.getByLabel("Author").fill("NCAP Content Review Team");
+  const title = `Safer community messaging ${Date.now()}`;
+  await page.goto("/admin/awareness/articles");
+  await page.getByRole("button", { name: "Add Article", exact: true }).click();
+  await page.getByLabel("Title *").fill(title);
+  await page
+    .getByLabel("Summary *", { exact: true })
+    .fill("Verify unusual requests before sharing a code.");
+  await page.getByLabel("Topic", { exact: true }).selectOption("Phishing");
+  await page.getByLabel("Status", { exact: true }).selectOption("Published");
+  await page.getByLabel("Author / source").fill("NCAP Content Review Team");
   await page.getByLabel("Reading minutes").fill("4");
   await page
     .getByLabel("Article body *")
@@ -29,84 +31,83 @@ test("administered article taxonomy is reflected on the public frontend", async 
       "Pause when a message creates urgency.\n\nConfirm through a contact method you already trust.",
     );
   await page.getByRole("button", { name: "Save record" }).click();
-  await expect(
-    page.getByRole("cell", { name: "Safer community messaging", exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem("ncap.demo.v2") ?? "{}") as {
-          state?: { articles?: { title: string }[] };
-        };
-        return saved.state?.articles?.some(
-          (article) => article.title === "Safer community messaging",
-        );
-      }),
-    )
-    .toBe(true);
-
-  await page.goto("/awareness/articles", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Filter by topic").selectOption("Secure Messaging");
-  await expect(page.getByRole("link", { name: "Safer community messaging" })).toBeVisible();
-  await page.getByRole("link", { name: "Safer community messaging" }).click();
-  await expect(page.getByText("By NCAP Content Review Team")).toBeVisible();
-  await expect(page.getByText("4 minute read")).toBeVisible();
-
-  await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Edit Secure Messaging" }).click();
-  await page.getByLabel("Topic name").fill("Safer Messaging");
-  await page.getByRole("button", { name: "Save topic" }).click();
-
-  await page.goto("/awareness/articles", { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Filter by topic").selectOption("Safer Messaging");
-  await expect(page.getByRole("link", { name: "Safer community messaging" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: `Edit ${title}`, exact: true }).click();
+  await page.getByLabel("Topic", { exact: true }).selectOption("MFA");
+  await page.getByRole("button", { name: "Save record" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const guest = await browser.newContext();
+  try {
+    const publicPage = await guest.newPage();
+    await publicPage.goto("/awareness/articles");
+    await publicPage.getByLabel("Filter by topic").selectOption("MFA");
+    await publicPage.getByRole("searchbox").fill(title);
+    await publicPage.getByRole("link", { name: title, exact: true }).click();
+    await expect(publicPage.getByText("By NCAP Content Review Team")).toBeVisible();
+    await expect(publicPage.getByText("4 minute read", { exact: true })).toBeVisible();
+    await expect(
+      publicPage.getByText("Confirm through a contact method you already trust."),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => JSON.parse(localStorage.getItem("ncap.demo.v2") ?? "{}").state?.articles,
+      ),
+    ).toBeUndefined();
+  } finally {
+    await guest.close();
+    await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
+    await page.getByRole("button", { name: "Delete content" }).click();
+  }
 });
 
-test("an uploaded poster is the same asset previewed and downloaded publicly", async ({
+test("uploaded poster preview and download use the same managed file", async ({
   page,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== "chromium", "The IndexedDB media audit runs once.");
-
+  browser,
+}) => {
   await loginAs(page, "admin");
-  await page.goto("/admin/posters", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Add poster" }).click();
-  await page.getByLabel("Title *").fill("Secure messaging checklist");
+  const title = `Secure messaging checklist ${Date.now()}`;
+  await page.goto("/admin/awareness/posters");
+  await page.getByRole("button", { name: "Add Poster", exact: true }).click();
+  await page.getByLabel("Title *").fill(title);
   await page
     .getByLabel("Description / accessible alt-text basis")
     .fill("A three-step checklist for verifying unusual messages.");
-  await page.locator('input[type="file"]').setInputFiles({
-    name: "secure-messaging.png",
-    mimeType: "image/png",
-    buffer: Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-      "base64",
-    ),
-  });
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles({
+      name: "secure-messaging.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
   await page.getByLabel("Alternative text *").fill("Three checks for safer community messages");
   await page.getByRole("button", { name: "Use this image" }).click();
-  await expect(page.getByText("secure-messaging.png")).toBeVisible();
-  await page.getByLabel("Status").selectOption("Published");
+  await expect(page.getByText("secure-messaging.png", { exact: true })).toBeVisible();
+  await page.getByLabel("Status", { exact: true }).selectOption("Published");
   await page.getByRole("button", { name: "Save record" }).click();
-  await expect(
-    page.getByRole("cell", { name: "Secure messaging checklist", exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const saved = JSON.parse(localStorage.getItem("ncap.demo.v2") ?? "{}") as {
-          state?: { posters?: { title: string }[] };
-        };
-        return saved.state?.posters?.some(
-          (poster) => poster.title === "Secure messaging checklist",
-        );
-      }),
-    )
-    .toBe(true);
-
-  await page.goto("/awareness/posters", { waitUntil: "domcontentloaded" });
-  await expect(page.getByAltText("Three checks for safer community messages")).toBeVisible();
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Download PNG" }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("secure-messaging.png");
+  await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
+  const guest = await browser.newContext();
+  try {
+    const publicPage = await guest.newPage();
+    await publicPage.goto("/awareness/posters");
+    await publicPage.getByRole("searchbox").fill(title);
+    await expect(
+      publicPage.getByAltText("Three checks for safer community messages"),
+    ).toBeVisible();
+    const downloadPromise = publicPage.waitForEvent("download");
+    await publicPage.getByRole("link", { name: "Download PNG", exact: true }).click();
+    expect((await downloadPromise).suggestedFilename()).toBe("secure-messaging.png");
+    expect(
+      await page.evaluate(
+        () => JSON.parse(localStorage.getItem("ncap.demo.v2") ?? "{}").state?.posters,
+      ),
+    ).toBeUndefined();
+  } finally {
+    await guest.close();
+    await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
+    await page.getByRole("button", { name: "Delete content" }).click();
+  }
 });

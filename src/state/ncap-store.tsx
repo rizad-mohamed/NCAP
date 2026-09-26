@@ -9,15 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import { lessons as seedLessons, modules as seedModules } from "@/data/learning";
-import {
-  articles as seedArticles,
-  bestPractices as seedBestPractices,
-  infographics as seedInfographics,
-  news as seedNewsUpdates,
-  posters as seedPosters,
-  tips as seedCyberTips,
-  videos as seedVideos,
-} from "@/data/awareness";
 import { questions as seedQuestions } from "@/data/quizzes";
 import {
   announcements as seedAnnouncements,
@@ -217,14 +208,14 @@ const emptyState = (): StoreState => ({
   issuedCertificates: [],
   lessons: seedLessons,
   modules: seedModules.map((module, order) => ({ ...module, order: order + 1 })),
-  articles: seedArticles,
-  cyberTips: seedCyberTips.map((item, order) => ({ ...item, status: "Published", order })),
-  newsUpdates: seedNewsUpdates.map((item, order) => ({ ...item, status: "Published", order })),
-  bestPractices: seedBestPractices.map((item, order) => ({ ...item, status: "Published", order })),
-  posters: seedPosters,
+  articles: [],
+  cyberTips: [],
+  newsUpdates: [],
+  bestPractices: [],
+  posters: [],
   questions: seedQuestions,
-  infographics: seedInfographics.map((item) => ({ ...item, status: item.status ?? "Published" })),
-  videos: seedVideos.map((item, order) => ({ ...item, status: "Published", order })),
+  infographics: [],
+  videos: [],
   topics: seedTopics,
   announcements: seedAnnouncements,
   users: seedUsers.map((user, index) => ({
@@ -369,7 +360,14 @@ export function NcapProvider({
         phone: "",
       },
     };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, state: persistedState }));
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 2, state: persistedState }, (key, value) =>
+        ["articles", "cyberTips", "newsUpdates", "bestPractices", "posters", "infographics", "videos"].includes(key)
+          ? undefined
+          : value,
+      ),
+    );
   }, [state, ready]);
 
   const logActivity = useCallback((kind: ActivityItem["kind"], label: string) => {

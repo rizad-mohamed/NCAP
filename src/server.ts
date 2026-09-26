@@ -65,7 +65,20 @@ function withSecurityHeaders(response: Response, request: Request) {
   headers.set("referrer-policy", "strict-origin-when-cross-origin");
   headers.set("x-frame-options", "DENY");
   headers.set("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
-  headers.set("content-security-policy", CONTENT_SECURITY_POLICY);
+  // Awareness uploads and private signed downloads use only this configured Storage origin.
+  let storageOrigin = "";
+  try {
+    storageOrigin = new URL(process.env.SUPABASE_URL ?? "").origin;
+  } catch {
+    /* Missing config is handled by the server functions. */
+  }
+  headers.set(
+    "content-security-policy",
+    CONTENT_SECURITY_POLICY.replace(
+      "img-src 'self' blob: data:",
+      `img-src 'self' blob: data: ${storageOrigin}`,
+    ).replace("connect-src 'self'", `connect-src 'self' ${storageOrigin}`),
+  );
   if (new URL(request.url).protocol === "https:") {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
   }

@@ -5,10 +5,10 @@ test("a newly administered awareness type completes the public publication lifec
   page,
 }, testInfo) => {
   test.skip(
-    testInfo.project.name !== "chromium",
-    "The repository lifecycle browser audit runs once.",
+    testInfo.project.name !== "chromium" || process.env.AWARENESS_E2E !== "1",
+    "Set AWARENESS_E2E=1 on a migrated test project; the lifecycle audit runs once.",
   );
-  const title = "Check unexpected verification requests";
+  const title = `Check unexpected verification requests ${Date.now()}`;
 
   await loginAs(page, "admin");
   await page.goto("/admin/awareness/cyber-tips", { waitUntil: "domcontentloaded" });

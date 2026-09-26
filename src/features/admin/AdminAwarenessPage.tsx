@@ -12,10 +12,12 @@ import type {
   Poster,
   Topic,
   VideoResource,
+  VideoAsset,
 } from "@/data/types";
 import { AppLink } from "@/components/layout/AppShell";
 import { EmptyState, PageHeader } from "@/components/common/primitives";
 import { MediaField, useMediaUrl } from "@/components/common/MediaField";
+import { AwarenessVideoField } from "@/components/common/AwarenessVideoField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { topicSlug } from "@/domain/rules";
-import { DemoMediaService } from "@/services/media";
+import { AwarenessMediaService } from "@/services/awareness-media";
 import { useRepository } from "@/services/repository-provider";
 import {
   useRemoveRepositoryRecord,
@@ -164,13 +166,20 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
     if (kind === "videos") await saveVideo.mutateAsync(record as VideoResource);
   };
   const remove = async (record: AwarenessRecord) => {
-    if (kind === "articles") await removeArticle.mutateAsync(record.id);
-    if (kind === "cyber-tips") await removeTip.mutateAsync(record.id);
-    if (kind === "updates") await removeUpdate.mutateAsync(record.id);
-    if (kind === "best-practices") await removePractice.mutateAsync(record.id);
-    if (kind === "posters") await removePoster.mutateAsync(record.id);
-    if (kind === "infographics") await removeInfographic.mutateAsync(record.id);
-    if (kind === "videos") await removeVideo.mutateAsync(record.id);
+    if (kind === "articles")
+      await removeArticle.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "cyber-tips")
+      await removeTip.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "updates")
+      await removeUpdate.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "best-practices")
+      await removePractice.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "posters")
+      await removePoster.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "infographics")
+      await removeInfographic.mutateAsync({ id: record.id, version: record.version });
+    if (kind === "videos")
+      await removeVideo.mutateAsync({ id: record.id, version: record.version });
   };
   const toggle = async (record: AwarenessRecord) => {
     try {
@@ -191,7 +200,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
       <PageHeader
         eyebrow="Administration · Awareness"
         title="Manage Awareness"
-        description="Create, review, publish, and maintain every resource shown in the public Awareness hub. Changes are saved to the shared browser-demo repository."
+        description="Create, review, publish, and maintain every resource shown in the public Awareness hub. Changes are saved securely and shared across browsers."
       />
       <nav
         className="app-scrollbar mt-7 flex gap-2 overflow-x-auto border-b"
@@ -374,8 +383,8 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
             <AlertDialogHeader>
               <AlertDialogTitle>Delete “{deleting?.title}”?</AlertDialogTitle>
               <AlertDialogDescription>
-                This removes the record from the admin repository and the public site. Local
-                uploaded media attached only to this record will also be removed.
+                This removes the record from administration and the public site. Its uploaded media
+                will also be removed.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -387,15 +396,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
                   const record = deleting;
                   setDeleting(null);
                   void remove(record)
-                    .then(async () => {
-                      const media =
-                        "image" in record
-                          ? record.image
-                          : "poster" in record
-                            ? record.poster
-                            : undefined;
-                      if (media?.status === "local-demo")
-                        await DemoMediaService.remove(media).catch(() => undefined);
+                    .then(() => {
                       toast.success("Awareness content deleted");
                     })
                     .catch((error: unknown) =>
@@ -492,6 +493,12 @@ function AwarenessEditor({
         : undefined
     : undefined;
   const [media, setMedia] = useState<MediaAsset | undefined>(originalMedia);
+  const originalVideo = original && "video" in original ? original.video : undefined;
+  const [video, setVideo] = useState<VideoAsset | undefined>(originalVideo);
+  const videoRef = useRef(video);
+  useEffect(() => {
+    videoRef.current = video;
+  }, [video]);
   const [saving, setSaving] = useState(false);
   const mediaRef = useRef(media);
   const committed = useRef(false);
@@ -501,18 +508,17 @@ function AwarenessEditor({
   useEffect(
     () => () => {
       const pending = mediaRef.current;
-      if (
-        !committed.current &&
-        pending?.status === "local-demo" &&
-        pending.id !== originalMedia?.id
-      )
-        void DemoMediaService.remove(pending).catch(() => undefined);
+      const pendingVideo = videoRef.current;
+      if (!committed.current && pendingVideo && pendingVideo.id !== originalVideo?.id)
+        void AwarenessMediaService.remove(pendingVideo).catch(() => undefined);
+      if (!committed.current && pending?.status === "ready" && pending.id !== originalMedia?.id)
+        void AwarenessMediaService.remove(pending).catch(() => undefined);
     },
-    [originalMedia?.id],
+    [originalMedia?.id, originalVideo?.id],
   );
   const changeMedia = (next: MediaAsset | undefined) => {
-    if (media?.status === "local-demo" && media.id !== originalMedia?.id && media.id !== next?.id)
-      void DemoMediaService.remove(media).catch(() => undefined);
+    if (media?.status === "ready" && media.id !== originalMedia?.id && media.id !== next?.id)
+      void AwarenessMediaService.remove(media).catch(() => undefined);
     setMedia(next);
   };
   const submit = async (event: FormEvent) => {
@@ -556,9 +562,12 @@ function AwarenessEditor({
       toast.error("Video source must be a complete http(s) URL.");
       return;
     }
-    const id = original?.id ?? `${kind.slice(0, 2)}-${Date.now()}`;
+    const id = original?.id ?? crypto.randomUUID();
     const common = {
       id,
+      ...(original?.version ? { version: original.version } : {}),
+      language: original?.language ?? "en",
+      featured: original?.featured ?? false,
       slug: cleanSlug,
       title: cleanTitle,
       status,
@@ -643,6 +652,7 @@ function AwarenessEditor({
           .filter(Boolean),
         ...(sourceUrl ? { sourceUrl } : {}),
         poster: media,
+        video,
         ...(original && "posterUrl" in original && original.posterUrl
           ? { posterUrl: original.posterUrl }
           : {}),
@@ -651,8 +661,6 @@ function AwarenessEditor({
     try {
       await onSave(record);
       committed.current = true;
-      if (originalMedia?.status === "local-demo" && originalMedia.id !== media?.id)
-        await DemoMediaService.remove(originalMedia).catch(() => undefined);
       toast.success(original ? "Awareness content updated" : "Awareness content created");
       onClose();
     } catch (error) {
@@ -809,6 +817,14 @@ function AwarenessEditor({
           )}
           {kind === "videos" && (
             <>
+              <AwarenessVideoField
+                asset={video}
+                onChange={(next) => {
+                  if (video && video.id !== originalVideo?.id && video.id !== next?.id)
+                    void AwarenessMediaService.remove(video).catch(() => undefined);
+                  setVideo(next);
+                }}
+              />
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-semibold">
                   Duration (m:ss)
@@ -860,6 +876,7 @@ function AwarenessEditor({
           )}
           {needsMedia && (
             <MediaField
+              storage="awareness"
               label={
                 kind === "videos" ? "Video poster image" : "Featured image / downloadable asset"
               }
@@ -920,6 +937,10 @@ function PreviewContent({ record }: { record: AwarenessRecord }) {
           ? record.posterUrl
           : undefined;
   const src = useMediaUrl(media, fallback);
+  const videoSrc = useMediaUrl(
+    "video" in record ? record.video : undefined,
+    "sourceUrl" in record ? record.sourceUrl : undefined,
+  );
   const detail =
     "body" in record
       ? (record.body ?? [])
@@ -948,6 +969,16 @@ function PreviewContent({ record }: { record: AwarenessRecord }) {
         />
       )}
       <p className="text-lg text-muted-foreground">{recordSummary(record)}</p>
+      {videoSrc && (
+        <video
+          controls
+          preload="metadata"
+          src={videoSrc}
+          poster={src}
+          aria-label={record.title}
+          className="aspect-video w-full rounded-xl bg-primary"
+        />
+      )}
       {detail.length > 0 && (
         <div className="grid gap-3 rounded-xl border bg-muted/30 p-5">
           {detail.map((part, index) => (

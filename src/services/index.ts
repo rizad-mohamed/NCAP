@@ -79,11 +79,12 @@ export function normalizeRepositoryError(error: unknown, status?: number): Repos
 }
 
 export interface RepositoryCollection<T extends { id: string }> {
+  scope?: string;
   snapshot?(): T[];
   list(signal?: AbortSignal): Promise<T[]>;
   get(id: string, signal?: AbortSignal): Promise<T | null>;
   save(record: T, signal?: AbortSignal): Promise<T>;
-  remove(id: string, signal?: AbortSignal): Promise<void>;
+  remove(id: string, signal?: AbortSignal, version?: number): Promise<void>;
   replace(records: T[], signal?: AbortSignal): Promise<void>;
 }
 

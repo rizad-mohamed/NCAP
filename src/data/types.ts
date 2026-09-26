@@ -129,7 +129,13 @@ export interface Quiz {
   difficulty: Difficulty;
 }
 
-export interface Article {
+export interface AwarenessMetadata {
+  version?: number;
+  language?: "en" | "si" | "ta";
+  featured?: boolean;
+}
+
+export interface Article extends AwarenessMetadata {
   id: string;
   slug: string;
   title: string;
@@ -146,7 +152,7 @@ export interface Article {
   order?: number;
 }
 
-export interface CyberTip {
+export interface CyberTip extends AwarenessMetadata {
   id: string;
   slug?: string;
   title: string;
@@ -159,7 +165,7 @@ export interface CyberTip {
   order?: number;
 }
 
-export interface NewsUpdate {
+export interface NewsUpdate extends AwarenessMetadata {
   id: string;
   slug?: string;
   title: string;
@@ -173,7 +179,7 @@ export interface NewsUpdate {
   order?: number;
 }
 
-export interface BestPractice {
+export interface BestPractice extends AwarenessMetadata {
   id: string;
   slug?: string;
   title: string;
@@ -187,7 +193,7 @@ export interface BestPractice {
   order?: number;
 }
 
-export interface Poster {
+export interface Poster extends AwarenessMetadata {
   id: string;
   slug?: string;
   title: string;
@@ -203,7 +209,7 @@ export interface Poster {
   order?: number;
 }
 
-export interface Infographic {
+export interface Infographic extends AwarenessMetadata {
   id: string;
   slug?: string;
   title: string;
@@ -219,7 +225,8 @@ export interface Infographic {
   order?: number;
 }
 
-export interface VideoResource {
+export interface VideoResource extends AwarenessMetadata {
+  video?: VideoAsset | undefined;
   id: string;
   slug?: string;
   title: string;

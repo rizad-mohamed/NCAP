@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -37,7 +37,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useMediaUrl } from "@/components/common/MediaField";
 import { useRepository } from "@/services/repository-provider";
-import { useRepositoryList } from "@/services/query-hooks";
+import { useRepositoryRecord } from "@/services/query-hooks";
+import { useAwarenessPage, useAwarenessSummary } from "@/services/awareness-hooks";
+import { AwarenessMediaService } from "@/services/awareness-media";
 
 export { HomePage } from "@/features/public/home/HomePage";
 
@@ -46,29 +48,61 @@ const btn =
 const btnOutline =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-6 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
 export function AwarenessHubPage() {
-  const repository = useRepository();
-  const { data: articles = [] } = useRepositoryList(repository, "articles");
-  const { data: tips = [] } = useRepositoryList(repository, "cyberTips");
-  const { data: news = [] } = useRepositoryList(repository, "newsUpdates");
-  const { data: bestPractices = [] } = useRepositoryList(repository, "bestPractices");
-  const { data: posters = [] } = useRepositoryList(repository, "posters");
-  const { data: infographics = [] } = useRepositoryList(repository, "infographics");
-  const { data: videos = [] } = useRepositoryList(repository, "videos");
-  const featured = articles.find((article) => article.status === "Published");
+  const summary = useAwarenessSummary();
+  const featured = summary.data?.featured as Article | null;
+  const count = (kind: keyof NonNullable<typeof summary.data>["kinds"]) =>
+    summary.data?.kinds[kind]?.count ?? 0;
+  if (summary.isPending || summary.error) return <AwarenessQueryState query={summary} />;
   const categories = [
-    [FileText, "Articles", "In-depth guidance for common online risks.", "/awareness/articles", articles.filter((item) => item.status === "Published").length],
-    [Lightbulb, "Cyber tips", "Actions you can apply in under five minutes.", "/awareness/tips", tips.filter((item) => (item.status ?? "Published") === "Published").length],
+    [
+      FileText,
+      "Articles",
+      "In-depth guidance for common online risks.",
+      "/awareness/articles",
+      count("articles"),
+    ],
+    [
+      Lightbulb,
+      "Cyber tips",
+      "Actions you can apply in under five minutes.",
+      "/awareness/tips",
+      count("cyberTips"),
+    ],
     [
       Newspaper,
       "Demo updates",
       "Clearly labelled NCAP platform and learning updates.",
       "/awareness/news",
-      news.filter((item) => (item.status ?? "Published") === "Published").length,
+      count("newsUpdates"),
     ],
-    [ListChecks, "Best practices", "Step-by-step security routines.", "/awareness/best-practices", bestPractices.filter((item) => (item.status ?? "Published") === "Published").length],
-    [Download, "Posters", "Printable resources for schools and communities.", "/awareness/posters", posters.filter((item) => item.status === "Published").length],
-    [Sparkles, "Infographics", "Visual explanations of key concepts.", "/awareness/infographics", infographics.filter((item) => (item.status ?? "Published") === "Published").length],
-    [Video, "Videos", "Videos, chapters, and accessible transcripts.", "/awareness/videos", videos.filter((item) => (item.status ?? "Published") === "Published").length],
+    [
+      ListChecks,
+      "Best practices",
+      "Step-by-step security routines.",
+      "/awareness/best-practices",
+      count("bestPractices"),
+    ],
+    [
+      Download,
+      "Posters",
+      "Printable resources for schools and communities.",
+      "/awareness/posters",
+      count("posters"),
+    ],
+    [
+      Sparkles,
+      "Infographics",
+      "Visual explanations of key concepts.",
+      "/awareness/infographics",
+      count("infographics"),
+    ],
+    [
+      Video,
+      "Videos",
+      "Videos, chapters, and accessible transcripts.",
+      "/awareness/videos",
+      count("videos"),
+    ],
   ] as const;
   return (
     <div className="container-ncap py-12">
@@ -105,7 +139,9 @@ export function AwarenessHubPage() {
             <div className="p-6">
               <h2 className="text-xl font-semibold">{title}</h2>
               <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">{text}</p>
-              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{count} published</p>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                {count} published
+              </p>
               <span className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
                 Explore{" "}
                 <ArrowRight
@@ -165,6 +201,7 @@ function FilterBar({
         <span className="sr-only">Search resources</span>
         <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
         <input
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
@@ -186,38 +223,21 @@ function FilterBar({
 }
 
 export function ArticlesPage() {
-  const repository = useRepository();
-  const { data: articles = [] } = useRepositoryList(repository, "articles");
   const [search, setSearch] = useState("");
   const [topic, setTopic] = useState("All");
   const [sort, setSort] = useState("Newest");
-  const articleTopics = useMemo(
-    () => [
-      "All",
-      ...new Set(
-        articles
-          .filter((article) => article.status === "Published")
-          .map((article) => article.category),
-      ),
-    ],
-    [articles],
-  );
-  const filtered = useMemo(
-    () =>
-      articles
-        .filter(
-          (a) =>
-            a.status === "Published" &&
-            (topic === "All" || a.category === topic) &&
-            `${a.title} ${a.summary}`.toLowerCase().includes(search.toLowerCase()),
-        )
-        .sort((a, b) =>
-          sort === "Newest"
-            ? b.publishedAt.localeCompare(a.publishedAt)
-            : a.title.localeCompare(b.title),
-        ),
-    [articles, search, topic, sort],
-  );
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [search, topic, sort]);
+  const summary = useAwarenessSummary();
+  const query = useAwarenessPage("articles", {
+    search,
+    topic: topic === "All" ? "" : topic,
+    sort: sort === "Newest" ? "newest" : "title",
+    offset: page * 24,
+    limit: 24,
+  });
+  const articleTopics = ["All", ...(summary.data?.kinds.articles?.topics ?? [])];
+  const filtered = (query.data?.items ?? []) as Article[];
   return (
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: "Articles" }]} />
@@ -235,7 +255,7 @@ export function ArticlesPage() {
       />
       <div className="mt-4 flex justify-between text-sm text-muted-foreground">
         <span>
-          {filtered.length} article{filtered.length === 1 ? "" : "s"}
+          {query.data?.total ?? 0} article{query.data?.total === 1 ? "" : "s"}
         </span>
         <label>
           Sort{" "}
@@ -249,7 +269,9 @@ export function ArticlesPage() {
           </select>
         </label>
       </div>
-      {filtered.length ? (
+      {query.isPending || query.error ? (
+        <AwarenessQueryState query={query} />
+      ) : filtered.length ? (
         <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((a, i) => (
             <ArticleCard key={a.id} article={a} accent={i === 0} />
@@ -275,6 +297,7 @@ export function ArticlesPage() {
           />
         </div>
       )}
+      <AwarenessPagination page={page} total={query.data?.total ?? 0} setPage={setPage} />
     </ContentContainer>
   );
 }
@@ -326,14 +349,14 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
 
 export function ArticleDetailPage({ slug }: { slug: string }) {
   const repository = useRepository();
-  const { data: articles = [] } = useRepositoryList(repository, "articles");
-  const article = articles.find((a) => a.slug === slug && a.status === "Published");
+  const query = useRepositoryRecord(repository, "articles", slug);
+  const article = query.data;
+  const relatedQuery = useAwarenessPage("articles", { topic: article?.category ?? "", limit: 4 });
+  if (query.isPending || query.error) return <AwarenessQueryState query={query} />;
   if (!article) return <NotFoundContent />;
-  const related = articles
-    .filter(
-      (a) => a.status === "Published" && a.category === article.category && a.id !== article.id,
-    )
-    .slice(0, 3);
+  const related = (relatedQuery.data?.items ?? [])
+    .filter((a) => a.id !== article.id)
+    .slice(0, 3) as Article[];
   return (
     <ContentContainer narrow>
       <PageCrumbs
@@ -413,13 +436,28 @@ export function ResourceListingPage({
   const [topic, setTopic] = useState("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  const repository = useRepository();
-  const { data: posters = [] } = useRepositoryList(repository, "posters");
-  const { data: infographics = [] } = useRepositoryList(repository, "infographics");
-  const { data: tips = [] } = useRepositoryList(repository, "cyberTips");
-  const { data: news = [] } = useRepositoryList(repository, "newsUpdates");
-  const { data: bestPractices = [] } = useRepositoryList(repository, "bestPractices");
-  const { data: videos = [] } = useRepositoryList(repository, "videos");
+  const backendKind = (
+    {
+      tips: "cyberTips",
+      news: "newsUpdates",
+      "best-practices": "bestPractices",
+      posters: "posters",
+      infographics: "infographics",
+      videos: "videos",
+    } as const
+  )[kind];
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    setPage(0);
+    setSelected(null);
+  }, [search, topic, kind]);
+  const summary = useAwarenessSummary();
+  const query = useAwarenessPage(backendKind, {
+    search,
+    topic: topic === "All" ? "" : topic,
+    offset: page * 24,
+    limit: 24,
+  });
   const definitions = {
     tips: ["Cyber tips", "Small actions, meaningful protection."],
     news: [
@@ -432,46 +470,27 @@ export function ResourceListingPage({
     ],
     posters: [
       "Awareness posters",
-      "Local printable SVG resources for classrooms, workplaces, and communities.",
+      "Printable resources for classrooms, workplaces, and communities.",
     ],
-    infographics: [
-      "Infographics",
-      "Open accessible visual explainers and download the local demo asset.",
+    infographics: ["Infographics", "Open accessible visual explainers and download the resource."],
+    videos: [
+      "Video learning",
+      "Videos and text previews with useful chapters and full transcripts.",
     ],
-    videos: ["Video learning", "Demo media experiences with useful chapters and full transcripts."],
   } as const;
   const [title, description] = definitions[kind];
-  const data =
-    kind === "tips"
-      ? tips.filter((item) => (item.status ?? "Published") === "Published")
-      : kind === "news"
-        ? news.filter((item) => (item.status ?? "Published") === "Published")
-        : kind === "best-practices"
-          ? bestPractices.filter((item) => (item.status ?? "Published") === "Published")
-          : kind === "posters"
-            ? posters.filter((item) => item.status === "Published")
-            : kind === "infographics"
-              ? infographics.filter((item) => (item.status ?? "Published") === "Published")
-              : videos.filter((item) => (item.status ?? "Published") === "Published");
-  const query = search.trim().toLowerCase();
-  const items = data.filter((item) => {
-    const matchesTopic =
-      topic === "All" ||
-      ("topic" in item && item.topic === topic) ||
-      ("category" in item && item.category === topic);
-    const matchesSearch = !query || JSON.stringify(item).toLowerCase().includes(query);
-    return matchesTopic && matchesSearch;
-  });
-  const availableTopics = [
-    "All",
-    ...new Set(
-      data.flatMap((item) =>
-        "topic" in item ? [item.topic] : "category" in item ? [item.category] : [],
-      ),
-    ),
-  ];
-  const selectedVideo = videos.find((v) => v.id === selected);
-  const selectedInfo = infographics.find((v) => v.id === selected);
+  const items = query.data?.items ?? [];
+  const availableTopics = ["All", ...(summary.data?.kinds[backendKind]?.topics ?? [])];
+  const selectedVideo =
+    kind === "videos"
+      ? (items.find((v) => v.id === selected) as VideoResource | undefined)
+      : undefined;
+  const selectedInfo =
+    kind === "infographics"
+      ? (items.find((v) => v.id === selected) as Infographic | undefined)
+      : undefined;
+  const videoSrc = useMediaUrl(selectedVideo?.video, selectedVideo?.sourceUrl);
+  const videoPoster = useMediaUrl(selectedVideo?.poster, selectedVideo?.posterUrl);
   return (
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: title }]} />
@@ -513,7 +532,7 @@ export function ResourceListingPage({
           aria-live="polite"
         >
           <span>
-            {items.length} {items.length === 1 ? "resource" : "resources"} found
+            {query.data?.total ?? 0} {query.data?.total === 1 ? "resource" : "resources"} found
           </span>
           {(search || topic !== "All") && (
             <button
@@ -529,7 +548,9 @@ export function ResourceListingPage({
           )}
         </div>
       </div>
-      {items.length > 0 ? (
+      {query.isPending || query.error ? (
+        <AwarenessQueryState query={query} />
+      ) : items.length > 0 ? (
         <div className="stagger-grid mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((raw) => {
             if (kind === "tips") {
@@ -557,7 +578,14 @@ export function ResourceListingPage({
                   <p className="mt-2 text-muted-foreground">{item.summary}</p>
                   <details className="mt-5 rounded-lg bg-muted p-4 text-sm">
                     <summary className="cursor-pointer font-semibold">Read more</summary>
-                    {(item.body?.length ? item.body : ["This demonstration update is not a report of a real-world incident."]).map((paragraph, index) => <p key={`${item.id}-${index}`} className="mt-2 text-muted-foreground">{paragraph}</p>)}
+                    {(item.body?.length
+                      ? item.body
+                      : ["This demonstration update is not a report of a real-world incident."]
+                    ).map((paragraph, index) => (
+                      <p key={`${item.id}-${index}`} className="mt-2 text-muted-foreground">
+                        {paragraph}
+                      </p>
+                    ))}
                   </details>
                 </article>
               );
@@ -641,9 +669,16 @@ export function ResourceListingPage({
                 <button
                   onClick={() => setSelected(item.id)}
                   className="group relative block aspect-video w-full bg-primary text-white"
-                  aria-label={`${item.sourceUrl ? "Open video" : "Open transcript preview"} ${item.title}`}
+                  aria-label={`${item.sourceUrl || item.video ? "Open video" : "Open transcript preview"} ${item.title}`}
                 >
-                  {(item.poster || item.posterUrl) && <MediaImage asset={item.poster} fallback={item.posterUrl} alt="" className="absolute inset-0 size-full object-cover opacity-45" />}
+                  {(item.poster || item.posterUrl) && (
+                    <MediaImage
+                      asset={item.poster}
+                      fallback={item.posterUrl}
+                      alt=""
+                      className="absolute inset-0 size-full object-cover opacity-45"
+                    />
+                  )}
                   <span className="absolute inset-0 grid-motif opacity-20" />
                   <span className="absolute inset-0 grid place-items-center">
                     <span className="grid size-14 place-items-center rounded-full bg-white text-primary shadow-overlay transition group-hover:scale-105">
@@ -657,7 +692,9 @@ export function ResourceListingPage({
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <span className="meta text-violet">{item.category}</span>
-                    <DemoTag label={item.sourceUrl ? "Video" : "Transcript preview"} />
+                    <DemoTag
+                      label={item.sourceUrl || item.video ? "Video" : "Transcript preview"}
+                    />
                   </div>
                   <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
                   <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
@@ -665,7 +702,7 @@ export function ResourceListingPage({
                     onClick={() => setSelected(item.id)}
                     className="mt-4 inline-flex min-h-10 items-center font-semibold text-primary"
                   >
-                    {item.sourceUrl ? "Open video" : "Read transcript"}{" "}
+                    {item.sourceUrl || item.video ? "Open video" : "Read transcript"}{" "}
                     <ArrowRight className="ml-2 size-4" />
                   </button>
                 </div>
@@ -694,6 +731,7 @@ export function ResourceListingPage({
           />
         </div>
       )}
+      <AwarenessPagination page={page} total={query.data?.total ?? 0} setPage={setPage} />
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           {selectedVideo && (
@@ -701,20 +739,47 @@ export function ResourceListingPage({
               <DialogHeader>
                 <DialogTitle>{selectedVideo.title}</DialogTitle>
                 <DialogDescription>
-                  {selectedVideo.sourceUrl
+                  {videoSrc
                     ? "Accessible video with chapters and a complete text transcript"
                     : "Text preview · Licensed video media has not been configured"}
                 </DialogDescription>
               </DialogHeader>
-              {selectedVideo.sourceUrl ? (
+              {videoSrc ? (
                 <video
                   controls
                   preload="metadata"
-                  poster={selectedVideo.posterUrl}
+                  poster={videoPoster}
                   className="aspect-video w-full rounded-xl bg-primary"
                   aria-label={selectedVideo.title}
+                  onError={async (event) => {
+                    const player = event.currentTarget;
+                    const lastRetry = Number(player.dataset["retryAt"] ?? 0);
+                    if (!selectedVideo.video || Date.now() - lastRetry < 30000) {
+                      toast.error(
+                        "The video could not be played. Please try again or read the transcript.",
+                      );
+                      return;
+                    }
+                    player.dataset["retryAt"] = String(Date.now());
+                    const resumeAt = player.currentTime;
+                    try {
+                      const renewed = await AwarenessMediaService.objectUrl(selectedVideo.video);
+                      player.addEventListener(
+                        "loadedmetadata",
+                        () => {
+                          player.currentTime = resumeAt;
+                          void player.play().catch(() => undefined);
+                        },
+                        { once: true },
+                      );
+                      player.src = renewed;
+                      player.load();
+                    } catch {
+                      toast.error("The video is no longer available. Please reload.");
+                    }
+                  }}
                 >
-                  <source src={selectedVideo.sourceUrl} />
+                  <source src={videoSrc} />
                   Your browser does not support HTML5 video. Use the transcript below.
                 </video>
               ) : (
@@ -812,13 +877,30 @@ function MediaDownloadLink({
   className: string;
 }) {
   const src = useMediaUrl(asset, fallback);
-  if (!src) return null;
+  if (!src && !asset) return null;
   return (
     <a
-      href={src}
+      href={src || "#"}
       download={asset?.fileName ?? true}
       className={className}
-      onClick={() => toast.success("Resource download started")}
+      onClick={async (event) => {
+        if (!asset) return;
+        event.preventDefault();
+        try {
+          const url = await AwarenessMediaService.objectUrl(asset, true);
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Download failed");
+          const blobUrl = URL.createObjectURL(await response.blob());
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = asset.fileName;
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+          toast.success("Resource download started");
+        } catch {
+          toast.error("The resource could not be downloaded. Please try again.");
+        }
+      }}
     >
       <Download aria-hidden="true" />
       {label}
@@ -914,5 +996,50 @@ function ContentContainer({
 }) {
   return (
     <div className={cn("container-ncap py-10 md:py-14", narrow && "max-w-5xl")}>{children}</div>
+  );
+}
+
+export function AwarenessQueryState({
+  query,
+}: {
+  query: { isPending: boolean; error: Error | null; refetch: () => unknown };
+}) {
+  return (
+    <div className="container-ncap py-8" role={query.error ? "alert" : "status"}>
+      <p>{query.error ? query.error.message : "Loading Awareness resources…"}</p>
+      {query.error && (
+        <button className={btnOutline} onClick={() => void query.refetch()}>
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+function AwarenessPagination({
+  page,
+  total,
+  setPage,
+}: {
+  page: number;
+  total: number;
+  setPage: (page: number) => void;
+}) {
+  if (total <= 24) return null;
+  return (
+    <nav aria-label="Resource pages" className="mt-6 flex items-center gap-4">
+      <button className={btnOutline} disabled={page === 0} onClick={() => setPage(page - 1)}>
+        Previous
+      </button>
+      <span>
+        Page {page + 1} of {Math.ceil(total / 24)}
+      </span>
+      <button
+        className={btnOutline}
+        disabled={(page + 1) * 24 >= total}
+        onClick={() => setPage(page + 1)}
+      >
+        Next
+      </button>
+    </nav>
   );
 }

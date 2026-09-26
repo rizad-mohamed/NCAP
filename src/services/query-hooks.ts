@@ -15,7 +15,10 @@ type CollectionRecord<K extends CollectionName> =
 export function useRepositoryList<K extends CollectionName>(repository: NcapRepository, name: K) {
   const queryClient = useQueryClient();
   const collection = repository[name] as unknown as RepositoryCollection<CollectionRecord<K>>;
-  const queryKey = useMemo(() => repositoryKeys.collection(name), [name]);
+  const queryKey = useMemo(
+    () => [...repositoryKeys.collection(name), collection.scope ?? "local"],
+    [name, collection.scope],
+  );
   const snapshot = collection.snapshot?.();
   const query = useQuery({
     queryKey,
@@ -39,7 +42,7 @@ export function useRepositoryRecord<K extends CollectionName>(
 ) {
   const collection = repository[name] as unknown as RepositoryCollection<CollectionRecord<K>>;
   return useQuery({
-    queryKey: repositoryKeys.record(name, id),
+    queryKey: [...repositoryKeys.record(name, id), collection.scope ?? "local"],
     queryFn: ({ signal }) =>
       collection.get(id, signal).catch((error) => Promise.reject(normalizeRepositoryError(error))),
     enabled: Boolean(id),
@@ -57,6 +60,7 @@ export function useSaveRepositoryRecord<K extends CollectionName>(
       collection.save(record).catch((error) => Promise.reject(normalizeRepositoryError(error))),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
+      void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },
   });
 }
@@ -68,10 +72,17 @@ export function useRemoveRepositoryRecord<K extends CollectionName>(
   const queryClient = useQueryClient();
   const collection = repository[name] as unknown as RepositoryCollection<CollectionRecord<K>>;
   return useMutation({
-    mutationFn: (id: string) =>
-      collection.remove(id).catch((error) => Promise.reject(normalizeRepositoryError(error))),
+    mutationFn: (input: string | { id: string; version: number | undefined }) =>
+      collection
+        .remove(
+          typeof input === "string" ? input : input.id,
+          undefined,
+          typeof input === "string" ? undefined : input.version,
+        )
+        .catch((error) => Promise.reject(normalizeRepositoryError(error))),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
+      void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },
   });
 }

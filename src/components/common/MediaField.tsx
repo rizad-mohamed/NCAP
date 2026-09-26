@@ -3,6 +3,7 @@ import { ImagePlus, LoaderCircle, RefreshCw, Trash2, Upload } from "lucide-react
 import { toast } from "sonner";
 import type { MediaAsset, VideoAsset } from "@/data/types";
 import { DemoMediaService, MEDIA_LIMITS } from "@/services/media";
+import { AwarenessMediaService } from "@/services/awareness-media";
 import { cn } from "@/lib/utils";
 
 export function useMediaUrl(asset?: MediaAsset | VideoAsset, fallback?: string) {
@@ -15,21 +16,36 @@ export function useMediaUrl(asset?: MediaAsset | VideoAsset, fallback?: string) 
       setUrl(fallback ?? "");
       return;
     }
-    void DemoMediaService.objectUrl(asset)
-      .then((next) => {
-        if (!active) {
-          if (next) URL.revokeObjectURL(next);
-          return;
-        }
-        if (next) {
-          current = next;
-          setUrl(next);
-        } else setUrl(fallback ?? "");
-      })
-      .catch(() => {
-        if (active) setUrl(fallback ?? "");
-      });
+    const service = asset.status === "ready" ? AwarenessMediaService : DemoMediaService;
+    const refresh = () =>
+      service
+        .objectUrl(asset)
+        .then((next) => {
+          if (!active) {
+            if (next) URL.revokeObjectURL(next);
+            return;
+          }
+          if (next) {
+            current = next;
+            setUrl(next);
+          } else setUrl(fallback ?? "");
+        })
+        .catch(() => {
+          if (active) {
+            setUrl(fallback ?? "");
+            if (asset.status === "ready")
+              toast.error("This media could not be loaded. Please try again.", {
+                id: `awareness-media-${asset.id}`,
+              });
+          }
+        });
+    void refresh();
+    const timer =
+      asset.status === "ready" && !asset.mimeType.startsWith("video/")
+        ? window.setInterval(() => void refresh(), 45000)
+        : undefined;
     return () => {
+      if (timer) window.clearInterval(timer);
       active = false;
       if (current) URL.revokeObjectURL(current);
     };
@@ -44,6 +60,7 @@ export function MediaField({
   initialAlt = "",
   guidance,
   onChange,
+  storage = "demo",
 }: {
   label?: string;
   asset?: MediaAsset | undefined;
@@ -51,6 +68,7 @@ export function MediaField({
   initialAlt?: string;
   guidance?: string;
   onChange: (asset: MediaAsset | undefined) => void;
+  storage?: "demo" | "awareness";
 }) {
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -83,10 +101,17 @@ export function MediaField({
     if (!file) return;
     setBusy(true);
     try {
-      const saved = await DemoMediaService.save(file, altText);
+      const saved =
+        storage === "awareness"
+          ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
+          : await DemoMediaService.save(file, altText);
       onChange(saved);
       setFile(null);
-      toast.success("Image stored in local demo media storage");
+      toast.success(
+        storage === "awareness"
+          ? "Image uploaded. Save the record to attach it."
+          : "Image stored in local demo media storage",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The image could not be prepared.");
     } finally {
@@ -115,8 +140,8 @@ export function MediaField({
             </p>
             {asset && (
               <p className="text-xs text-muted-foreground">
-                {asset.width} × {asset.height} · {(asset.sizeBytes / 1024).toFixed(0)} KiB · Local
-                demo media
+                {asset.width} × {asset.height} · {(asset.sizeBytes / 1024).toFixed(0)} KiB ·{" "}
+                {storage === "awareness" ? "Uploaded media" : "Local demo media"}
               </p>
             )}
             <div className="flex flex-wrap gap-2">

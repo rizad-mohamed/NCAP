@@ -1,3 +1,4 @@
+import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -636,9 +637,7 @@ function ImpactStrip() {
   const store = useNcap();
   const modules = useModules();
   const publishedLessons = store.lessons.filter((lesson) => lesson.status === "Published").length;
-  const publishedArticles = store.articles.filter(
-    (article) => article.status === "Published",
-  ).length;
+  const publishedArticles = useAwarenessSummary().data?.kinds.articles?.count ?? "—";
   return (
     <section className="container-ncap pb-3 pt-1" aria-label="NCAP demonstration impact indicators">
       <div className="grid overflow-hidden rounded-2xl bg-primary px-6 py-5 text-white shadow-raised md:grid-cols-[1.75fr_repeat(3,.65fr)] md:items-center md:px-8">

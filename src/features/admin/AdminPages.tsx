@@ -1,3 +1,4 @@
+import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
@@ -120,6 +121,7 @@ const seedTopicNames: Topic[] = [
 ];
 
 export function AdminDashboardPage() {
+  const awareness = useAwarenessSummary();
   const s = useNcap();
   const metrics = [
     { label: "Total demo users", value: s.users.length, icon: <Users />, tone: "violet" as const },
@@ -188,7 +190,7 @@ export function AdminDashboardPage() {
             {[
               ["Published lessons", s.lessons.filter((x) => x.status === "Published").length],
               ["Draft lessons", s.lessons.filter((x) => x.status === "Draft").length],
-              ["Published articles", s.articles.filter((x) => x.status === "Published").length],
+              ["Published articles", awareness.data?.kinds.articles?.count ?? "—"],
               ["Question bank", s.questions.length],
               ["Active announcements", s.announcements.filter((x) => x.active).length],
             ].map(([label, value]) => (
@@ -486,12 +488,6 @@ export function AdminTopicsPage() {
     const name = topic.name;
     return (
       store.lessons.some((item) => item.topic === name) ||
-      store.articles.some((item) => item.category === name) ||
-      store.cyberTips.some((item) => item.topic === name) ||
-      store.bestPractices.some((item) => item.topic === name) ||
-      store.posters.some((item) => item.topic === name) ||
-      store.infographics.some((item) => item.category === name) ||
-      store.videos.some((item) => item.category === name) ||
       store.questions.some((item) => item.topic === name)
     );
   };
@@ -540,36 +536,6 @@ export function AdminTopicsPage() {
           item.topic === original.name ? { ...item, topic: next.name } : item,
         ),
       );
-      store.setArticles(
-        store.articles.map((item) =>
-          item.category === original.name ? { ...item, category: next.name } : item,
-        ),
-      );
-      store.setCyberTips(
-        store.cyberTips.map((item) =>
-          item.topic === original.name ? { ...item, topic: next.name } : item,
-        ),
-      );
-      store.setBestPractices(
-        store.bestPractices.map((item) =>
-          item.topic === original.name ? { ...item, topic: next.name } : item,
-        ),
-      );
-      store.setPosters(
-        store.posters.map((item) =>
-          item.topic === original.name ? { ...item, topic: next.name } : item,
-        ),
-      );
-      store.setInfographics(
-        store.infographics.map((item) =>
-          item.category === original.name ? { ...item, category: next.name } : item,
-        ),
-      );
-      store.setVideos(
-        store.videos.map((item) =>
-          item.category === original.name ? { ...item, category: next.name } : item,
-        ),
-      );
       store.setQuestions(
         store.questions.map((item) =>
           item.topic === original.name ? { ...item, topic: next.name } : item,
@@ -601,7 +567,7 @@ export function AdminTopicsPage() {
       <PageHeader
         eyebrow="Administration · Taxonomy"
         title="Topics"
-        description="Maintain the shared topic taxonomy used by learning, awareness, quizzes, search, and reports."
+        description="Maintain the topic taxonomy used by learning, quizzes, search, and reports. Awareness topics are maintained on each resource."
         actions={
           <button className={primary} onClick={() => open("new")}>
             <Plus />
