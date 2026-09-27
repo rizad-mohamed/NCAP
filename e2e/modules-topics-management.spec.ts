@@ -7,7 +7,7 @@ test("administered modules and topics drive the learner catalogue lifecycle", as
   test.setTimeout(120_000);
   test.skip(
     testInfo.project.name !== "chromium",
-    "The complete local repository lifecycle runs once.",
+    "The complete backend lifecycle runs once against disposable staging data.",
   );
   const topic = "Community Digital Safety";
   const title = "Community Device Safety";

@@ -1,6 +1,7 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { loginAs } from "./helpers/auth";
+import { recordVideoFixture } from "./helpers/video";
 
 async function openWorkspaceLink(page: Page, role: "admin" | "learner", name: string) {
   if ((page.viewportSize()?.width ?? 1440) < 1024) {
@@ -70,7 +71,7 @@ test("administrator can add an optional video and author lesson blocks without J
   await expect(dialog).not.toBeVisible();
 
   await loginAs(page, "learner");
-  await expect(page.getByRole("heading", { level: 1, name: "Welcome back, Demo" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Welcome back,/ })).toBeVisible();
   await openRiskLesson(page);
 
   const player = page.getByTitle(`${lessonTitle} video`);
@@ -105,35 +106,7 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   let bytes: number[];
   try {
     const recordingPage = generator ? await generator.newPage() : page;
-    bytes = await recordingPage.evaluate(async (mimeType) => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 320;
-      canvas.height = 180;
-      const context = canvas.getContext("2d")!;
-      const stream = canvas.captureStream(15);
-      const recorder = new MediaRecorder(stream, {
-        mimeType:
-          mimeType === "video/mp4" ? "video/mp4;codecs=avc1.42E01E" : "video/webm;codecs=vp8",
-      });
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (event) => chunks.push(event.data);
-      const stopped = new Promise<void>((resolve) => {
-        recorder.onstop = () => resolve();
-      });
-      recorder.start();
-      const paint = window.setInterval(() => {
-        context.fillStyle = "#0f172a";
-        context.fillRect(0, 0, 320, 180);
-        context.fillStyle = "#ffffff";
-        context.fillText(`NCAP video ${Date.now()}`, 30, 90);
-      }, 65);
-      await new Promise((resolve) => window.setTimeout(resolve, 3000));
-      recorder.stop();
-      await stopped;
-      window.clearInterval(paint);
-      stream.getTracks().forEach((track) => track.stop());
-      return Array.from(new Uint8Array(await new Blob(chunks, { type: mimeType }).arrayBuffer()));
-    }, mimeType);
+    bytes = await recordVideoFixture(recordingPage, mimeType);
   } finally {
     await generator?.close();
   }
@@ -172,6 +145,8 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   await page.getByRole("button", { name: `Edit ${title}` }).click();
   const dialog = page.getByRole("dialog", { name: "Edit lesson" });
   await dialog.getByLabel("Video source").selectOption("upload");
+  const removeVideo = dialog.getByRole("button", { name: "Remove video" });
+  if (await removeVideo.isVisible()) await removeVideo.click();
   await dialog.getByLabel("Choose video", { exact: true }).setInputFiles({
     name: mimeType === "video/mp4" ? "lesson.mp4" : "lesson.webm",
     mimeType,
@@ -188,6 +163,7 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   ]);
   expect(uploadOutcome).toBe("ready");
   await expect(dialog.getByLabel("Uploaded lesson video preview")).toBeVisible({ timeout: 20_000 });
+  await dialog.getByLabel("Video transcript").fill("");
   await dialog.getByRole("button", { name: "Save record" }).click();
   await expect(dialog).toBeVisible();
   await dialog
@@ -199,7 +175,7 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   await dialog.getByRole("button", { name: "Remove video" }).click();
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await loginAs(page, "learner");
-  await expect(page.getByRole("heading", { level: 1, name: "Welcome back, Demo" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Welcome back,/ })).toBeVisible();
   await openRiskLesson(page);
   const player = page.getByLabel(`${title} video`, { exact: true });
   await expect(player).toBeVisible();
@@ -216,8 +192,15 @@ test("uploaded lesson videos play, retain speed controls, and survive edit cance
   await expect
     .poll(() => player.evaluate((node) => (node as HTMLVideoElement).currentTime))
     .toBeGreaterThan(0.5);
+  const resumeSaved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      !!response.request().postData()?.includes("resume") &&
+      response.ok(),
+  );
   await player.evaluate((node) => (node as HTMLVideoElement).pause());
+  await resumeSaved;
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByText("Resumed at")).toBeVisible();
-  await expect(player).toHaveAttribute("src", /^blob:/);
+  await expect(player).toHaveAttribute("src", /\/storage\/v1\/object\/sign\/learning-media\//);
 });

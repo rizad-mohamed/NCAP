@@ -1,5 +1,7 @@
 # Supabase authentication setup
 
+For persistent Learning content, progress, bookmarks and media, follow [Learning deployment and operations](LEARNING.md).
+
 For the persistent Awareness module, follow [Awareness deployment and operations](AWARENESS.md)
 after applying the authentication migration below.
 
