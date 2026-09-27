@@ -77,10 +77,20 @@ export const learningListSchema = z.object({
 });
 export type LearningListInput = z.input<typeof learningListSchema>;
 export const learnerMutationSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("complete"), lessonId: learningId }),
-  z.object({ action: z.literal("bookmark"), lessonId: learningId, saved: z.boolean() }),
+  z.object({
+    action: z.literal("complete"),
+    lessonId: learningId,
+    expectedUserId: z.string().uuid().optional(),
+  }),
+  z.object({
+    action: z.literal("bookmark"),
+    lessonId: learningId,
+    saved: z.boolean(),
+    expectedUserId: z.string().uuid().optional(),
+  }),
   z.object({
     action: z.literal("resume"),
+    expectedUserId: z.string().uuid().optional(),
     lessonId: learningId,
     source: z.string().max(2048),
     seconds: z.number().finite().min(0).max(14400),

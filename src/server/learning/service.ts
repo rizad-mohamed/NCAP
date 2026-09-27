@@ -87,8 +87,13 @@ export async function updateLearningState(
   client: LearningClient,
   input: unknown,
 ): Promise<LearningState> {
-  await requireLearner(client);
-  const payload = learnerMutationSchema.parse(input);
+  const userId = await requireLearner(client);
+  const { expectedUserId, ...payload } = learnerMutationSchema.parse(input);
+  if (expectedUserId && expectedUserId !== userId)
+    throw new RepositoryError(
+      "conflict",
+      "Your signed-in account changed. Reload before saving learning progress.",
+    );
   const { data, error } = await client.rpc("mutate_learning_state", { payload });
   learningDatabaseError(error);
   return data as unknown as LearningState;

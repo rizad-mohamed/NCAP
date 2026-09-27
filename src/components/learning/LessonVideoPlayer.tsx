@@ -41,12 +41,13 @@ export function LessonVideoPlayer({
     loadedSource.current = "";
     lastStoredSecond.current = -1;
     const player = element.current;
+    const saveOnExit = saver.current;
     return () => {
       if (authenticated && player && !player.ended && Number.isFinite(player.currentTime)) {
-        void saver.current(lessonId, sourceKey ?? "", player.currentTime).catch(() => undefined);
+        void saveOnExit(lessonId, sourceKey ?? "", player.currentTime).catch(() => undefined);
       }
     };
-  }, [lessonId, learnerKey, sourceKey, authenticated]);
+  }, [lessonId, learnerKey, sourceKey, sourceUrl, authenticated]);
   const loadProgress = () => {
     const player = element.current;
     if (!player) return;

@@ -1397,7 +1397,22 @@ function ContentEditor({
                 Module
                 <select
                   value={moduleId}
-                  onChange={(e) => setModuleId(e.target.value)}
+                  onChange={(e) => {
+                    const nextModuleId = e.target.value;
+                    setModuleId(nextModuleId);
+                    if (kind === "lessons")
+                      setLessonOrder(
+                        Math.max(
+                          0,
+                          ...s.lessons
+                            .filter(
+                              (lesson) =>
+                                lesson.moduleId === nextModuleId && lesson.id !== original?.id,
+                            )
+                            .map((lesson) => lesson.order),
+                        ) + 1,
+                      );
+                  }}
                   className={field}
                 >
                   {s.modules.map((m) => (

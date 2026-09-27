@@ -54,15 +54,21 @@ export function useLearningStore(user: AuthUser | null, admin: boolean) {
     learningError: modules.error ?? lessons.error ?? topics.error ?? (user ? state.error : null),
     learningSaving: mutation.isPending,
     async completeLesson(lessonId: string) {
-      await mutation.mutateAsync({ action: "complete", lessonId });
+      await mutation.mutateAsync({ action: "complete", lessonId, expectedUserId: user?.id });
     },
     async toggleBookmark(lessonId: string) {
       const saved = !learning.bookmarks.includes(lessonId);
-      await mutation.mutateAsync({ action: "bookmark", lessonId, saved });
+      await mutation.mutateAsync({ action: "bookmark", lessonId, saved, expectedUserId: user?.id });
       return saved;
     },
     async saveResume(lessonId: string, source: string, seconds: number) {
-      await mutation.mutateAsync({ action: "resume", lessonId, source, seconds });
+      await mutation.mutateAsync({
+        action: "resume",
+        lessonId,
+        source,
+        seconds,
+        expectedUserId: user?.id,
+      });
     },
   };
 }
