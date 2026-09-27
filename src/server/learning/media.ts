@@ -1,4 +1,4 @@
-﻿import { mediaInputSchema } from "@/domain/awareness";
+import { learningMediaInputSchema as mediaInputSchema } from "@/domain/learning-media";
 import { RepositoryError } from "@/services";
 import { sanitizeDisplayFileName } from "@/services/media";
 import { requireLearningAdmin, type LearningClient } from "./authorization";

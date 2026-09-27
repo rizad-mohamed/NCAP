@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { learningSchemas, learningListSchema, learnerMutationSchema } from "./learning";
+import { learningMediaInputSchema, LEARNING_VIDEO_MAX_BYTES } from "./learning-media";
 const module = {
   id: "m-one",
   topicId: "t-one",
@@ -65,6 +66,22 @@ describe("Learning input contracts", () => {
         status: "Published",
         video: { kind: "external", url: "https://example.org/video.mp4", transcript: "" },
       }).success,
+    ).toBe(false);
+  });
+  it("enforces the configured project upload limit before preparing media", () => {
+    const video = {
+      fileName: "lesson.webm",
+      mimeType: "video/webm",
+      sizeBytes: LEARNING_VIDEO_MAX_BYTES,
+      width: 320,
+      height: 180,
+      durationSeconds: 3,
+      altText: "",
+    };
+    expect(learningMediaInputSchema.safeParse(video).success).toBe(true);
+    expect(
+      learningMediaInputSchema.safeParse({ ...video, sizeBytes: LEARNING_VIDEO_MAX_BYTES + 1 })
+        .success,
     ).toBe(false);
   });
   it("bounds search, pagination and resume payloads", () => {

@@ -1,4 +1,5 @@
-﻿import type { MediaAsset, VideoAsset } from "@/data/types";
+import type { MediaAsset, VideoAsset } from "@/data/types";
+import { LEARNING_VIDEO_MAX_BYTES } from "@/domain/learning-media";
 import { validateMediaFile, validateVideoFile } from "./media";
 import { unwrapLearning } from "./learning-repository";
 import { RepositoryError } from "@/services";
@@ -10,6 +11,8 @@ import {
 } from "@/learning/learning.functions";
 export const LearningMediaService = {
   async save(file: File, altText = ""): Promise<MediaAsset | VideoAsset> {
+    if (file.size > LEARNING_VIDEO_MAX_BYTES)
+      throw new RepositoryError("validation", "Learning videos must be 50 MiB or smaller.");
     const metadata = file.type.startsWith("image/")
       ? await validateMediaFile(file)
       : await validateVideoFile(file);

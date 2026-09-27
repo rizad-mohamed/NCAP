@@ -163,7 +163,7 @@ export function LessonVideoField({
               <p className="mt-2 text-sm font-semibold">
                 {file?.name ?? "Choose an MP4 or WebM video"}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">Up to 100 MiB and four hours.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Up to 50 MiB and four hours.</p>
               <label
                 htmlFor={inputId}
                 className={cn(dashboardButton.secondary, "mt-3 cursor-pointer")}

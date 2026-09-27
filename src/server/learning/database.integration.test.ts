@@ -99,6 +99,9 @@ describe("Learning PostgreSQL migrations, RPC transactions and actual RLS", () =
     await db.exec(
       await readFile("supabase/migrations/202609270001_learning_maintenance.sql", "utf8"),
     );
+    await db.exec(
+      await readFile("supabase/migrations/202609270002_learning_upload_limit.sql", "utf8"),
+    );
     await db.query(
       "insert into auth.users(id,email) values ($1,'admin@test.invalid'),($2,'alice@test.invalid'),($3,'bob@test.invalid')",
       [admin, alice, bob],

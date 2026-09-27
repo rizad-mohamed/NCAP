@@ -1,4 +1,4 @@
-﻿// Operator-only: deploy the Edge Function first, then run this once or to rotate its secret.
+// Operator-only: deploy the Edge Function first, then run this once or to rotate its secret.
 import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 const { SUPABASE_URL, SUPABASE_ACCESS_TOKEN } = process.env;
@@ -41,12 +41,11 @@ do $$ declare secret_id uuid; begin
 end $$;`,
   )
   .join("\n");
-const sql = await readFile(
-  new URL("../supabase/operations/learning-cleanup.sql", import.meta.url),
-  "utf8",
-);
+const sql = (
+  await readFile(new URL("../supabase/operations/learning-cleanup.sql", import.meta.url), "utf8")
+).replace(/^\uFEFF/, "");
 await management("database/query", {
   query: `begin;\n${secrets}\n${sql}\ncommit;`,
   read_only: false,
 });
-console.log("Learning maintenance secret configured; hourly cleanup scheduled at minute 17 UTC.");
+console.log("Learning maintenance secret configured; hourly cleanup scheduled at minute 37 UTC.");

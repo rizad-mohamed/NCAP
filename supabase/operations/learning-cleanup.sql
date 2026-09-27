@@ -1,4 +1,4 @@
-﻿-- Run through scripts/setup-learning-cleanup.mjs after deploying the maintenance function.
+-- Run through scripts/setup-learning-cleanup.mjs after deploying the maintenance function.
 -- Secrets are stored in Vault by that operator script, never in this SQL file.
 create extension if not exists pg_cron;
 create extension if not exists pg_net with schema extensions;

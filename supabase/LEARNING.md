@@ -2,9 +2,11 @@
 
 Learning uses the existing authenticated Supabase server client and TanStack Start server functions. The application needs only `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `APP_URL`. Service credentials belong exclusively to maintenance tooling.
 
+The configured backend has been deployed. See [live deployment verification](LEARNING_VERIFICATION.md) for applied migrations, test evidence and outstanding release gates.
+
 ## Deploy
 
-1. Apply migrations in filename order, including `202609260002_learning.sql` and `202609270001_learning_maintenance.sql`, to a staging project first. The Learning migrations are transactional and depend on the authentication profile migration and Supabase's Storage schema. The maintenance migration explicitly grants the worker access to its cleanup queue, independently of project default privileges.
+1. Apply migrations in filename order: `202609260002_learning.sql`, `202609270001_learning_maintenance.sql`, and `202609270002_learning_upload_limit.sql`, to a staging project first. The Learning migrations are transactional and depend on the authentication profile migration and Supabase's Storage schema. The maintenance migration explicitly grants the worker access to its cleanup queue, independently of project default privileges. The upload-limit migration aligns Learning with the configured project's 50 MiB ceiling without changing other buckets or billing.
 2. Provision a Super Admin as described in [README.md](README.md). An empty installation supports authoring immediately. To import the bundled catalogue, run `npm run learning:seed -- --write`, then execute `learning-seed.sql` in the SQL Editor after setting the authenticated actor in that session:
 
    ```sql
@@ -39,7 +41,7 @@ React Query isolates caches by account and administrator/public context. Content
 
 ## Storage
 
-`learning-media` is private. JPEG/PNG/WebP images are limited to 5 MiB and 4096×4096; MP4/WebM videos to 100 MiB and four hours. Admin-only preparation creates an immutable path and signed upload token. Finalization checks actual object size/type, inspects file signatures/dimensions/duration, and rejects mismatched metadata. Published video lessons require transcripts. Replacement attaches the new asset transactionally and retires unreferenced old assets; lesson copies can share a video safely.
+`learning-media` is private. JPEG/PNG/WebP images are limited to 5 MiB and 4096×4096; MP4/WebM videos to 50 MiB and four hours. The configured project's upload ceiling is 50 MiB; Learning's UI, client validation, server validation, database constraint and bucket agree with that limit. Admin-only preparation creates an immutable path and signed upload token. Finalization checks actual object size/type, inspects file signatures/dimensions/duration, and rejects mismatched metadata. Published video lessons require transcripts. Replacement attaches the new asset transactionally and retires unreferenced old assets; lesson copies can share a video safely.
 
 Abandoned pending/ready uploads expire after 24 hours. Retired rows remain a retry queue until Storage deletion succeeds. Tombstones remain beyond the two-hour upload-token lifetime to catch cancellation/replay races. Referenced assets cannot be retired by cleanup. Images use 60-second signed URLs; video URLs last for the validated duration plus five minutes (maximum four hours five minutes) to permit range requests during playback. Previously issued signed URLs remain usable until expiry after unpublishing; deleting an object revokes its availability earlier.
 
@@ -59,8 +61,8 @@ npm run build
 npx playwright test e2e/learning-backend.spec.ts e2e/modules-topics-management.spec.ts e2e/lesson-authoring.spec.ts --project=chromium
 ```
 
-Use disposable accounts and catalogue data for browser authoring tests. Apply migrations, run these checks, and verify cleanup before promoting the feature to production. This change does not automatically apply migrations or deploy to an existing remote project.
+Use a confirmed staging/test project with disposable accounts and catalogue data for browser authoring tests. The existing authoring scenarios edit seeded lessons, so they must not run against production content. Apply migrations, run these checks, and verify cleanup before promoting the feature to production.
 
 For read-only outage checks, set `SUPABASE_URL=http://127.0.0.1:54321` (with no backend running there), `SUPABASE_PUBLISHABLE_KEY=playwright-local-placeholder-key`, and `LEARNING_UNAVAILABLE_E2E=1`, remove test login credentials, then run `npx playwright test e2e/learning-unavailable.spec.ts --project=chromium`. The upload fixture check records and decodes a video entirely in memory. Video uploads require finalized container duration metadata; raw streaming recordings may need re-exporting before upload.
 
-Implementation verification: the full unit/integration suite passed with 160 tests passed and two existing hosted Awareness tests skipped, including 47 new Learning tests. The final test run used `npm test -- --maxWorkers=2` after the default worker count encountered worker startup timeouts. Typecheck, lint, secret scan and the production build passed. Five Chromium checks passed: three Learning outage/sign-in checks, one video fixture metadata/decoding check, and one existing public sign-in/register smoke check, all with Supabase forced to localhost and credentials removed. Authenticated browser authoring was not run: automatic approval review rejected the unspecified remote target because the suite could modify a shared or production backend. A confirmed disposable staging target and authorization are required for that remaining verification.
+Latest deployment validation: `npm run check` passed with `VITEST_MAX_WORKERS=2`: 161 tests passed and two existing hosted Awareness tests skipped. The focused Learning command passed all 48 tests. Typecheck, lint, secret scan and the production build passed. A read-only Chromium scenario verified catalogue, module, search and guest lesson access against the deployed backend. Earlier localhost verification passed five Chromium checks covering outages, sign-in guards and video fixture decoding. Authenticated browser authoring/upload verification awaits confirmation that the configured project is staging/test, in accordance with the deployment request's prohibition on destructive production testing. See the deployment report for the remaining gates.
