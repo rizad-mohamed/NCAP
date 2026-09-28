@@ -90,11 +90,14 @@ test("administered modules and topics drive the learner catalogue lifecycle", as
   await expect(page.getByText(topic, { exact: true })).toHaveCount(0);
 });
 
-test("sign in and sign up omit the global site footer", async ({ page }) => {
-  for (const route of ["/login", "/register"]) {
+for (const { route, button, footerCount } of [
+  { route: "/login", button: "Log in", footerCount: 0 },
+  { route: "/register", button: "Create account", footerCount: 0 },
+  { route: "/forgot-password", button: "Send reset link", footerCount: 1 },
+]) {
+  test(`${route} renders its form with ${footerCount} global footers`, async ({ page }) => {
     await page.goto(route, { waitUntil: "domcontentloaded" });
-    await expect(page.locator("footer")).toHaveCount(0);
-  }
-  await page.goto("/forgot-password", { waitUntil: "domcontentloaded" });
-  await expect(page.locator("footer")).toHaveCount(1);
-});
+    await expect(page.getByRole("button", { name: button, exact: true })).toBeVisible();
+    await expect(page.locator("footer")).toHaveCount(footerCount);
+  });
+}

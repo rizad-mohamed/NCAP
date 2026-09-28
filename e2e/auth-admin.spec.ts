@@ -17,13 +17,17 @@ test("authentication forms validate locally and expose no demo access bypass", a
   );
 });
 
-test("protected learner and administrator routes redirect anonymous visitors", async ({ page }) => {
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fdashboard$/);
-
-  await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fadmin%2Ftopics$/);
-});
+// Each redirect starts in a fresh page so a previous route's hydration cannot
+// interrupt the next navigation in WebKit.
+for (const route of ["/dashboard", "/admin/topics"]) {
+  test(`anonymous visitors to ${route} reach the login form`, async ({ page }) => {
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(
+      `http://127.0.0.1:4173/login?redirect=${encodeURIComponent(route)}`,
+    );
+    await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
+  });
+}
 
 test("administrator can create, reject a duplicate, delete a topic, and export a report", async ({
   page,
