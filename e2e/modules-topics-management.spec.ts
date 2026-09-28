@@ -22,9 +22,12 @@ test("administered modules and topics drive the learner catalogue lifecycle", as
   await page.getByRole("button", { name: "Edit Community Safety" }).click();
   await page.getByLabel("Topic name *").fill(topic);
   await page.getByRole("button", { name: "Save topic" }).click();
-  await page.getByRole("button", { name: `Deactivate ${topic}` }).click();
-  await expect(page.getByRole("button", { name: `Activate ${topic}` })).toBeVisible();
-  await page.getByRole("button", { name: `Activate ${topic}` }).click();
+  await page.getByRole("button", { name: `Deactivate ${topic}`, exact: true }).click();
+  await expect(page.getByRole("button", { name: `Activate ${topic}`, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: `Activate ${topic}`, exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: `Deactivate ${topic}`, exact: true }),
+  ).toBeVisible();
 
   await page.getByRole("tab", { name: "Modules" }).click();
   await page.getByRole("button", { name: "Create module" }).click();
@@ -71,7 +74,12 @@ test("administered modules and topics drive the learner catalogue lifecycle", as
 
   await page.goto("/admin/topics", { waitUntil: "domcontentloaded" });
   await page.getByRole("tab", { name: "Modules" }).click();
-  await page.getByRole("button", { name: "Publish Community Device Protection" }).click();
+  await page
+    .getByRole("button", { name: "Publish Community Device Protection", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Unpublish Community Device Protection", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Delete Community Device Protection" }).click();
   await page.getByRole("button", { name: "Delete module" }).click();
   await expect(page.getByText("Community Device Protection", { exact: true })).toHaveCount(0);

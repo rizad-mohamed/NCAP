@@ -58,9 +58,25 @@ export function useSaveRepositoryRecord<K extends CollectionName>(
   return useMutation({
     mutationFn: (record: CollectionRecord<K>) =>
       collection.save(record).catch((error) => Promise.reject(normalizeRepositoryError(error))),
-    onSuccess: () => {
-      if (["modules", "lessons", "topics"].includes(name))
-        void queryClient.invalidateQueries({ queryKey: ["repository"] });
+    onSuccess: async (saved) => {
+      if (["modules", "lessons", "topics"].includes(name)) {
+        await queryClient.cancelQueries({ queryKey: repositoryKeys.collection(name) });
+        queryClient.setQueryData<CollectionRecord<K>[]>(
+          [...repositoryKeys.collection(name), collection.scope ?? "local"],
+          (records) =>
+            records?.some((record) => record.id === saved.id)
+              ? records.map((record) => (record.id === saved.id ? saved : record))
+              : records
+                ? [...records, saved]
+                : undefined,
+        );
+        await Promise.all(
+          ["modules", "lessons", "topics"].map((kind) =>
+            queryClient.invalidateQueries({ queryKey: ["repository", kind] }),
+          ),
+        );
+        return;
+      }
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
       void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },
@@ -82,9 +98,21 @@ export function useRemoveRepositoryRecord<K extends CollectionName>(
           typeof input === "string" ? undefined : input.version,
         )
         .catch((error) => Promise.reject(normalizeRepositoryError(error))),
-    onSuccess: () => {
-      if (["modules", "lessons", "topics"].includes(name))
-        void queryClient.invalidateQueries({ queryKey: ["repository"] });
+    onSuccess: async (_, input) => {
+      if (["modules", "lessons", "topics"].includes(name)) {
+        await queryClient.cancelQueries({ queryKey: repositoryKeys.collection(name) });
+        const id = typeof input === "string" ? input : input.id;
+        queryClient.setQueryData<CollectionRecord<K>[]>(
+          [...repositoryKeys.collection(name), collection.scope ?? "local"],
+          (records) => records?.filter((record) => record.id !== id),
+        );
+        await Promise.all(
+          ["modules", "lessons", "topics"].map((kind) =>
+            queryClient.invalidateQueries({ queryKey: ["repository", kind] }),
+          ),
+        );
+        return;
+      }
       void queryClient.invalidateQueries({ queryKey: repositoryKeys.collection(name) });
       void queryClient.invalidateQueries({ queryKey: ["awareness"] });
     },
