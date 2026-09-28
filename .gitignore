@@ -19,6 +19,12 @@ playwright-report
 test-results
 *.local
 
+# Environment configuration (only the placeholder template is tracked)
+.env
+.env.*
+!.env.example
+.dev.vars.*
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

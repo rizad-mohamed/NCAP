@@ -1,256 +1,183 @@
-# NCAP — National Cybersecurity Awareness Platform
+# NCAP - National Cybersecurity Awareness Platform
 
 [![Frontend checks](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml/badge.svg)](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml)
 
-NCAP is an accessible cybersecurity awareness, learning, and assessment platform designed for Sri Lanka. It brings together public awareness resources, structured lessons, quizzes, learner progress, certificates, and administration tools in one responsive application.
+NCAP is an accessible cybersecurity awareness, learning, and assessment platform designed for Sri Lanka. It combines public awareness resources, structured lessons, learner progress, and administration tools in a responsive application.
 
-> **Foundation Release:** Supabase provides real authentication, secure server-managed sessions, user profiles, and authoritative roles. Learning, editorial, reporting, and certificate records currently use browser-local demonstration repositories and are not yet a shared production backend.
+## Current status - September 28, 2026
 
-## What is included
+Authentication, Awareness, and Learning use Supabase-backed services. Awareness and Learning are deployed and verified on the configured **staging** project. Public HTTPS frontend hosting, production authentication origins, backup/restore verification, and operational alerting remain release gates.
 
-### Public experience
+| Area                         | Current implementation                                                                                                                                                                        |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication               | Supabase Auth, server-managed HTTP-only session cookies, protected profiles, learner/Super Admin roles, registration, verification, login, recovery, and password management                  |
+| Awareness                    | Persistent catalogue of 60 published resources across seven types; search/filtering, administration, publication, private managed media, and scheduled cleanup                                |
+| Learning                     | Persistent catalogue of 11 topics, five modules, and 18 lessons; structured authoring, publication, progress, bookmarks, video resume, dashboard statistics, audit history, and managed media |
+| Assessments and certificates | Demonstration quiz/question data, attempts, badges, achievements, and certificate previews; authoritative assessment and certificate services remain future work                              |
+| Other administration         | User-management, announcements, and broader reporting interfaces retain demonstration behavior; they are not full Supabase Auth administration or production analytics                        |
 
-- Cybersecurity awareness articles, tips, news, posters, infographics, videos, and best practices
-- Searchable and filterable awareness library
-- Responsive, keyboard-accessible layouts with reduced-motion support
-- English interface with an initial localization foundation
+The latest staging Learning verification recorded 163 passing unit/integration tests, two opt-in hosted Awareness tests skipped, 50 passing focused Learning tests, and nine passing live Chromium scenarios across the full run and corrected image-only rerun. See [Learning verification](supabase/LEARNING_VERIFICATION.md) and [Awareness readiness](supabase/AWARENESS_READINESS.md) for the evidence, scope, and remaining gates. These records do not certify a public production deployment.
 
-### Learner experience
+## Features
 
-- Five-module learning catalogue with 18 structured lessons
-- Rich lesson content, knowledge checks, bookmarks, and video support
-- Timed quizzes backed by 48 seeded questions
-- Local progress, badges, achievements, and certificate previews
-- Account registration, email verification, login, recovery, and password management
+- Awareness articles, cyber tips, news/updates, posters, infographics, videos, and best practices
+- Searchable Learning catalogue with structured lessons, knowledge checks, and transcripts
+- Account-scoped completion, bookmarks, activity, and video resume that persist across sessions/devices
+- Super Admin topic/module/lesson and Awareness authoring, ordering, publication, and media management
+- Server and database authorization, optimistic version checks, and Learning audit records
+- Responsive layouts, keyboard navigation, reduced-motion support, and an English interface with a localization foundation
+- Timed demonstration quizzes backed by 48 seeded questions
 
-### Super Admin experience
+## Technology and architecture
 
-- Dashboard and programme reporting views
-- Module, topic, lesson, and question management
-- Awareness content management across seven content types
-- User, certificate, announcement, and profile interfaces
-- Role-protected administration routes
-
-## Technology stack
-
-- **Application:** React 19, TypeScript, TanStack Start, TanStack Router, TanStack Query
-- **Styling:** Tailwind CSS 4, Radix UI primitives, Lucide icons
-- **Backend foundation:** TanStack server functions, Supabase Auth, PostgreSQL, Row Level Security
-- **Local data layer:** typed repository interfaces, schema-validated `localStorage`, IndexedDB media
-- **Validation:** Zod, TypeScript, ESLint, Prettier
-- **Testing:** Vitest, Testing Library, Playwright, axe-core
-- **Deployment target:** Nitro Cloudflare Module / Cloudflare Workers
-
-## Architecture
+- React 19, TypeScript, TanStack Start, Router, and Query
+- Tailwind CSS 4, Radix UI primitives, and Lucide icons
+- TanStack server functions, Supabase Auth, PostgreSQL RPCs, Row Level Security, and private Storage
+- Supabase Edge Functions and scheduled media cleanup
+- Zod, ESLint, Prettier, Vitest, Testing Library, PGlite, Playwright, and axe-core
+- Nitro Cloudflare Module build target
 
 ```text
-Browser
-├── React UI and TanStack Router
-├── TanStack Start server functions
-│   └── Supabase Auth + public.profiles + RLS
-└── NcapRepository
-    └── LocalDemoRepository
-        ├── versioned localStorage data
-        └── IndexedDB media blobs
+Browser: React UI + TanStack Router/Query
+  -> TanStack Start server functions
+     -> Supabase Auth + protected profiles
+     -> Awareness repository -> PostgreSQL + private Storage
+     -> Learning repository  -> PostgreSQL + private Storage
+  -> Local demo repository for remaining demonstration domains
+
+Scheduled maintenance -> protected Edge Functions -> retired/expired media cleanup
 ```
 
-Authentication and authorization are server-backed. Other product domains remain intentionally isolated behind repository boundaries so they can be replaced incrementally with production APIs.
-
-For the complete implementation inventory, architecture assessment, requirements, and gap analysis, see [PROJECT_INTELLIGENCE.md](PROJECT_INTELLIGENCE.md).
-
-## Prerequisites
-
-- Node.js 22 or newer
-- npm
-- A Supabase project for authentication
-- Supabase CLI, SQL Editor access, or another approved migration workflow
+Awareness and Learning records are excluded from persisted demo state. Their backend adapters are authoritative, with caches scoped by account and administrator/public access. Other domains still use browser-local demonstration storage; clearing browser data can remove those demo records.
 
 ## Local setup
 
-1. Clone the repository and enter the application directory:
-
-   ```sh
-   git clone https://github.com/rizad-mohamed/NCAP.git
-   cd NCAP/ncap_v1.0
-   ```
-
-2. Install the locked dependencies:
-
-   ```sh
-   npm ci
-   ```
-
-3. Create the local environment file:
-
-   ```sh
-   cp .env.example .env.local
-   ```
-
-   On Windows PowerShell, use:
-
-   ```powershell
-   Copy-Item .env.example .env.local
-   ```
-
-4. Configure `.env.local`:
-
-   ```dotenv
-   SUPABASE_URL=https://your-project-ref.supabase.co
-   SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-   APP_URL=http://localhost:8080
-   ```
-
-   Never add a Supabase service-role key to this application or commit `.env.local`.
-
-5. Apply the migration in `supabase/migrations` and configure authentication URLs. Follow [the Supabase setup guide](supabase/README.md) for the complete procedure, including safe provisioning of the first Super Admin.
-
-6. Start development:
-
-   ```sh
-   npm run dev
-   ```
-
-The application is served at `http://localhost:8080` by default.
-
-## Available commands
-
-| Command                 | Purpose                                                   |
-| ----------------------- | --------------------------------------------------------- |
-| `npm run dev`           | Start the development server on port 8080                 |
-| `npm run build`         | Create the production Cloudflare/Nitro build              |
-| `npm run preview`       | Preview a production build locally                        |
-| `npm run typecheck`     | Run TypeScript validation                                 |
-| `npm run lint`          | Run ESLint and formatting checks                          |
-| `npm run test`          | Run the Vitest suite once                                 |
-| `npm run test:watch`    | Run Vitest in watch mode                                  |
-| `npm run test:e2e`      | Build and run Playwright browser tests                    |
-| `npm run security:scan` | Check source and output for security regressions          |
-| `npm run check`         | Run typecheck, lint, unit tests, security scan, and build |
-| `npm run format`        | Format supported repository files                         |
-
-Install browser binaries once before running end-to-end tests:
+Use Node.js 22 or newer and npm. A configured Supabase project is required for working authentication, Awareness, and Learning.
 
 ```sh
-npx playwright install
+git clone https://github.com/rizad-mohamed/NCAP.git
+cd NCAP
+npm ci
+cp .env.example .env.local
 ```
 
-## Authentication and authorization
+On Windows PowerShell, use `Copy-Item .env.example .env.local` for the last step. The application files are at the Git repository root.
 
-NCAP supports:
+Configure the server runtime in `.env.local`:
 
-- learner registration with profile provisioning
-- email verification
-- email/password login
-- HTTP-only server-managed authentication cookies
-- automatic session refresh
-- logout
-- password recovery and reset
-- authenticated password changes
-- learner and `super_admin` roles
-- server-side route guards
-- profile ownership policies enforced with PostgreSQL RLS
+```dotenv
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+APP_URL=http://localhost:8080
+```
 
-The browser never receives a service-role credential. Administrative access is determined from the protected `profiles.role` database field, not from browser state or user-editable metadata.
+Follow [authentication setup](supabase/README.md), [Awareness operations](supabase/AWARENESS.md), and [Learning operations](supabase/LEARNING.md) to apply migrations in order, provision the first Super Admin, seed content, and configure maintenance. An empty Supabase project does not contain the required schema or catalogue. Do not rerun initial schema SQL against an already migrated project.
 
-The migration must be applied before authentication can work end to end. Do not create shared credentials or commit passwords. Provision administrators through the documented Supabase process and rotate any bootstrap credential immediately.
+```sh
+npm run dev
+```
 
-## Data and media behavior
+Development runs at `http://localhost:8080`.
 
-The current Foundation Release persists non-authentication data under a versioned browser-local key. Uploaded lesson images and videos use IndexedDB. This makes the complete product experience demonstrable without implying that the data is shared, durable, or production-ready.
+## Environment files and credentials
 
-Important consequences:
+- `.env.example` is the tracked, placeholder-only runtime template.
+- `.env`, `.env.*`, `.dev.vars`, `.dev.vars.*`, and local operator/test files are ignored, except `.env.example`.
+- Keep service-role keys, management tokens, database passwords, cleanup tokens, and disposable test credentials in ignored operator files or the relevant service's secret configuration.
+- The application runtime uses the publishable key with the caller's session and RLS. It does not require a service-role key.
+- Never put privileged credentials in `VITE_` variables, browser bundles, tracked files, command arguments, or logs. Operator scripts consume process environment; follow the operations guides for loading it safely.
+- CI's default checks use placeholder runtime settings and require no staging credentials. Live authenticated verification is a separate opt-in operation against disposable staging accounts.
 
-- learning progress does not synchronize across browsers or devices
-- local demonstration state may be shared by different accounts using the same browser profile
-- admin user records are demonstrations and do not modify Supabase Auth users
-- reports combine seeded and locally computed data
-- uploaded media disappears if the browser's site data is cleared
-- certificates are demonstrations and are not cryptographically verifiable
+## Commands
 
-Production work should replace these repositories with authorized APIs, database tables, object storage, audit logging, and authoritative reporting.
+| Command                                                  | Purpose                                                           |
+| -------------------------------------------------------- | ----------------------------------------------------------------- |
+| `npm run dev`                                            | Start development on port 8080                                    |
+| `npm run build`                                          | Create the production Nitro/Cloudflare build in `.output`         |
+| `npm run preview`                                        | Preview a production build locally                                |
+| `npm run typecheck`                                      | Validate TypeScript                                               |
+| `npm run lint`                                           | Run ESLint and configured formatting rules                        |
+| `npm test`                                               | Run Vitest unit and integration tests                             |
+| `npm run test:watch`                                     | Run Vitest in watch mode                                          |
+| `npm run security:scan`                                  | Scan tracked and unignored source files for known secret patterns |
+| `npm run check`                                          | Run typecheck, lint, Vitest, secret scan, and production build    |
+| `npm run test:e2e`                                       | Build and run Playwright browser tests                            |
+| `npm run format`                                         | Format supported repository files                                 |
+| `npm run awareness:seed` / `npm run learning:seed`       | Run documented operator catalogue imports                         |
+| `npm run awareness:cleanup` / `npm run learning:cleanup` | Run documented operator media maintenance                         |
 
-## Lesson authoring and video support
+Review the operations guides before running seed or cleanup commands against a remote project.
 
-The admin lesson editor supports headings, paragraphs, lists, callouts, examples, knowledge checks, reordering, deletion, and undo/redo. Content is stored as typed data and rendered as escaped text rather than executable HTML.
+## Verification and CI
 
-Lessons may use:
+The **Frontend checks** workflow runs on pushes and pull requests: locked dependency installation, `npm run check`, browser installation, and Playwright across Chromium, Firefox, WebKit, and mobile browser profiles. Vitest uses two workers for predictable resource use.
 
-- HTTPS YouTube or Vimeo links
-- direct HTTPS MP4 or WebM URLs
-- local MP4 or WebM files up to 100 MiB and four hours
+```sh
+npm run check
+npx playwright install
+npm run test:e2e
+```
 
-Published video lessons require a transcript. Native video supports playback speed, fullscreen controls, local resume state, and completion on playback ending. Provider-hosted playback depends on the provider's availability and embedding policy.
+PGlite tests exercise migrations, RLS, ownership, transactional mutations, and integrity using a local PostgreSQL harness. Browser tests run against the built Worker. Scenarios requiring a seeded hosted backend or authenticated users skip unless their documented opt-in settings are supplied; a green default CI run does not imply that live staging scenarios ran.
+
+Use the disposable-account procedures and environment flags in [the Supabase guide](supabase/README.md), [Awareness operations](supabase/AWARENESS.md), and [Learning operations](supabase/LEARNING.md) for live verification. Authoring scenarios mutate catalogue data and must use staging fixtures.
+
+## Learning media and authoring
+
+The lesson editor supports typed headings, paragraphs, lists, callouts, examples, knowledge checks, reordering, deletion, and undo/redo. Content renders as escaped text.
+
+Lessons support HTTPS YouTube/Vimeo links, direct HTTPS MP4/WebM URLs, and managed uploads. Learning images are limited to 5 MiB and 4096 by 4096 pixels; videos to **50 MiB and four hours**, matching the deployed project limit. Published video lessons require transcripts. Native playback supports speed controls, fullscreen, persisted resume, and completion on ending.
+
+Private Storage, authorized signed URLs, server-side byte validation, and protected scheduled cleanup govern managed media. Previously issued URLs may remain usable until expiry, and CDN caching can outlast origin deletion. See the module operations guides for lifecycle and recovery details.
 
 ## Repository structure
 
 ```text
-.
-├── .github/workflows/       CI validation
-├── design-system/           design-system reference and guidance
-├── e2e/                     Playwright browser tests
-├── public/                  static assets and security headers
-├── scripts/                 security and maintenance scripts
-├── src/
-│   ├── auth/                auth contracts and shared helpers
-│   ├── components/          shared UI components
-│   ├── data/                seed and demonstration data
-│   ├── domain/              domain rules and validation
-│   ├── features/            public, learner, and admin features
-│   ├── routes/              typed file-based routes
-│   ├── server/              server-only Supabase integration
-│   ├── services/            repository interfaces and adapters
-│   └── state/               application state providers
-├── supabase/
-│   ├── migrations/          database schema, triggers, grants, and RLS
-│   └── README.md            Supabase deployment instructions
-├── IMPLEMENTATION_STATUS.md validation history and delivery notes
-└── PROJECT_INTELLIGENCE.md  authoritative architecture and gap audit
+.github/workflows/       Frontend CI
+ design-system/         Design reference and guidance
+ e2e/                   Playwright scenarios and fixtures
+ public/                Static assets and security headers
+ scripts/               Secret scan, import, and maintenance tools
+ src/
+   auth/                Authentication contracts and helpers
+   components/          Shared UI
+   data/                Seed and demonstration data
+   domain/              Validation and domain rules
+   features/            Public, learner, and admin features
+   routes/              Typed file-based routes
+   server/              Server-only authentication and backend services
+   services/            Repository adapters and query hooks
+   state/               Application state providers
+ supabase/
+   functions/           Media cleanup Edge Functions
+   migrations/          Versioned schema, grants, and RLS
+   README.md            Authentication setup
 ```
 
-## Quality and security
+## Deployment and remaining work
 
-The CI workflow runs the full non-browser validation gate and the Playwright browser suite on pushes and pull requests. Before opening a pull request, run:
+The backend is deployed to staging; a public HTTPS frontend has not been deployed. The configured local application origin and Supabase Auth site URL are not yet aligned for production.
 
-```sh
-npm run check
-npm run test:e2e
-```
+Before public release:
 
-Security-sensitive changes should preserve these boundaries:
+1. Select and deploy the HTTPS frontend origin with server runtime configuration.
+2. Align `APP_URL`, Supabase Site URL, and allowed authentication redirects.
+3. Repeat public, learner, and administrator smoke tests on that hosted origin.
+4. Establish database **and Storage object** backups, verify a staging restore, and assign an operations owner.
+5. Verify cleanup-failure alerts and operational monitoring.
 
-- keep Supabase operations and environment access in server-only modules
-- enforce privileged access on the server and in database policies
-- treat client-side route checks as user experience, not authorization
-- never commit secrets, real passwords, generated environment files, or service-role keys
-- validate all data again at future production API boundaries
-- preserve accessible keyboard, focus, contrast, and reduced-motion behavior
+The ignored pre-deployment snapshot is not a full database backup. The latest deployment report recorded no listed database backups and point-in-time recovery disabled. Prefer forward corrections to destructive schema rollback; preserve data and verify recovery before any reversal.
 
-## Deployment
+Further product work includes authoritative assessment attempts/certificates, user administration APIs, broader analytics, localization, and continued accessibility verification.
 
-`npm run build` produces a Nitro Cloudflare Module build in `.output`. A production deployment must provide the three environment variables listed above, apply database migrations separately, and configure Supabase Site URL and redirect URLs for the deployed origin.
+## Documentation
 
-Before promoting a release:
-
-1. Run the complete validation suite.
-2. Apply and verify database migrations in the target environment.
-3. Confirm Supabase authentication URLs and email delivery.
-4. Test learner and Super Admin accounts through real browser flows.
-5. Confirm security headers and server-side route protection.
-6. Run a post-deployment smoke test without exposing credentials in logs.
-
-## Project documentation
-
-- [Project intelligence, PRD, architecture, and gap audit](PROJECT_INTELLIGENCE.md)
 - [Supabase authentication setup](supabase/README.md)
+- [Awareness operations](supabase/AWARENESS.md), [verification](supabase/AWARENESS_VERIFICATION.md), and [readiness](supabase/AWARENESS_READINESS.md)
+- [Learning operations](supabase/LEARNING.md) and [deployment verification](supabase/LEARNING_VERIFICATION.md)
+- [Backend reference architecture](supabase/AWARENESS_REFERENCE_ARCHITECTURE.md)
+- [Project intelligence and original gap audit](PROJECT_INTELLIGENCE.md) - read alongside the newer module verification reports
 - [Implementation status](IMPLEMENTATION_STATUS.md)
 - [Design-system guidance](design-system/ncap-sri-lanka/MASTER.md)
-
-## Current roadmap priorities
-
-1. Apply and verify the Supabase migration in each deployment environment.
-2. Implement production content, media, progress, quiz-attempt, and certificate storage.
-3. Connect user administration to Supabase profiles through privileged server APIs.
-4. Add authoritative analytics, audit logs, rate limiting, and operational monitoring.
-5. Expand localization and complete production accessibility verification.
 
 NCAP is not an official incident-reporting channel or a substitute for approved government cybersecurity policy.
