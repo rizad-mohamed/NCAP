@@ -10,7 +10,7 @@ import {
   videos,
 } from "@/data/awareness";
 import { lessons, modules } from "@/data/learning";
-import { questions } from "@/data/quizzes";
+import { questions } from "@/data/quiz-seed";
 import {
   createLocalDemoRepository,
   type LocalDemoMutations,
