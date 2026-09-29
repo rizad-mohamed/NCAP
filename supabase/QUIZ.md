@@ -1,5 +1,15 @@
 # Quiz deployment
 
+## Live deployment verification — 2026-09-29
+
+The Quiz migration `202609290001_quiz.sql` and `quiz-seed.sql` were applied to the linked Supabase project `zsaefnfgauqvstptetdw` using the access token in `.env.local`. The migration and its `supabase_migrations.schema_migrations` entry were committed in one database transaction. The project already contained all five published Learning modules required by the seed.
+
+The live database contains five published quizzes, 48 questions, and 192 options, with every quiz's actual question count matching its configured count. All six Quiz tables have row level security enabled. The migration has exactly one history row. The seed was run twice; quiz, question, and option row counts and content fingerprints remained unchanged on the second run. No quiz attempts existed at verification time.
+
+The anonymous catalogue RPC returned HTTP 200 with five quizzes. Database privilege checks confirmed that anonymous and authenticated roles cannot directly select `quiz_options` or `quiz_attempt_items`; anonymous callers cannot execute `quiz_start`, and authenticated callers cannot execute the private scoring helper. Authenticated roles have access to the guarded learner and administrator RPCs, where the functions perform their own identity and role checks.
+
+Two authenticated Chromium browser tests passed against the live project using disposable learner and Super Admin accounts. They covered catalogue display, attempt start, answer feedback, cross-session resume, final submission, persisted score after reload, and administrator management visibility. Direct live API checks rejected anonymous attempt creation, learner access to administrator RPCs, direct answer-option reads, and another user's attempt UUID. The disposable accounts and their attempt data were removed afterward. Administrator create, edit, and publish mutations were not exercised against this live project; run those with disposable content before release.
+
 Apply migrations through `202609290001_quiz.sql` in order. Import the Learning catalogue first, because each quiz references an existing learning module. Run `npm run quiz:seed -- --write` to generate `supabase/quiz-seed.sql`, then apply that SQL in the Supabase SQL Editor or with your migration runner. The import uses stable IDs and `ON CONFLICT DO NOTHING`; reruns preserve administrator edits and existing attempts.
 
 The application uses the existing `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `APP_URL` settings. No service role key is needed in the application. A Super Admin can manage quizzes at `/admin/questions`. Learners use `/quizzes`.
