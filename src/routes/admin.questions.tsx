@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminContentPage } from "@/features/admin/AdminPages";
+import { AdminQuizPage } from "@/features/admin/AdminQuizPage";
 import { RouteShell } from "@/components/layout/RouteShell";
 export const Route = createFileRoute("/admin/questions")({
   head: () => ({
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin/questions")({
   }),
   component: () => (
     <RouteShell requiredRole="admin">
-      <AdminContentPage kind="questions" />
+      <AdminQuizPage />
     </RouteShell>
   ),
 });

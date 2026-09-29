@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { QuizInstructionsPage } from "@/features/learning/LearningPages";
+import { QuizInstructionsPage } from "@/features/learning/QuizPages";
 import { RouteShell } from "@/components/layout/RouteShell";
 export const Route = createFileRoute("/quizzes/$quizId/")({
   component: Page,

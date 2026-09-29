@@ -66,6 +66,19 @@ export interface Database {
         Args: { resource: string; expected_version: number };
         Returns: undefined;
       };
+      quiz_catalogue: { Args: { admin?: boolean }; Returns: Json };
+      quiz_admin_questions: { Args: { target: string | null }; Returns: Json };
+      quiz_save_definition: { Args: { payload: Json }; Returns: Json };
+      quiz_delete_definition: { Args: { target: string; expected_version: number }; Returns: undefined };
+      quiz_save_question: { Args: { payload: Json }; Returns: Json };
+      quiz_delete_question: { Args: { target: string; expected_version: number }; Returns: undefined };
+      quiz_start: { Args: { target: string }; Returns: Json };
+      quiz_attempt: { Args: { target: string }; Returns: Json };
+      quiz_answer: { Args: { target: string; question: string; option_id: string }; Returns: Json };
+      quiz_submit: { Args: { target: string }; Returns: Json };
+      quiz_history: { Args: { target: string | null }; Returns: Json };
+      quiz_eligibility: { Args: { target: string }; Returns: Json };
+      quiz_admin_summary: { Args: Record<never, never>; Returns: Json };
     };
     Enums: {
       app_role: AppRole;

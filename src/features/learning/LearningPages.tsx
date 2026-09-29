@@ -61,6 +61,7 @@ import { dashboardButton } from "@/components/common/dashboard-primitives";
 import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
 import { updateProfile as updateAccountProfile } from "@/auth/auth.functions";
 import { useAuth } from "@/auth/AuthProvider";
+import { useQuizCatalogue, useQuizHistory } from "@/services/quiz-hooks";
 
 const primary = dashboardButton.primary;
 const outline = dashboardButton.secondary;
@@ -224,7 +225,9 @@ export function LearningCataloguePage() {
 export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
   const { completedLessons, bookmarks, toggleBookmark, lessons } = useNcap();
   const modules = useModules();
+  const quizCatalogue = useQuizCatalogue();
   const module = modules.find((m) => m.id === moduleId);
+  const linkedQuiz = quizCatalogue.data?.find((quiz) => quiz.moduleId === moduleId);
   if (!module || module.status !== "Published") return <Missing />;
   const ls = lessons
     .filter((l) => l.moduleId === module.id && l.status === "Published")
@@ -355,20 +358,19 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
               </div>
             </dl>
           </div>
-          {module.quizId &&
-            quizzes.some((quiz) => quiz.id === module.quizId && quiz.moduleId === module.id) && (
-              <div className="mt-4 rounded-xl border border-violet/30 bg-violet-soft p-5">
-                <GraduationCap className="size-6 text-violet" />
-                <h2 className="mt-4 font-semibold">Related assessment</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Complete the module and score at least {NCAP_CONFIG.certificateThresholdPercent}%
-                  to become certificate eligible in this demo.
-                </p>
-                <AppLink href={`/quizzes/${module.quizId}`} className={cn(primary, "mt-5 w-full")}>
-                  View quiz
-                </AppLink>
-              </div>
-            )}
+          {linkedQuiz && (
+            <div className="mt-4 rounded-xl border border-violet/30 bg-violet-soft p-5">
+              <GraduationCap className="size-6 text-violet" />
+              <h2 className="mt-4 font-semibold">Related assessment</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Complete the module and score at least {linkedQuiz.eligibilityPercent}% to meet the
+                quiz eligibility threshold.
+              </p>
+              <AppLink href={`/quizzes/${linkedQuiz.id}`} className={cn(primary, "mt-5 w-full")}>
+                View quiz
+              </AppLink>
+            </div>
+          )}
         </aside>
       </div>
     </div>
@@ -376,11 +378,13 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
 }
 
 export function LessonPage({ lessonId }: { lessonId: string }) {
+  const quizCatalogue = useQuizCatalogue();
   const { completedLessons, bookmarks, toggleBookmark, completeLesson, lessons, session } =
     useNcap();
   const modules = useModules();
   const lesson = lessons.find((l) => l.id === lessonId && l.status === "Published");
   const module = modules.find((m) => m.id === lesson?.moduleId);
+  const linkedQuiz = quizCatalogue.data?.find((quiz) => quiz.moduleId === module?.id);
   const [checkAnswers, setCheckAnswers] = useState<Record<number, number>>({});
   useEffect(() => {
     setCheckAnswers({});
@@ -517,7 +521,10 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
                 <ChevronRight />
               </AppLink>
             ) : (
-              <AppLink href={`/quizzes/${module.quizId}`} className={cn(primary, "justify-end")}>
+              <AppLink
+                href={linkedQuiz ? `/quizzes/${linkedQuiz.id}` : "/quizzes"}
+                className={cn(primary, "justify-end")}
+              >
                 Take the module quiz
                 <ArrowRight />
               </AppLink>
@@ -933,6 +940,27 @@ export function BookmarksPage() {
 
 export function DashboardPage() {
   const store = useNcap();
+  const quizHistory = useQuizHistory();
+  const quizCatalogue = useQuizCatalogue();
+  const completedQuizAttempts = (quizHistory.data ?? [])
+    .filter((attempt) => attempt.scorePercent !== null)
+    .map((attempt) => ({
+      ...attempt,
+      scorePercent: attempt.scorePercent!,
+      seconds: Math.max(
+        0,
+        Math.round(
+          (Date.parse(attempt.completedAt ?? attempt.startedAt) - Date.parse(attempt.startedAt)) /
+            1000,
+        ),
+      ),
+    }));
+  const quizAverage = completedQuizAttempts.length
+    ? Math.round(
+        completedQuizAttempts.reduce((sum, attempt) => sum + attempt.scorePercent, 0) /
+          completedQuizAttempts.length,
+      )
+    : 0;
   const modules = useModules();
   const stats = useLearnerStats();
   const publishedLessons = store.lessons.filter(
@@ -993,8 +1021,8 @@ export function DashboardPage() {
         />
         <StatCard
           label="Quiz average"
-          value={`${stats.quizAverage}%`}
-          hint={`${store.attempts.length} completed attempts`}
+          value={`${quizAverage}%`}
+          hint={`${completedQuizAttempts.length} completed attempts`}
           icon={<Trophy />}
           tone="ember"
         />
@@ -1075,16 +1103,16 @@ export function DashboardPage() {
               </AppLink>
             }
           />
-          {store.attempts.length ? (
+          {completedQuizAttempts.length ? (
             <div className="grid gap-3">
-              {store.attempts.slice(0, 5).map((a) => (
+              {completedQuizAttempts.slice(0, 5).map((a) => (
                 <div
                   key={a.id}
                   className="flex items-center justify-between rounded-lg bg-muted p-4"
                 >
                   <div>
                     <p className="font-semibold">
-                      {quizzes.find((q) => q.id === a.quizId)?.title ?? "Quiz attempt"}
+                      {quizCatalogue.data?.find((q) => q.id === a.quizId)?.title ?? "Quiz attempt"}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {a.completedAt} · {Math.floor(a.seconds / 60)}m {a.seconds % 60}s
@@ -1178,551 +1206,6 @@ export function DashboardPage() {
           </p>
         )}
       </section>
-    </div>
-  );
-}
-
-export function QuizzesPage() {
-  const { attempts, questions } = useNcap();
-  const modules = useModules();
-  return (
-    <div className="container-ncap max-w-7xl py-2">
-      <PageHeader
-        eyebrow="Knowledge checks · Demo configuration"
-        title="Test what you can apply"
-        description={`Each attempt draws up to ${NCAP_CONFIG.questionsPerAttempt} questions once and keeps their order stable. You have ${NCAP_CONFIG.quizTimeLimitSeconds / 60} minutes.`}
-      />
-      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {quizzes
-          .filter((quiz) =>
-            modules.some((module) => module.id === quiz.moduleId && module.status === "Published"),
-          )
-          .map((q) => {
-            const module = modules.find((m) => m.id === q.moduleId)!;
-            const mine = attempts.filter((a) => a.quizId === q.id);
-            const best = mine.reduce((m, a) => Math.max(m, a.scorePercent), 0);
-            const count = Math.min(
-              NCAP_CONFIG.questionsPerAttempt,
-              questions.filter(
-                (question) => question.moduleId === q.moduleId && question.status === "Published",
-              ).length,
-            );
-            return (
-              <article
-                key={q.id}
-                className="flex min-h-[310px] flex-col rounded-xl border bg-white p-6"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="meta text-violet">{q.topic}</span>
-                  <span className="rounded-md bg-muted px-2 py-1 text-xs">{q.difficulty}</span>
-                </div>
-                <h2 className="mt-6 text-2xl font-semibold">{q.title}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{q.description}</p>
-                <div className="mt-5 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  <span>{count} questions</span>
-                  <span>· {NCAP_CONFIG.quizTimeLimitSeconds / 60} min</span>
-                  <span>· {module.title}</span>
-                </div>
-                <div className="mt-auto flex items-end justify-between pt-7">
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {mine.length ? "Best score" : "Attempt status"}
-                    </p>
-                    <p className="mt-1 font-mono text-xl font-bold">
-                      {mine.length ? `${best}%` : "Not started"}
-                    </p>
-                  </div>
-                  {count > 0 ? (
-                    <AppLink href={`/quizzes/${q.id}`} className={primary}>
-                      {mine.length ? "Try again" : "View quiz"}
-                      <ArrowRight />
-                    </AppLink>
-                  ) : (
-                    <span className="rounded-lg bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
-                      Awaiting questions
-                    </span>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-      </div>
-      <p className="mt-6 text-xs text-muted-foreground">
-        Passing and certificate thresholds shown here are frontend demo assumptions, not official
-        national policy.
-      </p>
-    </div>
-  );
-}
-
-export function QuizInstructionsPage({ quizId }: { quizId: string }) {
-  const { questions } = useNcap();
-  const modules = useModules();
-  const quiz = quizzes.find((q) => q.id === quizId);
-  const module = modules.find((m) => m.id === quiz?.moduleId);
-  if (!quiz || !module || module.status !== "Published") return <Missing />;
-  const questionCount = Math.min(
-    NCAP_CONFIG.questionsPerAttempt,
-    questions.filter(
-      (question) => question.moduleId === module.id && question.status === "Published",
-    ).length,
-  );
-  return (
-    <div className="container-ncap max-w-4xl py-2">
-      <PageCrumbs items={[{ label: "Quizzes", href: "/quizzes" }, { label: quiz.title }]} />
-      <div className="overflow-hidden rounded-xl border bg-white">
-        <div className="grid-motif border-b bg-primary-soft p-8 md:p-12">
-          <DemoTag label="Demo assessment" />
-          <h1 className="mt-5 text-4xl font-semibold">{quiz.title}</h1>
-          <p className="mt-3 max-w-2xl text-lg text-muted-foreground">{quiz.description}</p>
-        </div>
-        <div className="grid gap-8 p-6 md:grid-cols-[1fr_280px] md:p-10">
-          <div>
-            <h2 className="text-xl font-semibold">Before you begin</h2>
-            <ul className="mt-5 grid gap-4">
-              {(
-                [
-                  [
-                    FileCheck2,
-                    `${questionCount} questions selected from the published question bank`,
-                  ],
-                  [
-                    Timer,
-                    `${NCAP_CONFIG.quizTimeLimitSeconds / 60}-minute timer; the attempt submits when time expires`,
-                  ],
-                  [
-                    Target,
-                    `${NCAP_CONFIG.passingScorePercent}% passing score; ${NCAP_CONFIG.certificateThresholdPercent}% for certificate eligibility`,
-                  ],
-                  [CheckCircle2, "Submit one answer at a time to see immediate feedback"],
-                ] as const
-              ).map(([Icon, text]) => (
-                <li key={text} className="flex gap-3">
-                  <Icon className="size-5 shrink-0 text-violet" />
-                  <span>{text}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 rounded-lg bg-warning-soft p-4 text-sm">
-              These values are configurable demonstration assumptions—not official certification
-              policy.
-            </p>
-          </div>
-          <aside className="rounded-xl bg-primary p-6 text-white">
-            <p className="meta text-white/60">Ready?</p>
-            <p className="mt-4 text-sm text-white/70">
-              Question order is randomized once when you start and remains stable.
-            </p>
-            {questionCount > 0 ? (
-              <AppLink
-                href={`/quizzes/${quiz.id}/run`}
-                className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-white font-semibold text-primary"
-              >
-                Start quiz <ArrowRight />
-              </AppLink>
-            ) : (
-              <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">
-                This assessment is unavailable until reviewed questions are published.
-              </p>
-            )}
-          </aside>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function QuizRunnerPage({ quizId }: { quizId: string }) {
-  const navigate = useNavigate();
-  const { questions, recordAttempt, quizDrafts, saveQuizDraft, clearQuizDraft } = useNcap();
-  const modules = useModules();
-  const quiz = quizzes.find((q) => q.id === quizId);
-  const module = modules.find((item) => item.id === quiz?.moduleId);
-  const pool = useMemo(
-    () => questions.filter((q) => q.moduleId === quiz?.moduleId && q.status === "Published"),
-    [questions, quiz?.moduleId],
-  );
-  const restoredDraft = quizDrafts[quizId];
-  const [attemptQuestions] = useState<QuizQuestion[]>(() => {
-    if (restoredDraft) {
-      const restored = restoredDraft.questionIds
-        .map((id) => pool.find((question) => question.id === id))
-        .filter((question): question is QuizQuestion => Boolean(question));
-      if (restored.length === restoredDraft.questionIds.length) return restored;
-    }
-    const copy = [...pool];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
-    }
-    return copy.slice(0, NCAP_CONFIG.questionsPerAttempt);
-  });
-  const [index, setIndex] = useState(() =>
-    Math.min(restoredDraft?.currentIndex ?? 0, Math.max(0, attemptQuestions.length - 1)),
-  );
-  const [selected, setSelected] = useState<number | null>(() => {
-    const question = attemptQuestions[restoredDraft?.currentIndex ?? 0];
-    return question && restoredDraft?.answers[question.id] !== undefined
-      ? restoredDraft.answers[question.id]!
-      : null;
-  });
-  const [submitted, setSubmitted] = useState(() => {
-    const question = attemptQuestions[restoredDraft?.currentIndex ?? 0];
-    return Boolean(question && restoredDraft?.submittedQuestionIds.includes(question.id));
-  });
-  const [answers, setAnswers] = useState<{ question: QuizQuestion; answer: number }[]>(() =>
-    attemptQuestions.flatMap((question) => {
-      const answer = restoredDraft?.answers[question.id];
-      return answer === undefined ? [] : [{ question, answer }];
-    }),
-  );
-  const [seconds, setSeconds] = useState(() => {
-    if (!restoredDraft) return NCAP_CONFIG.quizTimeLimitSeconds;
-    return Math.max(0, Math.ceil((restoredDraft.deadlineAt - Date.now()) / 1000));
-  });
-  const started = useRef(restoredDraft?.startedAt ?? Date.now());
-  const deadline = useRef(
-    restoredDraft?.deadlineAt ?? Date.now() + NCAP_CONFIG.quizTimeLimitSeconds * 1000,
-  );
-  const finishing = useRef(false);
-  const current = attemptQuestions[index];
-  const finish = useCallback(
-    (finalAnswers: { question: QuizQuestion; answer: number }[]) => {
-      if (finishing.current || !quiz) return;
-      finishing.current = true;
-      const result = calculateQuizResult(
-        attemptQuestions,
-        Object.fromEntries(finalAnswers.map((answer) => [answer.question.id, answer.answer])),
-      );
-      recordAttempt({
-        quizId: quiz.id,
-        moduleId: quiz.moduleId,
-        scorePercent: result.scorePercent,
-        correct: result.correct,
-        total: result.total,
-        seconds: Math.round((Date.now() - started.current) / 1000),
-        byTopic: result.byTopic,
-      });
-      clearQuizDraft(quiz.id);
-      sessionStorage.setItem("ncap.last.quiz", quiz.id);
-      toast.success("Quiz submitted");
-      void navigate({ to: `/quizzes/${quiz.id}/results` as never });
-    },
-    [attemptQuestions, clearQuizDraft, navigate, quiz, recordAttempt],
-  );
-  useEffect(() => {
-    if (!quiz || !attemptQuestions.length || finishing.current) return;
-    saveQuizDraft({
-      quizId: quiz.id,
-      moduleId: quiz.moduleId,
-      questionIds: attemptQuestions.map((question) => question.id),
-      answers: Object.fromEntries(answers.map((answer) => [answer.question.id, answer.answer])),
-      currentIndex: index,
-      submittedQuestionIds: submitted && current ? [current.id] : [],
-      startedAt: started.current,
-      deadlineAt: deadline.current,
-    });
-  }, [answers, attemptQuestions, current, index, quiz, saveQuizDraft, submitted]);
-  useEffect(() => {
-    const id = window.setInterval(
-      () =>
-        setSeconds((s) => {
-          if (s <= 1) {
-            window.clearInterval(id);
-            finish(answers);
-            return 0;
-          }
-          return s - 1;
-        }),
-      1000,
-    );
-    return () => window.clearInterval(id);
-  }, [answers, finish]);
-  if (!quiz || !module || module.status !== "Published" || !current) return <Missing />;
-  const choose = (i: number) => {
-    if (!submitted) setSelected(i);
-  };
-  const submit = () => {
-    if (selected === null) return;
-    const next = [...answers, { question: current, answer: selected }];
-    setAnswers(next);
-    setSubmitted(true);
-  };
-  const advance = () => {
-    if (index === attemptQuestions.length - 1) {
-      finish(answers);
-      return;
-    }
-    setIndex((i) => i + 1);
-    const nextQuestion = attemptQuestions[index + 1];
-    const previous = nextQuestion
-      ? answers.find((answer) => answer.question.id === nextQuestion.id)
-      : null;
-    setSelected(previous?.answer ?? null);
-    setSubmitted(Boolean(previous));
-  };
-  const low = seconds <= NCAP_CONFIG.quizLowTimeWarningSeconds;
-  return (
-    <div className="mx-auto max-w-4xl py-2">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="meta text-violet">{quiz.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Question {index + 1} of {attemptQuestions.length} ·{" "}
-            {attemptQuestions.length - answers.length} unanswered
-          </p>
-        </div>
-        <div
-          role="timer"
-          aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds remaining`}
-          className={cn(
-            "flex min-h-11 items-center gap-2 rounded-lg border bg-white px-4 font-mono font-bold",
-            low && "border-destructive bg-destructive-soft text-destructive",
-          )}
-        >
-          <Timer className="size-5" />
-          {String(Math.floor(seconds / 60)).padStart(2, "0")}:
-          {String(seconds % 60).padStart(2, "0")}
-        </div>
-      </div>
-      <ProgressMeter value={(index / attemptQuestions.length) * 100} label="Quiz progress" />
-      <section className="mt-6 rounded-xl border bg-white p-6 md:p-10">
-        <span className="meta text-muted-foreground">
-          {current.topic} · {current.difficulty}
-        </span>
-        <h1 className="mt-4 text-2xl font-semibold md:text-3xl">{current.prompt}</h1>
-        <fieldset className="mt-8 grid gap-3">
-          <legend className="sr-only">Choose one answer</legend>
-          {current.options.map((option, i) => {
-            const correct = submitted && i === current.correctIndex;
-            const wrong = submitted && selected === i && i !== current.correctIndex;
-            return (
-              <label
-                key={option}
-                className={cn(
-                  "flex min-h-14 cursor-pointer items-center gap-4 rounded-lg border p-4 text-sm hover:border-violet",
-                  selected === i && "border-violet bg-violet-soft",
-                  correct && "border-success bg-success-soft",
-                  wrong && "border-destructive bg-destructive-soft",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="answer"
-                  checked={selected === i}
-                  onChange={() => choose(i)}
-                  disabled={submitted}
-                  className="size-4 accent-violet"
-                />
-                <span className="grid size-7 shrink-0 place-items-center rounded-md border bg-white font-mono text-xs">
-                  {String.fromCharCode(65 + i)}
-                </span>
-                <span className="font-medium">{option}</span>
-                {correct && <CheckCircle2 className="ml-auto size-5 text-success" />}
-                {wrong && <XCircle className="ml-auto size-5 text-destructive" />}
-              </label>
-            );
-          })}
-        </fieldset>
-        {submitted && (
-          <div
-            aria-live="polite"
-            className={cn(
-              "mt-6 rounded-xl p-5",
-              selected === current.correctIndex ? "bg-success-soft" : "bg-destructive-soft",
-            )}
-          >
-            <div className="flex gap-3">
-              {selected === current.correctIndex ? (
-                <CheckCircle2 className="size-6 shrink-0 text-success" />
-              ) : (
-                <XCircle className="size-6 shrink-0 text-destructive" />
-              )}
-              <div>
-                <h2 className="font-semibold">
-                  {selected === current.correctIndex ? "Correct" : "Incorrect"}
-                </h2>
-                {selected !== current.correctIndex && (
-                  <p className="mt-1 text-sm">
-                    Correct answer: <strong>{current.options[current.correctIndex]}</strong>
-                  </p>
-                )}
-                <p className="mt-2 text-sm text-foreground/80">{current.explanation}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="mt-8 flex justify-end">
-          {!submitted ? (
-            <button onClick={submit} disabled={selected === null} className={primary}>
-              Submit answer
-            </button>
-          ) : (
-            <button onClick={advance} className={primary}>
-              {index === attemptQuestions.length - 1 ? "View results" : "Next question"}
-              <ArrowRight />
-            </button>
-          )}
-        </div>
-      </section>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Your draft is stored locally in this browser and can be resumed until the timer expires.
-      </p>
-    </div>
-  );
-}
-
-export function QuizResultsPage({ quizId }: { quizId: string }) {
-  const store = useNcap();
-  const modules = useModules();
-  const { attempts, completedLessons } = store;
-  const stats = useLearnerStats();
-  const quiz = quizzes.find((q) => q.id === quizId);
-  const attempt = attempts.find((a) => a.quizId === quizId);
-  const module = modules.find((m) => m.id === quiz?.moduleId);
-  if (!quiz || !attempt || !module || module.status !== "Published")
-    return (
-      <div className="mx-auto max-w-3xl">
-        <EmptyState
-          icon={<Target />}
-          title="No result available"
-          description="Complete this quiz to see your score and topic breakdown."
-          action={
-            <AppLink href={`/quizzes/${quizId}`} className={primary}>
-              View quiz instructions
-            </AppLink>
-          }
-        />
-      </div>
-    );
-  const moduleLessons = store.lessons.filter(
-    (lesson) => lesson.moduleId === module.id && lesson.status === "Published",
-  );
-  const eligibility = evaluateCertificateEligibility({
-    moduleId: module.id,
-    quizId: quiz.id,
-    lessons: store.lessons,
-    completedLessonIds: completedLessons,
-    attempts,
-  });
-  const moduleComplete = eligibility.completionPercent === 100;
-  const eligible = eligibility.eligible;
-  const weakest = [...attempt.byTopic].sort((a, b) => a.correct / a.total - b.correct / b.total)[0];
-  const recommendation =
-    store.lessons.find(
-      (l) => l.status === "Published" && l.moduleId === module.id && l.topic === weakest?.topic,
-    ) ?? moduleLessons[0]!;
-  return (
-    <div className="mx-auto max-w-5xl py-2">
-      <div className="rounded-xl border bg-white p-6 md:p-10">
-        <div className="grid items-center gap-8 md:grid-cols-[260px_1fr]">
-          <div
-            className={cn(
-              "grid aspect-square place-items-center rounded-full border-[14px]",
-              attempt.scorePercent >= 80
-                ? "border-success-soft bg-success-soft"
-                : attempt.scorePercent >= 70
-                  ? "border-warning-soft bg-warning-soft"
-                  : "border-destructive-soft bg-destructive-soft",
-            )}
-          >
-            <div className="text-center">
-              <p className="font-mono text-5xl font-bold">{attempt.scorePercent}%</p>
-              <p className="mt-1 text-sm font-semibold">
-                {attempt.correct} of {attempt.total} correct
-              </p>
-            </div>
-          </div>
-          <div>
-            <DemoTag label="Quiz complete · Demo result" />
-            <h1 className="mt-4 text-4xl font-semibold">
-              {attempt.scorePercent >= 80
-                ? "Strong result"
-                : attempt.scorePercent >= 70
-                  ? "You passed the demo quiz"
-                  : "Keep building the skill"}
-            </h1>
-            <p className="mt-3 text-muted-foreground">
-              Completed in {Math.floor(attempt.seconds / 60)}m {attempt.seconds % 60}s. Your score
-              and topic summary are saved locally in this browser.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <AppLink href={`/quizzes/${quiz.id}/run`} className={primary}>
-                Retry quiz
-              </AppLink>
-              <AppLink href="/dashboard" className={outline}>
-                Return to dashboard
-              </AppLink>
-            </div>
-          </div>
-        </div>
-        <section className="mt-10 border-t pt-8">
-          <SectionHeading title="Performance by topic" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {attempt.byTopic.map((t) => {
-              const pct = Math.round((t.correct / t.total) * 100);
-              return (
-                <div key={t.topic} className="rounded-lg bg-muted p-4">
-                  <div className="mb-2 flex justify-between text-sm">
-                    <strong>{t.topic}</strong>
-                    <span className="font-mono">
-                      {t.correct}/{t.total}
-                    </span>
-                  </div>
-                  <ProgressMeter value={pct} label={`${t.topic} performance`} />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-        <section
-          className={cn(
-            "mt-8 rounded-xl border p-6",
-            eligible ? "border-success bg-success-soft" : "bg-primary-soft",
-          )}
-        >
-          <div className="flex gap-4">
-            {eligible ? (
-              <BadgeCheck className="size-8 shrink-0 text-success" />
-            ) : (
-              <GraduationCap className="size-8 shrink-0 text-primary" />
-            )}
-            <div>
-              <h2 className="text-xl font-semibold">
-                {eligible ? "Certificate eligible" : "Certificate steps remaining"}
-              </h2>
-              <p className="mt-2 text-sm">
-                Demo rule: complete the related module and score at least{" "}
-                {NCAP_CONFIG.certificateThresholdPercent}%.
-              </p>
-              <ul className="mt-3 grid gap-1 text-sm">
-                <li>{moduleComplete ? "✓" : "○"} Module complete</li>
-                <li>
-                  {eligibility.bestScore >= NCAP_CONFIG.certificateThresholdPercent ? "✓" : "○"}{" "}
-                  Quiz score ≥ {NCAP_CONFIG.certificateThresholdPercent}%
-                </li>
-              </ul>
-              <AppLink
-                href={eligible ? "/certificates" : `/learn/modules/${module.id}`}
-                className={cn(outline, "mt-5")}
-              >
-                {eligible ? "View certificate" : "Continue module"}
-              </AppLink>
-            </div>
-          </div>
-        </section>
-        <section className="mt-8 rounded-xl border p-6">
-          <p className="meta text-violet">Recommended next lesson · Rule-based</p>
-          <h2 className="mt-3 text-xl font-semibold">{recommendation.title}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Review {weakest?.topic ?? module.topic} to strengthen your lowest topic result. This is
-            deterministic, not AI-generated.
-          </p>
-          <AppLink href={`/learn/lessons/${recommendation.id}`} className={cn(primary, "mt-5")}>
-            Open lesson <ArrowRight />
-          </AppLink>
-        </section>
-      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useAwarenessSummary } from "@/services/awareness-hooks";
+import { useAdminQuizSummary } from "@/services/quiz-hooks";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
@@ -128,6 +129,7 @@ const seedTopicNames: Topic[] = [
 
 export function AdminDashboardPage() {
   const awareness = useAwarenessSummary();
+  const quizSummary = useAdminQuizSummary();
   const s = useNcap();
   const metrics = [
     { label: "Total demo users", value: s.users.length, icon: <Users />, tone: "violet" as const },
@@ -144,13 +146,13 @@ export function AdminDashboardPage() {
     },
     {
       label: "Quiz attempts",
-      value: s.users.reduce((sum, user) => sum + user.attempts, 0),
+      value: quizSummary.data?.attempts ?? 0,
       icon: <FileCheck2 />,
       tone: "ember" as const,
     },
     {
       label: "Average quiz score",
-      value: `${s.users.length ? Math.round(s.users.reduce((sum, user) => sum + user.quizAverage, 0) / s.users.length) : 0}%`,
+      value: `${quizSummary.data?.averageScore ?? 0}%`,
       icon: <Activity />,
     },
     {
@@ -173,7 +175,7 @@ export function AdminDashboardPage() {
         ))}
       </section>
       <Suspense fallback={<ChartLoading />}>
-        <AdminDashboardCharts />
+        <AdminDashboardCharts quizTrend={quizSummary.data?.trend ?? []} />
       </Suspense>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-xl border bg-white p-6">
@@ -197,7 +199,7 @@ export function AdminDashboardPage() {
               ["Published lessons", s.lessons.filter((x) => x.status === "Published").length],
               ["Draft lessons", s.lessons.filter((x) => x.status === "Draft").length],
               ["Published articles", awareness.data?.kinds.articles?.count ?? "—"],
-              ["Question bank", s.questions.length],
+              ["Question bank", quizSummary.data?.publishedQuestions ?? 0],
               ["Active announcements", s.announcements.filter((x) => x.active).length],
             ].map(([label, value]) => (
               <div

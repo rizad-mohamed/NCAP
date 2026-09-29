@@ -396,7 +396,7 @@ const adminNav = [
   ["Lessons", "/admin/lessons", BookOpen],
   ["Manage Awareness", "/admin/awareness", Newspaper],
   ["Manage Modules & Topics", "/admin/topics", Tags],
-  ["Questions", "/admin/questions", FileQuestion],
+  ["Quizzes", "/admin/questions", FileQuestion],
   ["Reports", "/admin/reports", ChartNoAxesCombined],
   ["Certificates", "/admin/certificates", GraduationCap],
   ["Announcements", "/admin/announcements", Megaphone],

@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { questions as seedQuestions } from "@/data/quizzes";
 import {
   announcements as seedAnnouncements,
   badges as badgeCatalogue,
@@ -98,83 +97,6 @@ const seedCertificateTemplate: CertificateTemplate = {
   theme: "navy",
 };
 
-const seedDemoProgress = {
-  completedLessons: [
-    "l-what-is-risk",
-    "l-four-habits",
-    "l-verify-before-act",
-    "l-passphrases",
-    "l-password-manager",
-    "l-reuse",
-    "l-spot-phishing",
-  ],
-  bookmarks: ["l-mfa", "l-otp-scams", "l-backups"],
-  attempts: [
-    {
-      id: "at-seed-1",
-      quizId: "q-fundamentals",
-      moduleId: "m-fundamentals",
-      scorePercent: 90,
-      correct: 9,
-      total: 10,
-      seconds: 372,
-      completedAt: "2026-08-22 19:41",
-      byTopic: [
-        { topic: "Safe Browsing", correct: 4, total: 4 },
-        { topic: "Social Engineering", correct: 2, total: 2 },
-        { topic: "Password Security", correct: 1, total: 2 },
-        { topic: "Privacy", correct: 2, total: 2 },
-      ],
-    },
-    {
-      id: "at-seed-2",
-      quizId: "q-passwords",
-      moduleId: "m-passwords",
-      scorePercent: 70,
-      correct: 7,
-      total: 10,
-      seconds: 425,
-      completedAt: "2026-08-26 08:12",
-      byTopic: [
-        { topic: "Password Security", correct: 4, total: 5 },
-        { topic: "MFA", correct: 3, total: 5 },
-      ],
-    },
-  ] as QuizAttempt[],
-  activities: [
-    {
-      id: "ac-1",
-      kind: "quiz",
-      label: "Completed the Passwords & MFA quiz — 70%",
-      at: "2026-08-26 08:12",
-    },
-    {
-      id: "ac-2",
-      kind: "bookmark",
-      label: "Bookmarked “Choosing the right second factor”",
-      at: "2026-08-25 21:04",
-    },
-    {
-      id: "ac-3",
-      kind: "lesson",
-      label: "Completed “Spotting a phishing message”",
-      at: "2026-08-24 18:30",
-    },
-    {
-      id: "ac-4",
-      kind: "badge",
-      label: "Earned the Phishing Spotter badge",
-      at: "2026-08-22 19:45",
-    },
-    {
-      id: "ac-5",
-      kind: "quiz",
-      label: "Completed the Digital Safety Fundamentals quiz — 90%",
-      at: "2026-08-22 19:41",
-    },
-  ] as ActivityItem[],
-};
-
 const emptyState = (): StoreState => ({
   session: GUEST,
   completedLessons: [],
@@ -189,7 +111,7 @@ const emptyState = (): StoreState => ({
   newsUpdates: [],
   bestPractices: [],
   posters: [],
-  questions: seedQuestions,
+  questions: [],
   infographics: [],
   videos: [],
   topics: [],
@@ -273,7 +195,8 @@ function sessionFromAuth(user: AuthUser | null, previous: Session = GUEST): Sess
 
 function withAuthenticatedDemoState(state: StoreState, user: AuthUser | null): StoreState {
   const session = sessionFromAuth(user, state.session);
-  if (session.role !== "learner") return { ...state, session };
+  if (session.role !== "learner")
+    return { ...state, session, attempts: [], questions: [], quizDrafts: {} };
   return {
     ...state,
     session,
@@ -282,7 +205,9 @@ function withAuthenticatedDemoState(state: StoreState, user: AuthUser | null): S
     lessons: [],
     modules: [],
     topics: [],
-    attempts: state.attempts.length === 0 ? seedDemoProgress.attempts : state.attempts,
+    attempts: [],
+    questions: [],
+    quizDrafts: {},
     activities: [],
   };
 }
@@ -361,6 +286,9 @@ export function NcapProvider({
           "posters",
           "infographics",
           "videos",
+          "attempts",
+          "questions",
+          "quizDrafts",
         ].includes(key)
           ? undefined
           : value,
