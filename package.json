@@ -23,7 +23,8 @@
     "awareness:seed": "node scripts/seed-awareness.mjs",
     "awareness:cleanup": "node scripts/cleanup-awareness.mjs",
     "learning:seed": "node scripts/seed-learning.mjs",
-    "learning:cleanup": "node scripts/cleanup-learning.mjs"
+    "learning:cleanup": "node scripts/cleanup-learning.mjs",
+    "quiz:seed": "node scripts/seed-quiz.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
