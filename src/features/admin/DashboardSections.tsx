@@ -7,7 +7,6 @@ import {
   useAdminDashboard,
   useDashboardReport,
   useDashboardAnnouncements,
-  useDashboardUsers,
 } from "@/services/dashboard-hooks";
 import type { Announcement } from "@/data/types";
 import { PageHeader, StatCard, EmptyState } from "@/components/common/primitives";
@@ -23,93 +22,6 @@ import { AdminReportCharts } from "./AdminCharts";
 
 const primary = dashboardButton.primary;
 const outline = dashboardButton.secondary;
-
-export function AdminUsersPage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const limit = 20;
-  const users = useDashboardUsers((page - 1) * limit, limit, search);
-  const pages = Math.max(1, Math.ceil((users.data?.total ?? 0) / limit));
-  return (
-    <div className="container-ncap max-w-[1400px] py-2">
-      <PageHeader
-        eyebrow="Administration · Users"
-        title="Learners"
-        description="Review saved learning progress and assessment activity."
-      />
-      <div className="mt-7">
-        <DashboardSearchInput
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-          placeholder="Search name or email…"
-        />
-      </div>
-      {users.isPending && (
-        <p role="status" className="my-4">
-          Loading learners…
-        </p>
-      )}
-      {users.isError && (
-        <p role="alert" className="my-4">
-          Learner records are unavailable. Please try again.
-        </p>
-      )}
-      <ResponsiveTableContainer label="Learner records">
-        <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              {[
-                "User",
-                "Email",
-                "Language",
-                "Learning progress",
-                "Lessons completed",
-                "Quiz average",
-                "Attempts",
-                "Last activity",
-              ].map((item) => (
-                <th key={item} className="px-4 py-3 font-semibold">
-                  {item}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {(users.data?.items ?? []).map((item) => (
-              <tr key={item.id} className="border-t">
-                <td className="px-4 py-4 font-semibold">{item.name}</td>
-                <td className="px-4 py-4">{item.email}</td>
-                <td className="px-4 py-4 uppercase">{item.language}</td>
-                <td className="px-4 py-4">{item.progressPercent}%</td>
-                <td className="px-4 py-4">{item.completedLessons}</td>
-                <td className="px-4 py-4">{item.quizAverage}%</td>
-                <td className="px-4 py-4">{item.attempts}</td>
-                <td className="px-4 py-4">{item.lastActivity}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!users.isPending && !users.data?.items.length && (
-          <div className="p-6">
-            <EmptyState
-              title="No learners found"
-              description="Adjust the search or wait for learners to register."
-            />
-          </div>
-        )}
-      </ResponsiveTableContainer>
-      <DashboardPagination
-        page={page}
-        pages={pages}
-        onPageChange={setPage}
-        count={users.data?.total ?? 0}
-      />
-    </div>
-  );
-}
 
 export function AdminReportsPage() {
   const store = useNcap();

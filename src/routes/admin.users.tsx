@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminUsersPage } from "@/features/admin/DashboardSections";
+import { AdminUsersPage } from "@/features/admin/UsersPage";
 import { RouteShell } from "@/components/layout/RouteShell";
 export const Route = createFileRoute("/admin/users")({
   head: () => ({
