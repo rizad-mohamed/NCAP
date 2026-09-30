@@ -79,6 +79,15 @@ export interface Database {
       quiz_history: { Args: { target: string | null }; Returns: Json };
       quiz_eligibility: { Args: { target: string }; Returns: Json };
       quiz_admin_summary: { Args: Record<never, never>; Returns: Json };
+      dashboard_begin_lesson: { Args: { target: string }; Returns: string };
+      dashboard_heartbeat: { Args: { target: string }; Returns: number };
+      dashboard_learner: { Args: { activity_offset?: number }; Returns: Json };
+      dashboard_admin: { Args: Record<never, never>; Returns: Json };
+      dashboard_report: { Args: { days?: number; module_filter?: string | null; quiz_filter?: string | null; attempt_offset?: number; attempt_limit?: number }; Returns: Json };
+      dashboard_users: { Args: { page_offset?: number; page_limit?: number; search_text?: string }; Returns: Json };
+      dashboard_announcements_admin: { Args: Record<never, never>; Returns: Json };
+      dashboard_save_announcement: { Args: { payload: Json }; Returns: undefined };
+      dashboard_delete_announcement: { Args: { target: string }; Returns: undefined };
     };
     Enums: {
       app_role: AppRole;
