@@ -53,12 +53,15 @@ function authRedirect(path: "/auth/callback" | "/reset-password") {
 async function toAuthUser(user: User, supabase: SupabaseClient<Database>): Promise<AuthUser> {
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,email,display_name,role,language,phone,notifications,created_at")
+    .select("id,email,display_name,role,status,language,phone,notifications,created_at")
     .eq("id", user.id)
     .single();
 
   if (error || !profile) {
     throw new Error("Your account profile is unavailable. Contact an administrator.");
+  }
+  if (profile.status !== "active") {
+    throw new Error("This account is unavailable. Contact an administrator.");
   }
 
   return {

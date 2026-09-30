@@ -16,6 +16,7 @@ export interface Database {
           email: string;
           display_name: string;
           role: AppRole;
+          status: "active" | "suspended" | "disabled";
           language: "en" | "si" | "ta";
           phone: string;
           notifications: boolean;
@@ -27,6 +28,7 @@ export interface Database {
           email: string;
           display_name: string;
           role?: AppRole;
+          status?: "active" | "suspended" | "disabled";
           language?: "en" | "si" | "ta";
           phone?: string;
           notifications?: boolean;
@@ -88,6 +90,9 @@ export interface Database {
       dashboard_announcements_admin: { Args: Record<never, never>; Returns: Json };
       dashboard_save_announcement: { Args: { payload: Json }; Returns: undefined };
       dashboard_delete_announcement: { Args: { target: string }; Returns: undefined };
+      admin_users_list: { Args: { page_offset?: number; page_limit?: number; search_text?: string; role_filter?: string; status_filter?: string; sort_field?: string; sort_direction?: string }; Returns: Json };
+      admin_user_details: { Args: { target: string }; Returns: Json };
+      admin_user_change: { Args: { target: string; new_role?: AppRole | null; new_status?: string | null; reason?: string }; Returns: undefined };
     };
     Enums: {
       app_role: AppRole;
