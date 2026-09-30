@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LessonPage } from "@/features/learning/LearningPages";
 import { RouteShell } from "@/components/layout/RouteShell";
+import { useDashboardLessonSession } from "@/services/dashboard-hooks";
 export const Route = createFileRoute("/learn/lessons/$lessonId")({
   component: Page,
   head: () => ({
@@ -9,6 +10,7 @@ export const Route = createFileRoute("/learn/lessons/$lessonId")({
 });
 function Page() {
   const { lessonId } = Route.useParams();
+  useDashboardLessonSession(lessonId);
   return (
     <RouteShell requiredRole="learner">
       <LessonPage lessonId={lessonId} />

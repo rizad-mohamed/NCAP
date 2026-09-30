@@ -1,5 +1,6 @@
 import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { useAdminQuizSummary } from "@/services/quiz-hooks";
+import { useAdminDashboard } from "@/services/dashboard-hooks";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
@@ -31,7 +32,6 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNcap } from "@/state/ncap-store";
 import { quizzes } from "@/data/quizzes";
-import { adminActivity } from "@/data/admin";
 import type {
   Announcement,
   Article,
@@ -130,18 +130,18 @@ const seedTopicNames: Topic[] = [
 export function AdminDashboardPage() {
   const awareness = useAwarenessSummary();
   const quizSummary = useAdminQuizSummary();
-  const s = useNcap();
+  const dashboard = useAdminDashboard();
   const metrics = [
-    { label: "Total demo users", value: s.users.length, icon: <Users />, tone: "violet" as const },
+    { label: "Total learners", value: dashboard.data?.users ?? 0, icon: <Users />, tone: "violet" as const },
     {
       label: "Active learners",
-      value: s.users.filter((u) => u.status === "Active").length,
+      value: dashboard.data?.activeLearners ?? 0,
       icon: <CircleUserRound />,
       tone: "success" as const,
     },
     {
       label: "Lessons published",
-      value: s.lessons.filter((l) => l.status === "Published").length,
+      value: dashboard.data?.publishedLessons ?? 0,
       icon: <BookOpen />,
     },
     {
@@ -156,18 +156,19 @@ export function AdminDashboardPage() {
       icon: <Activity />,
     },
     {
-      label: "Certificates issued",
-      value: s.users.reduce((n, u) => n + u.certificates, 0),
+      label: "Lessons completed",
+      value: dashboard.data?.completedLessons ?? 0,
       icon: <GraduationCap />,
     },
   ];
   return (
     <div className="container-ncap max-w-[1400px] py-2">
+      {dashboard.isPending && <p role="status">Loading administration metrics…</p>}
+      {dashboard.isError && <p role="alert">Administration metrics are unavailable. Please refresh.</p>}
       <PageHeader
-        eyebrow="Administration · Demo workspace"
+        eyebrow="Administration"
         title="Overview"
-        description="Monitor learning activity, content readiness, and assessment engagement across deterministic demonstration data."
-        actions={<DemoTag />}
+        description="Monitor learning activity, content readiness, and assessment engagement."
       />
       <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {metrics.map((m) => (
@@ -175,13 +176,13 @@ export function AdminDashboardPage() {
         ))}
       </section>
       <Suspense fallback={<ChartLoading />}>
-        <AdminDashboardCharts quizTrend={quizSummary.data?.trend ?? []} />
+        <AdminDashboardCharts quizTrend={quizSummary.data?.trend ?? []} topicEngagement={dashboard.data?.topicEngagement ?? []} />
       </Suspense>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-xl border bg-white p-6">
           <SectionHeading title="Recent activity" />
           <div className="grid gap-1">
-            {adminActivity.slice(0, 7).map((a) => (
+            {(dashboard.data?.recentActivity ?? []).map((a) => (
               <div key={a.id} className="flex gap-3 rounded-lg p-3 hover:bg-muted">
                 <span className="mt-1.5 size-2 rounded-full bg-violet" />
                 <div>
@@ -196,11 +197,11 @@ export function AdminDashboardPage() {
           <SectionHeading title="Content overview" />
           <div className="grid gap-3">
             {[
-              ["Published lessons", s.lessons.filter((x) => x.status === "Published").length],
-              ["Draft lessons", s.lessons.filter((x) => x.status === "Draft").length],
+              ["Published lessons", dashboard.data?.publishedLessons ?? 0],
+              ["Draft lessons", dashboard.data?.draftLessons ?? 0],
               ["Published articles", awareness.data?.kinds.articles?.count ?? "—"],
               ["Question bank", quizSummary.data?.publishedQuestions ?? 0],
-              ["Active announcements", s.announcements.filter((x) => x.active).length],
+              ["Active announcements", dashboard.data?.announcements ?? 0],
             ].map(([label, value]) => (
               <div
                 key={label}
@@ -235,248 +236,6 @@ function ChartLoading() {
         <div key={item} className="h-[340px] animate-pulse rounded-xl border bg-muted" />
       ))}
     </section>
-  );
-}
-
-export function AdminUsersPage() {
-  const s = useNcap();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("All");
-  const [language, setLanguage] = useState("All");
-  const [sort, setSort] = useState<"name" | "progress">("name");
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<DemoUser | null>(null);
-  const filtered = useMemo(
-    () =>
-      s.users
-        .filter(
-          (u) =>
-            (status === "All" || u.status === status) &&
-            (language === "All" || u.language === language) &&
-            `${u.name} ${u.email}`.toLowerCase().includes(search.toLowerCase()),
-        )
-        .sort((a, b) =>
-          sort === "name" ? a.name.localeCompare(b.name) : b.progressPercent - a.progressPercent,
-        ),
-    [s.users, search, status, language, sort],
-  );
-  const pages = Math.max(1, Math.ceil(filtered.length / NCAP_CONFIG.adminPageSize));
-  const rows = filtered.slice(
-    (page - 1) * NCAP_CONFIG.adminPageSize,
-    page * NCAP_CONFIG.adminPageSize,
-  );
-  const update = (user: DemoUser) => {
-    const administrators = s.users.filter((item) => item.roles?.includes("admin"));
-    const wasAdmin = s.users.find((item) => item.id === user.id)?.roles?.includes("admin");
-    if (wasAdmin && !user.roles?.includes("admin") && administrators.length <= 1) {
-      toast.error("At least one demonstration administrator must remain assigned.");
-      return;
-    }
-    s.setUsers(s.users.map((u) => (u.id === user.id ? user : u)));
-    s.logActivity("admin", `Updated roles and status for ${user.name}`);
-    setSelected(user);
-    toast.success("Demo user updated");
-  };
-  useEffect(() => setPage(1), [status, language, sort]);
-  return (
-    <div className="container-ncap max-w-[1400px] py-2">
-      <PageHeader
-        eyebrow="Administration · Users"
-        title="Learners"
-        description="Search, inspect, and update local demonstration learner records."
-        actions={<DemoTag />}
-      />
-      <FilterToolbar>
-        <DashboardSearchInput
-          value={search}
-          onChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
-          placeholder="Search name or email…"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className={dashboardSelect}
-          aria-label="Status filter"
-        >
-          <option>All</option>
-          <option>Active</option>
-          <option>Inactive</option>
-          <option>Suspended</option>
-        </select>
-        <select
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className={dashboardSelect}
-          aria-label="Language filter"
-        >
-          <option>All</option>
-          <option value="en">English</option>
-          <option value="si">Sinhala</option>
-          <option value="ta">Tamil</option>
-        </select>
-        <button className={outline} onClick={() => setSort(sort === "name" ? "progress" : "name")}>
-          <ArrowDownUp />
-          Sort: {sort === "name" ? "Name" : "Progress"}
-        </button>
-      </FilterToolbar>
-      <ResponsiveTableContainer label="Learner records">
-        <table className="w-full min-w-[960px] text-left text-sm">
-          <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              {[
-                "User",
-                "Email",
-                "Status",
-                "Roles",
-                "Language",
-                "Learning progress",
-                "Quiz average",
-                "Last activity",
-                "",
-              ].map((x) => (
-                <th key={x} className="px-4 py-3 font-semibold">
-                  {x}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((u) => (
-              <tr key={u.id} className="border-t hover:bg-muted/50">
-                <td className="px-4 py-4 font-semibold">{u.name}</td>
-                <td className="px-4 py-4 text-muted-foreground">{u.email}</td>
-                <td className="px-4 py-4">
-                  <StatusBadge value={u.status} />
-                </td>
-                <td className="px-4 py-4">
-                  {(u.roles ?? ["learner"]).map((role) => (
-                    <span
-                      key={role}
-                      className="mr-1 rounded-md bg-primary-soft px-2 py-1 text-xs font-semibold capitalize text-primary"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </td>
-                <td className="px-4 py-4 uppercase">{u.language}</td>
-                <td className="px-4 py-4">
-                  <div className="flex w-36 items-center gap-2">
-                    <ProgressMeter
-                      value={u.progressPercent}
-                      label={`${u.name} progress`}
-                      size="sm"
-                    />
-                    <span className="font-mono text-xs">{u.progressPercent}%</span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 font-mono">{u.quizAverage}%</td>
-                <td className="px-4 py-4 text-muted-foreground">{u.lastActivity}</td>
-                <td className="px-4 py-4">
-                  <button
-                    className={iconBtn}
-                    onClick={() => setSelected(u)}
-                    aria-label={`View ${u.name}`}
-                  >
-                    <Eye className="size-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {rows.length === 0 && (
-          <div className="p-6">
-            <EmptyState title="No learners found" description="Adjust search or filter criteria." />
-          </div>
-        )}
-      </ResponsiveTableContainer>
-      <DashboardPagination
-        page={page}
-        pages={pages}
-        onPageChange={setPage}
-        count={filtered.length}
-      />
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-xl">
-          {selected && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selected.name}</DialogTitle>
-                <DialogDescription>
-                  {selected.email} · Joined {selected.joinedAt}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard label="Progress" value={`${selected.progressPercent}%`} />
-                <StatCard label="Quiz avg" value={`${selected.quizAverage}%`} />
-                <StatCard label="Certificates" value={selected.certificates} />
-              </div>
-              <div className="rounded-lg bg-muted p-4">
-                <h3 className="font-semibold">Learning activity</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {selected.lessonsCompleted} lessons · {selected.attempts} quiz attempts · Last
-                  active {selected.lastActivity}
-                </p>
-              </div>
-              <label className="text-sm font-semibold">
-                Account status
-                <select
-                  className={field}
-                  value={selected.status}
-                  onChange={(e) =>
-                    setSelected({ ...selected, status: e.target.value as DemoUser["status"] })
-                  }
-                >
-                  <option>Active</option>
-                  <option>Inactive</option>
-                  <option>Suspended</option>
-                </select>
-              </label>
-              <fieldset className="rounded-lg border p-4">
-                <legend className="px-1 text-sm font-semibold">Assigned roles</legend>
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Client-side roles control this demonstration UI only. The backend must enforce
-                  RBAC.
-                </p>
-                {(["learner", "admin"] as const).map((role) => (
-                  <label
-                    key={role}
-                    className="flex min-h-11 items-center gap-3 text-sm font-medium capitalize"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(selected.roles ?? ["learner"]).includes(role)}
-                      onChange={(event) => {
-                        const roles = selected.roles ?? ["learner"];
-                        setSelected({
-                          ...selected,
-                          roles: event.target.checked
-                            ? [...new Set([...roles, role])]
-                            : roles.filter((item) => item !== role),
-                        });
-                      }}
-                      className="size-4 accent-primary"
-                    />
-                    {role}
-                  </label>
-                ))}
-              </fieldset>
-              <DialogFooter>
-                <button className={outline} onClick={() => setSelected(null)}>
-                  Cancel
-                </button>
-                <button className={primary} onClick={() => update(selected)}>
-                  Save changes
-                </button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
   );
 }
 
@@ -1629,254 +1388,6 @@ function ContentEditor({
   );
 }
 
-export function AdminReportsPage() {
-  const s = useNcap();
-  const [filters, setFilters] = useState({
-    range: "Last 6 months",
-    module: "All",
-    topic: "All",
-    quiz: "All",
-    status: "All",
-  });
-  const [generated, setGenerated] = useState(filters);
-  const report = useMemo(() => {
-    const users = s.users.filter(
-      (user) => generated.status === "All" || user.status === generated.status,
-    );
-    const selectedModule = s.modules.find((module) => module.title === generated.module);
-    const selectedQuiz = quizzes.find((quiz) => quiz.title === generated.quiz);
-    const currentDate = new Date();
-    const cutoff =
-      generated.range === "Last 30 days"
-        ? new Date(currentDate.getTime() - 30 * 86_400_000)
-        : generated.range === "Year to date"
-          ? new Date(Date.UTC(currentDate.getUTCFullYear(), 0, 1))
-          : new Date(currentDate.getTime() - 183 * 86_400_000);
-    const attempts = s.attempts.filter((attempt) => {
-      const completedAt = new Date(`${attempt.completedAt.replace(" ", "T")}Z`);
-      return (
-        !Number.isNaN(completedAt.getTime()) &&
-        completedAt >= cutoff &&
-        (!selectedModule || attempt.moduleId === selectedModule.id) &&
-        (!selectedQuiz || attempt.quizId === selectedQuiz.id) &&
-        (generated.topic === "All" ||
-          attempt.byTopic.some((topic) => topic.topic === generated.topic && topic.total > 0))
-      );
-    });
-    const completedLessonRecords = s.lessons.filter(
-      (lesson) =>
-        lesson.status === "Published" &&
-        s.completedLessons.includes(lesson.id) &&
-        (!selectedModule || lesson.moduleId === selectedModule.id) &&
-        (generated.topic === "All" || lesson.topic === generated.topic),
-    );
-    const monthly = new Map<string, { total: number; count: number }>();
-    for (const attempt of attempts) {
-      const key = attempt.completedAt.slice(0, 7);
-      const current = monthly.get(key) ?? { total: 0, count: 0 };
-      monthly.set(key, {
-        total: current.total + attempt.scorePercent,
-        count: current.count + 1,
-      });
-    }
-    const quizRows = [...monthly.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([period, value]) => ({
-        period,
-        attempts: value.count,
-        average: Math.round(value.total / value.count),
-      }));
-    const completedLessons = completedLessonRecords.length;
-    return {
-      users,
-      quizRows,
-      completionRows: [{ period: "Current", completions: completedLessons }],
-      attempts,
-      average: attempts.length
-        ? Math.round(
-            attempts.reduce((sum, attempt) => sum + attempt.scorePercent, 0) / attempts.length,
-          )
-        : 0,
-      completedLessons,
-      completionRate: users.length
-        ? Math.round(users.reduce((sum, user) => sum + user.progressPercent, 0) / users.length)
-        : 0,
-      learningHours:
-        Math.round(
-          (completedLessonRecords.reduce((sum, lesson) => sum + lesson.minutes, 0) / 60) * 10,
-        ) / 10,
-      certificateEligible: users.filter(
-        (user) =>
-          user.progressPercent === 100 &&
-          user.quizAverage >= NCAP_CONFIG.certificateThresholdPercent,
-      ).length,
-    };
-  }, [generated, s.attempts, s.completedLessons, s.lessons, s.modules, s.users]);
-  const generate = () => {
-    setGenerated(filters);
-    toast.success("Demo report generated");
-  };
-  const csv = () => {
-    const escape = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const rows = [
-      "Completed at,Quiz,Module,Score percent,Correct,Total",
-      ...report.attempts.map((attempt) =>
-        [
-          attempt.completedAt,
-          quizzes.find((quiz) => quiz.id === attempt.quizId)?.title ?? attempt.quizId,
-          s.modules.find((module) => module.id === attempt.moduleId)?.title ?? attempt.moduleId,
-          attempt.scorePercent,
-          attempt.correct,
-          attempt.total,
-        ]
-          .map(escape)
-          .join(","),
-      ),
-    ];
-    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ncap-demo-report.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("CSV export created locally");
-  };
-  return (
-    <div className="container-ncap max-w-[1400px] py-2">
-      <PageHeader
-        eyebrow="Administration · Reporting"
-        title="Learning reports"
-        description="Generate traceable Foundation Release summaries from current demo records. This is not a National Cybersecurity Index."
-        actions={
-          <>
-            <button className={outline} onClick={csv}>
-              <Download />
-              Export CSV
-            </button>
-            <button className={outline} onClick={() => window.print()}>
-              <Printer />
-              Print
-            </button>
-          </>
-        }
-      />
-      <section className="no-print mt-7 rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {Object.entries(filters).map(([key, value]) => (
-            <label key={key} className="text-xs font-semibold capitalize">
-              {key}
-              <select
-                value={value}
-                onChange={(e) => setFilters((f) => ({ ...f, [key]: e.target.value }))}
-                className={field}
-              >
-                {key === "range" ? (
-                  <>
-                    <option>Last 30 days</option>
-                    <option>Last 6 months</option>
-                    <option>Year to date</option>
-                  </>
-                ) : key === "module" ? (
-                  <>
-                    <option>All</option>
-                    {s.modules.map((m) => (
-                      <option key={m.id}>{m.title}</option>
-                    ))}
-                  </>
-                ) : key === "topic" ? (
-                  <>
-                    <option>All</option>
-                    {s.topics.map((topic) => (
-                      <option key={topic.id}>{topic.name}</option>
-                    ))}
-                  </>
-                ) : key === "quiz" ? (
-                  <>
-                    <option>All</option>
-                    {quizzes.map((q) => (
-                      <option key={q.id}>{q.title}</option>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    <option>All</option>
-                    <option>Active</option>
-                    <option>Inactive</option>
-                    <option>Suspended</option>
-                  </>
-                )}
-              </select>
-            </label>
-          ))}
-          <button className={cn(primary, "self-end")} onClick={generate}>
-            Generate report
-          </button>
-        </div>
-      </section>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Showing: {Object.values(generated).join(" · ")} · Current browser demo records
-      </p>
-      <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard label="Quiz attempts" value={report.attempts.length} />
-        <StatCard label="Average score" value={`${report.average}%`} tone="violet" />
-        <StatCard label="Completion rate" value={`${report.completionRate}%`} tone="success" />
-        <StatCard label="Completed lessons" value={report.completedLessons} />
-        <StatCard label="Learning hours" value={report.learningHours} />
-        <StatCard label="Certificate eligible" value={report.certificateEligible} tone="ember" />
-      </section>
-      <Suspense fallback={<ChartLoading />}>
-        <AdminReportCharts quizRows={report.quizRows} completionRows={report.completionRows} />
-      </Suspense>
-      <section className="mt-6 overflow-x-auto rounded-xl border bg-white">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <caption className="p-5 text-left text-lg font-semibold">Filtered quiz attempts</caption>
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-4 py-3">Completed</th>
-              <th className="px-4 py-3">Quiz</th>
-              <th className="px-4 py-3">Module</th>
-              <th className="px-4 py-3">Score</th>
-              <th className="px-4 py-3">Score outcome</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.attempts.map((attempt) => (
-              <tr key={attempt.id} className="border-t">
-                <td className="px-4 py-3 font-mono text-xs">{attempt.completedAt}</td>
-                <td className="px-4 py-3 font-semibold">
-                  {quizzes.find((quiz) => quiz.id === attempt.quizId)?.title ?? "Quiz"}
-                </td>
-                <td className="px-4 py-3">
-                  {s.modules.find((module) => module.id === attempt.moduleId)?.title ?? "Module"}
-                </td>
-                <td className="px-4 py-3">{attempt.scorePercent}%</td>
-                <td className="px-4 py-3">
-                  <StatusBadge
-                    value={
-                      attempt.scorePercent >= NCAP_CONFIG.passingScorePercent
-                        ? "Target met"
-                        : "Below target"
-                    }
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {report.attempts.length === 0 && (
-          <div className="p-6">
-            <EmptyState
-              title="No quiz attempts match"
-              description="Adjust the report range or learning filters and generate the report again."
-            />
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
 export function AdminCertificatesPage() {
   const store = useNcap();
   const [view, setView] = useState<"registry" | "template">("registry");
@@ -2205,207 +1716,6 @@ export function AdminCertificatesPage() {
         </div>
       )}
     </div>
-  );
-}
-
-export function AdminAnnouncementsPage() {
-  const s = useNcap();
-  const [editing, setEditing] = useState<Announcement | "new" | null>(null);
-  const remove = (id: string) => {
-    if (window.confirm("Delete this announcement from demo state?")) {
-      s.setAnnouncements(s.announcements.filter((a) => a.id !== id));
-      toast.success("Announcement deleted");
-    }
-  };
-  return (
-    <div className="container-ncap max-w-6xl py-2">
-      <PageHeader
-        eyebrow="Administration · Communications"
-        title="Announcements"
-        description="Create, schedule, activate, and maintain notices shown in the learner dashboard."
-        actions={
-          <button className={primary} onClick={() => setEditing("new")}>
-            <Plus />
-            New announcement
-          </button>
-        }
-      />
-      <div className="mt-7 grid gap-4">
-        {s.announcements.map((a) => (
-          <article key={a.id} className="rounded-xl border bg-white p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge value={announcementStatus(a)} />
-                  <span className="meta text-muted-foreground">{a.audience}</span>
-                </div>
-                <h2 className="mt-3 text-xl font-semibold">{a.title}</h2>
-                <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{a.body}</p>
-                <p className="mt-4 font-mono text-xs text-muted-foreground">
-                  {a.startsAt} → {a.endsAt}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className={iconBtn}
-                  onClick={() => setEditing(a)}
-                  aria-label={`Edit ${a.title}`}
-                >
-                  <Edit3 className="size-4" />
-                </button>
-                <button
-                  className={iconBtn}
-                  onClick={() => {
-                    s.setAnnouncements(
-                      s.announcements.map((x) => (x.id === a.id ? { ...x, active: !x.active } : x)),
-                    );
-                    toast.success(a.active ? "Announcement deactivated" : "Announcement activated");
-                  }}
-                  aria-label={`${a.active ? "Deactivate" : "Activate"} ${a.title}`}
-                >
-                  <Check className="size-4" />
-                </button>
-                <button
-                  className={cn(iconBtn, "text-destructive")}
-                  onClick={() => remove(a.id)}
-                  aria-label={`Delete ${a.title}`}
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-        {s.announcements.length === 0 && (
-          <EmptyState
-            title="No announcements"
-            description="Create a scheduled notice for learners or administrators."
-          />
-        )}
-      </div>
-      <AnnouncementEditor
-        key={editing === "new" ? "new" : (editing?.id ?? "closed")}
-        value={editing}
-        onClose={() => setEditing(null)}
-      />
-    </div>
-  );
-}
-function AnnouncementEditor({
-  value,
-  onClose,
-}: {
-  value: Announcement | "new" | null;
-  onClose: () => void;
-}) {
-  const s = useNcap();
-  const original = value === "new" ? null : value;
-  const [form, setForm] = useState({
-    title: original?.title ?? "",
-    body: original?.body ?? "",
-    audience: original?.audience ?? "All Learners",
-    startsAt: original?.startsAt ?? new Date().toISOString().slice(0, 10),
-    endsAt: original?.endsAt ?? "2026-12-31",
-    active: original?.active ?? false,
-  });
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!form.title.trim() || !form.body.trim()) {
-      toast.error("Title and message are required");
-      return;
-    }
-    if (form.endsAt < form.startsAt) {
-      toast.error("End date must be after start date");
-      return;
-    }
-    const item: Announcement = {
-      ...form,
-      id: original?.id ?? `an-${Date.now()}`,
-      audience: form.audience as Announcement["audience"],
-    };
-    s.setAnnouncements(
-      original
-        ? s.announcements.map((a) => (a.id === item.id ? item : a))
-        : [item, ...s.announcements],
-    );
-    toast.success(original ? "Announcement updated" : "Announcement created");
-    onClose();
-  };
-  const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
-  return (
-    <Dialog open={!!value} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{original ? "Edit" : "Create"} announcement</DialogTitle>
-          <DialogDescription>Active notices appear on the learner dashboard.</DialogDescription>
-        </DialogHeader>
-        <form className="grid gap-4" onSubmit={submit}>
-          <label className="text-sm font-semibold">
-            Title *
-            <input
-              value={form.title}
-              onChange={(e) => set("title", e.target.value)}
-              className={field}
-            />
-          </label>
-          <label className="text-sm font-semibold">
-            Message *
-            <textarea
-              value={form.body}
-              onChange={(e) => set("body", e.target.value)}
-              className="mt-1.5 min-h-28 w-full rounded-lg border p-3"
-            />
-          </label>
-          <label className="text-sm font-semibold">
-            Audience
-            <select
-              value={form.audience}
-              onChange={(e) => set("audience", e.target.value)}
-              className={field}
-            >
-              <option>All Learners</option>
-              <option>New Learners</option>
-              <option>Administrators</option>
-            </select>
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-sm font-semibold">
-              Start date
-              <input
-                type="date"
-                value={form.startsAt}
-                onChange={(e) => set("startsAt", e.target.value)}
-                className={field}
-              />
-            </label>
-            <label className="text-sm font-semibold">
-              End date
-              <input
-                type="date"
-                value={form.endsAt}
-                onChange={(e) => set("endsAt", e.target.value)}
-                className={field}
-              />
-            </label>
-          </div>
-          <label className="flex min-h-11 items-center gap-3 rounded-lg border p-3 text-sm font-semibold">
-            <input
-              type="checkbox"
-              checked={form.active}
-              onChange={(e) => set("active", e.target.checked)}
-              className="size-4 accent-violet"
-            />
-            Active on learner dashboard
-          </label>
-          <DialogFooter>
-            <button type="button" className={outline} onClick={onClose}>
-              Cancel
-            </button>
-            <button className={primary}>Save announcement</button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -55,7 +55,7 @@ export type LearningTables = {
     id: string;
     user_id: string;
     lesson_id: string | null;
-    kind: "lesson" | "bookmark";
+    kind: "lesson" | "bookmark" | "opened";
     label: string;
     created_at: string;
   }>;

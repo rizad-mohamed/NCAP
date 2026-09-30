@@ -295,7 +295,7 @@ export interface QuizAttempt {
 
 export interface ActivityItem {
   id: string;
-  kind: "lesson" | "quiz" | "badge" | "bookmark" | "certificate" | "admin";
+  kind: "lesson" | "quiz" | "badge" | "bookmark" | "certificate" | "admin" | "opened";
   label: string;
   at: string;
 }

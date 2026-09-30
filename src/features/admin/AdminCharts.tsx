@@ -9,7 +9,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { topicEngagement } from "@/data/admin";
 
 type QuizRow = { period: string; average: number; attempts: number };
 type CompletionRow = { period: string; completions: number };
@@ -26,13 +25,13 @@ function ChartPanel({
   return (
     <div className="rounded-xl border bg-white p-5">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-1 text-xs text-muted-foreground">{description} · Demo data</p>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       <div className="mt-5">{children}</div>
     </div>
   );
 }
 
-export function AdminDashboardCharts({ quizTrend }: { quizTrend: QuizRow[] }) {
+export function AdminDashboardCharts({ quizTrend, topicEngagement }: { quizTrend: QuizRow[]; topicEngagement: { topic: string; learners: number }[] }) {
   return (
     <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_.75fr]">
       <ChartPanel title="Quiz performance trend" description="Monthly average across completed attempts">
