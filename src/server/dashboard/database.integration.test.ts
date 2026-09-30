@@ -46,6 +46,7 @@ describe("Dashboard database contracts", () => {
       "202609270002_learning_upload_limit.sql",
       "202609290001_quiz.sql",
       "202609300001_dashboard.sql",
+      "202609300002_dashboard_session_limit.sql",
     ])
       await db.exec(await readFile(`supabase/migrations/${file}`, "utf8"));
     await db.query(
@@ -207,6 +208,47 @@ describe("Dashboard database contracts", () => {
       )[0]!.result;
       expect(report.attempts[0]?.scorePercent).toBe(90);
       expect(report.learningSeconds).toBeGreaterThanOrEqual(29);
+    } finally {
+      await db.exec("reset role; rollback");
+    }
+  });
+  it("allows only one open learning session per user", async () => {
+    await db.exec("begin");
+    try {
+      await as(alice);
+      const first = (
+        await query<{ id: string }>("select public.dashboard_begin_lesson('l-test') id")
+      )[0]!.id;
+      const second = (
+        await query<{ id: string }>("select public.dashboard_begin_lesson('l-test') id")
+      )[0]!.id;
+      expect(first).not.toBe(second);
+      expect(
+        (
+          await query<{ count: number }>(
+            "select count(*)::int count from public.dashboard_learning_sessions where user_id=$1 and ended_at is null",
+            [alice],
+          )
+        )[0]!.count,
+      ).toBe(1);
+      await db.exec("reset role");
+      await query(
+        "update public.dashboard_learning_sessions set last_heartbeat_at=now()-interval '30 seconds' where id in ($1,$2)",
+        [first, second],
+      );
+      await as(alice);
+      expect(
+        (
+          await query<{ seconds: number }>("select public.dashboard_heartbeat($1) seconds", [first])
+        )[0]!.seconds,
+      ).toBe(0);
+      expect(
+        (
+          await query<{ seconds: number }>("select public.dashboard_heartbeat($1) seconds", [
+            second,
+          ])
+        )[0]!.seconds,
+      ).toBeGreaterThan(0);
     } finally {
       await db.exec("reset role; rollback");
     }

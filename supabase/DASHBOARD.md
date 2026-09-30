@@ -1,6 +1,6 @@
 # Dashboard deployment and verification
 
-Apply `migrations/202609300001_dashboard.sql` after the Auth, Learning, and Quiz migrations. The migration seeds only the badge rule catalogue. It does not seed learner history or announcements. The migration backfills earned badges from existing completions and submitted quiz attempts.
+Apply `migrations/202609300001_dashboard.sql` and then `migrations/202609300002_dashboard_session_limit.sql` after the Auth, Learning, and Quiz migrations. The first migration seeds only the badge rule catalogue. It does not seed learner history or announcements. It backfills earned badges from existing completions and submitted quiz attempts. The second migration ensures one open learning session per learner, so multiple tabs cannot multiply time credit.
 
 The application requires the existing `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `APP_URL` settings. No Dashboard service key is needed. The migration adds:
 
