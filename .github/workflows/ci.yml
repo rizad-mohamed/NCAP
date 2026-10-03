@@ -12,11 +12,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm audit --audit-level=moderate
+      - run: node scripts/security-review.mjs
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npx playwright test

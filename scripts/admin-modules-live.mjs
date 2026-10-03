@@ -78,6 +78,31 @@ const anon = createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
 let adminId;
 let learnerId;
 let outsiderId;
+const integrityTables = [
+  "awareness_resources",
+  "learning_topics",
+  "learning_modules",
+  "learning_lessons",
+  "quiz_definitions",
+  "quiz_questions",
+  "quiz_options",
+  "learning_completions",
+  "learning_bookmarks",
+  "quiz_attempts",
+  "certificates",
+];
+async function integritySnapshot() {
+  return sql(
+    integrityTables
+      .map(
+        (table) =>
+          `select '${table}' as name,count(*)::integer as count,md5(coalesce(string_agg(to_jsonb(t)::text,'' order by to_jsonb(t)::text),'')) as digest from public.${table} t`,
+      )
+      .join(" union all "),
+    true,
+  );
+}
+const baselineData = await integritySnapshot();
 try {
   const adminCreated = await service.auth.admin.createUser({
     email: adminEmail,
@@ -117,8 +142,14 @@ try {
       values('${moduleId}','${topicId}','${moduleTitle}','Disposable staging verification','Beginner',10,9900,'Published','${quizId}');
     insert into public.learning_lessons(id,module_id,topic_id,title,summary,difficulty,minutes,display_order,status)
       values('${lessonId}','${moduleId}','${topicId}','Eligibility lesson ${suffix}','Disposable eligibility evidence','Beginner',10,1,'Published');
+    insert into public.learning_module_objectives(module_id,position,text) values('${moduleId}',1,'Learn safely');
     insert into public.quiz_definitions(id,module_id,title,slug,description,topic,difficulty,passing_percent,eligibility_percent,question_count,status)
       values('${quizId}','${moduleId}','${quizTitle}','live-assessment-${suffix}','Disposable assessment','Live Safety','Beginner',70,80,1,'Published');
+    insert into public.quiz_questions(id,quiz_id,prompt,topic,difficulty,explanation,status)
+      values('qn-live-${suffix}','${quizId}','Which action protects your account?','Live Safety','Beginner','Use a unique passphrase.','Published');
+    insert into public.quiz_options(question_id,position,answer_text,is_correct) values
+      ('qn-live-${suffix}',0,'Use a unique passphrase',true),
+      ('qn-live-${suffix}',1,'Share your password',false);
     insert into public.learning_completions(user_id,lesson_id,completed_at) values('${learnerId}','${lessonId}',now()-interval '1 day');
     insert into public.quiz_attempts(user_id,quiz_id,attempt_number,started_at,deadline_at,completed_at,status,correct_count,total_count,score_percent,passed)
       values('${learnerId}','${quizId}',1,now()-interval '2 days',now()-interval '2 days'+interval '10 minutes',now()-interval '2 days'+interval '5 minutes','submitted',9,10,90,true);
@@ -156,6 +187,28 @@ try {
     ).error
   )
     throw new Error("Disposable learner sign-in failed.");
+  const progress = await learnerClient.rpc("dashboard_learner", { activity_offset: 0 });
+  const isolated = await outsiderClient.rpc("dashboard_learner", { activity_offset: 0 });
+  if (
+    progress.error ||
+    progress.data?.statistics?.completedCount !== 1 ||
+    isolated.error ||
+    isolated.data?.statistics?.completedCount !== 0
+  )
+    throw new Error("Live Dashboard progress or cross-user isolation failed.");
+  for (const name of ["dashboard_admin", "admin_users_list", "dashboard_announcements_admin"]) {
+    if (!(await learnerClient.rpc(name)).error)
+      throw new Error(`Learner unexpectedly accessed ${name}.`);
+  }
+  for (const table of ["quiz_options", "quiz_attempt_items"]) {
+    if (!(await learnerClient.from(table).select("*").limit(1)).error)
+      throw new Error("Learner unexpectedly read private quiz answer/snapshot tables.");
+  }
+  if (
+    !(await learnerClient.from("profiles").update({ role: "super_admin" }).eq("id", learnerId))
+      .error
+  )
+    throw new Error("Learner unexpectedly changed their own administrator role.");
   if (
     !(await learnerClient.rpc("certificate_issue", { learner: learnerId, module_target: moduleId }))
       .error
@@ -256,6 +309,9 @@ try {
     SUPABASE_PUBLISHABLE_KEY: env.SUPABASE_PUBLISHABLE_KEY,
     ADMIN_MODULES_E2E: "1",
     AWARENESS_INTEGRATION: "1",
+    AWARENESS_E2E: "1",
+    LEARNING_E2E: "1",
+    AWARENESS_VIDEO_FIXTURE: process.env.AWARENESS_VIDEO_FIXTURE || ".qa.local/awareness.webm",
     E2E_ADMIN_EMAIL: adminEmail,
     E2E_ADMIN_PASSWORD: adminPassword,
     E2E_LEARNER_EMAIL: learnerEmail,
@@ -264,6 +320,10 @@ try {
     E2E_MODULE_TITLE: moduleTitle,
     E2E_QUIZ_TITLE: quizTitle,
     E2E_LEARNER_NAME: learnerName,
+    E2E_LESSON_ID: lessonId,
+    E2E_QUIZ_ID: quizId,
+    E2E_SECOND_EMAIL: outsiderEmail,
+    E2E_SECOND_PASSWORD: outsiderPassword,
     E2E_RUN_ID: suffix,
   };
   await run(
@@ -277,12 +337,17 @@ try {
       "node_modules/@playwright/test/cli.js",
       "test",
       "e2e/admin-modules-live.spec.ts",
-      "--project=chromium",
+      "e2e/full-stack-live.spec.ts",
+      "e2e/awareness-backend.spec.ts",
+      "e2e/learning-media.spec.ts",
+      ...(playwrightArgs.some((arg) => arg.startsWith("--project")) ? [] : ["--project=chromium"]),
       ...playwrightArgs,
     ],
     testEnv,
   );
-  console.log("Authenticated Chromium administrator and learner workflows passed.");
+  console.log("Selected authenticated administrator and learner browser workflows passed.");
+  if (process.env.NCAP_LIGHTHOUSE === "1")
+    await run(process.execPath, ["scripts/lighthouse-review.mjs"], testEnv);
 } finally {
   const cleanupErrors = [];
   try {
@@ -297,6 +362,19 @@ try {
           .error
       )
         throw new Error("Disposable media cleanup failed.");
+      const learningAssets = await sql(
+        `select path from public.learning_media_assets where uploaded_by='${adminId}'`,
+        true,
+      );
+      if (
+        learningAssets.length &&
+        (
+          await service.storage
+            .from("learning-media")
+            .remove(learningAssets.map((asset) => asset.path))
+        ).error
+      )
+        throw new Error("Disposable Learning media cleanup failed.");
       await sql(`begin;
       delete from public.certificate_audit where certificate_id in (select id from public.certificates where user_id='${learnerId}' or issued_by='${adminId}');
       delete from public.certificates where user_id='${learnerId}' or issued_by='${adminId}';
@@ -306,12 +384,15 @@ try {
       delete from public.learning_completions where user_id='${learnerId}' or lesson_id in (select id from public.learning_lessons where module_id='${moduleId}');
       delete from public.learning_lessons where module_id='${moduleId}';
       delete from public.learning_modules where id='${moduleId}';
+      delete from public.learning_modules where title='Learning image verification ${suffix}';
       delete from public.learning_topics where id='${topicId}';
       delete from public.awareness_resources where created_by='${adminId}';
       delete from public.awareness_media_assets where uploaded_by='${adminId}';
+      delete from public.learning_media_assets where uploaded_by='${adminId}';
       delete from public.awareness_audit where actor_id='${adminId}' or before_data->>'created_by'='${adminId}' or after_data->>'created_by'='${adminId}';
       delete from public.learning_audit where actor_id='${adminId}';
       delete from public.quiz_audit where actor_id='${adminId}';
+      delete from public.admin_user_audit where actor_id='${adminId}' or target_id in ('${learnerId}','${outsiderId}');
       -- Remove orphaned audit fixtures from earlier interrupted runs of this harness.
       delete from public.learning_audit a where actor_id is null and kind='lessons'
         and coalesce(after_data->>'moduleId',before_data->>'moduleId') ~ '^m-live-[0-9a-f]{8}$'
@@ -338,6 +419,12 @@ try {
     }
   }
   if (cleanupErrors.length) throw new Error(cleanupErrors.join(" "));
+  if (JSON.stringify(await integritySnapshot()) !== JSON.stringify(baselineData))
+    throw new Error(
+      "Staging content/progress integrity differs from the baseline after cleanup; investigate before release.",
+    );
   if (adminId || learnerId)
-    console.log("Disposable staging accounts, content, activity and certificates removed.");
+    console.log(
+      "Disposable staging accounts, content, activity and certificates removed; all 11 content/progress table digests match the baseline.",
+    );
 }

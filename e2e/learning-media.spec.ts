@@ -15,7 +15,7 @@ test("Learning module images validate, upload, replace and retire through the ba
   await page.getByRole("tab", { name: "modules", exact: true }).click();
   await page.getByRole("button", { name: "Create module" }).click();
   const dialog = page.getByRole("dialog");
-  const title = `Learning image verification ${Date.now()}`;
+  const title = `Learning image verification ${process.env.E2E_RUN_ID ?? Date.now()}`;
   await dialog.getByLabel("Module title *").fill(title);
   await dialog.getByLabel("Description *").fill("Disposable Learning media verification.");
   await dialog.getByLabel("Learning objectives").fill("Verify managed images");
