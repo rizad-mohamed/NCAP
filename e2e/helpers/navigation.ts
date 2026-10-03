@@ -28,3 +28,20 @@ export async function gotoApp(page: Page, path: string) {
   await expect(page).toHaveURL(destination);
   await page.waitForLoadState("networkidle");
 }
+
+export async function reloadApp(page: Page) {
+  const destination = page.url();
+  try {
+    await page.reload({ waitUntil: "commit" });
+  } catch (error) {
+    if (
+      page.context().browser()?.browserType().name() !== "firefox" ||
+      !(error instanceof Error) ||
+      !error.message.includes("NS_BINDING_ABORTED")
+    )
+      throw error;
+    console.info("Firefox reload cancellation: verifying the committed route and workflow.");
+  }
+  await expect(page).toHaveURL(destination);
+  await page.waitForLoadState("networkidle");
+}

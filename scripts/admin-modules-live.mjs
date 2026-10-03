@@ -273,7 +273,15 @@ try {
   });
   if (report.error || report.data?.attemptCount !== 1 || report.data?.averageScore !== 90)
     throw new Error("Live authoritative report verification failed.");
-  const concurrentEdit = sql(`begin; select pg_advisory_xact_lock(726021); select pg_sleep(3);
+  const concurrentEdit = sql(`begin; set local application_name='ncap-live-edit-${suffix}';
+    select pg_advisory_xact_lock(726021);
+    do $wait$ declare deadline timestamptz:=clock_timestamp()+interval '30 seconds'; begin
+      loop
+        exit when exists(select 1 from pg_locks where locktype='advisory' and objid=726021 and not granted and pid<>pg_backend_pid());
+        if clock_timestamp()>deadline then raise exception 'Concurrent issuance was not observed'; end if;
+        perform pg_sleep(0.05);
+      end loop;
+    end $wait$;
     update public.learning_modules set description=description where id='${moduleId}'; commit;`).then(
     () => ({ ok: true }),
     () => ({ ok: false }),
@@ -281,7 +289,8 @@ try {
   let editLockObserved = false;
   for (let attempt = 0; attempt < 10; attempt++) {
     const locks = await sql(
-      "select exists(select 1 from pg_locks where locktype='advisory' and objid=726021 and granted) as locked",
+      `select exists(select 1 from pg_locks l join pg_stat_activity a on a.pid=l.pid
+        where l.locktype='advisory' and l.objid=726021 and l.granted and a.application_name='ncap-live-edit-${suffix}') as locked`,
       true,
     );
     if (locks[0]?.locked) {

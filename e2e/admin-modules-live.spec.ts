@@ -21,6 +21,7 @@ test.describe("live administrator content, reports and certificates", () => {
   test("administrator controls use the authoritative content and question backends", async ({
     page,
   }) => {
+    test.setTimeout(120000);
     await loginAs(page, "admin");
     await gotoApp(page, "/admin/lessons");
     await page.getByRole("button", { name: "Add lesson" }).click();

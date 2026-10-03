@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { reloadApp } from "./navigation";
 
 type TestRole = "learner" | "admin";
 
@@ -47,7 +48,7 @@ export async function loginAs(page: Page, role: TestRole) {
   await page.waitForURL(account.destination, { waitUntil: "networkidle", timeout: 20000 });
   // Start module verification from a fully loaded authenticated document so a
   // late guest-route redirect cannot race the workflow's first navigation.
-  await page.reload({ waitUntil: "networkidle" });
+  await reloadApp(page);
   await expect(page).toHaveURL(account.destination, { timeout: 20000 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 }
