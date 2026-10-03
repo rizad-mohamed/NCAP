@@ -62,7 +62,10 @@ export function RouteShell({
   return (
     <AppShell pathname={pathname}>
       {learningPage && (learningPending || learningError) ? (
-        <div className="container-ncap py-12" role={learningError ? "alert" : "status"}>
+        <div
+          className={learningPending ? "container-ncap min-h-screen py-12" : "container-ncap py-12"}
+          role={learningError ? "alert" : "status"}
+        >
           <p>{learningError?.message ?? "Loading learning content…"}</p>
           {learningError && (
             <button

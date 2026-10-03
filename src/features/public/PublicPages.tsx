@@ -325,11 +325,11 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
             {article.readingMinutes} min read
           </span>
         </div>
-        <h3 className="mt-4 text-xl font-semibold">
+        <h2 className="mt-4 text-xl font-semibold">
           <AppLink href={`/awareness/articles/${article.slug}`} className="hover:text-primary">
             {article.title}
           </AppLink>
-        </h3>
+        </h2>
         <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
           {article.summary}
         </p>

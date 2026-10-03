@@ -86,7 +86,7 @@ export function Brand({
     <AppLink
       href="/"
       className="inline-flex min-h-11 items-center gap-3 font-bold"
-      aria-label="NCAP — National Cyber Awareness Platform Sri Lanka home"
+      aria-label="NCAP National Cyber Awareness — Sri Lanka home"
     >
       <span
         className={cn(

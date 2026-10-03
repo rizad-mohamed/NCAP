@@ -597,6 +597,7 @@ function LatestResources() {
                 ) : (
                   <AppLink
                     href={resource.href}
+                    aria-label={`${resource.action}: ${resource.title}`}
                     className="mt-auto inline-flex min-h-10 w-fit items-center gap-2 rounded-lg pt-3 text-xs font-bold text-violet hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
                   >
                     {resource.action === "5 min read" && (

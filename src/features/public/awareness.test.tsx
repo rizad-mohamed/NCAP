@@ -73,7 +73,7 @@ describe("backend Awareness screens", () => {
       "articles",
       expect.objectContaining({ sort: "title" }),
     );
-    expect(screen.getByRole("heading", { name: articles[0]!.title })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: articles[0]!.title, level: 2 })).toBeInTheDocument();
   });
   it("loads detail by slug and renders structured text", () => {
     mocks.record.mockReturnValue(ready(articles[0]));

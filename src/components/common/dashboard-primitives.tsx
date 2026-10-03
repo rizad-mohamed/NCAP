@@ -97,7 +97,7 @@ export function StatusBadge({ value }: { value: string }) {
         positive
           ? "bg-success-soft text-success"
           : negative
-            ? "bg-destructive-soft text-destructive"
+            ? "bg-destructive-soft text-red-700"
             : "bg-muted text-muted-foreground",
       )}
     >
