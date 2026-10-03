@@ -1,12 +1,14 @@
 import "@tanstack/react-start/server-only";
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { getCookies, setCookie } from "@tanstack/react-start/server";
+import { getCookies, setCookie, setResponseHeaders } from "@tanstack/react-start/server";
 import type { Database } from "@/types/database";
 import { getServerAuthEnv } from "@/server/auth/env";
 
-export function createSupabaseServerClient() {
+export function createSupabaseServerClient(settings?: { persistSessionCookie: boolean }) {
   const env = getServerAuthEnv();
+  const persistent =
+    settings?.persistSessionCookie ?? getCookies()["ncap-session-persistent"] === "1";
   const secure = new URL(env.APP_URL).protocol === "https:";
 
   return createServerClient<Database>(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
@@ -20,9 +22,21 @@ export function createSupabaseServerClient() {
       getAll() {
         return Object.entries(getCookies()).map(([name, value]) => ({ name, value }));
       },
-      setAll(cookies) {
+      setAll(cookies, headers) {
+        setResponseHeaders(new Headers(headers));
         for (const { name, value, options } of cookies) {
-          setCookie(name, value, options as CookieOptions);
+          const hardened: CookieOptions = {
+            ...options,
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+            secure,
+          };
+          if (!persistent && value) {
+            delete hardened.maxAge;
+            delete hardened.expires;
+          }
+          setCookie(name, value, hardened);
         }
       },
     },

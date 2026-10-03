@@ -1,3 +1,4 @@
+import { setResponseHeaders } from "@tanstack/react-start/server";
 import { createFileRoute } from "@tanstack/react-router";
 import { createSupabaseServerClient } from "@/server/auth/supabase";
 import { getServerAuthEnv } from "@/server/auth/env";
@@ -7,6 +8,9 @@ export const Route = createFileRoute("/auth/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        setResponseHeaders(
+          new Headers({ "cache-control": "private, no-store", "referrer-policy": "no-referrer" }),
+        );
         const requestUrl = new URL(request.url);
         const code = requestUrl.searchParams.get("code");
         const next = safeInternalPath(requestUrl.searchParams.get("next"), "/dashboard");

@@ -1,3 +1,4 @@
+import { authAction } from "@/auth/action-result";
 import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
 import { CertificatePreview } from "@/components/common/CertificatePreview";
 import { LessonBlockView } from "@/features/learning/LearningPages";
@@ -1811,12 +1812,12 @@ export function AdminProfilePage() {
   const auth = useAuth();
   const { language, setLanguage } = useI18n();
   const [profile, setProfile] = useState({
-    name: store.session.name || "Demo Administrator",
-    email: store.session.email || "admin@ncap.demo",
-    phone: store.session.phone,
-    language,
-    notifications: store.session.notifications,
-    avatar: store.session.avatar,
+    name: auth.user?.displayName ?? "",
+    email: auth.user?.email ?? "",
+    phone: auth.user?.phone ?? "",
+    language: auth.user?.language ?? language,
+    notifications: auth.user?.notifications ?? true,
+    avatar: auth.user?.avatar,
   });
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
   const [savingProfile, setSavingProfile] = useState(false);
@@ -1837,14 +1838,17 @@ export function AdminProfilePage() {
       return;
     }
     setSavingProfile(true);
-    const result = await updateAccountProfile({
-      data: {
-        displayName: profile.name.trim(),
-        language: profile.language,
-        phone: profile.phone.trim(),
-        notifications: profile.notifications,
-      },
-    });
+    const result = await authAction(() =>
+      updateAccountProfile({
+        data: {
+          displayName: profile.name.trim(),
+          language: profile.language,
+          phone: profile.phone.trim(),
+          notifications: profile.notifications,
+          avatar: profile.avatar ? { ...profile.avatar, status: "ready" as const } : null,
+        },
+      }),
+    );
     setSavingProfile(false);
     if (!result.ok) {
       toast.error(result.message);
@@ -1858,7 +1862,6 @@ export function AdminProfilePage() {
     });
     setLanguage(profile.language);
     await auth.refresh();
-    store.logActivity("admin", "Updated administrator profile settings");
     toast.success("Administrator profile updated");
   };
   const changePassword = async (event: FormEvent) => {
@@ -1900,11 +1903,17 @@ export function AdminProfilePage() {
         >
           <h2 className="text-xl font-semibold">Profile</h2>
           <MediaField
+            storage="profile"
             label="Profile picture"
             asset={profile.avatar}
             initialAlt={`${profile.name} profile picture`}
             guidance="A square image is recommended."
-            onChange={(avatar) => setProfile((value) => ({ ...value, avatar }))}
+            onChange={(avatar) =>
+              setProfile((value) => ({
+                ...value,
+                avatar: avatar ? { ...avatar, status: "ready" as const } : undefined,
+              }))
+            }
           />
           <label className="text-sm font-semibold">
             Full name *

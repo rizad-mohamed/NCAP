@@ -29,6 +29,8 @@ export default defineConfig({
       SUPABASE_URL: testSupabaseUrl,
       SUPABASE_PUBLISHABLE_KEY: testSupabasePublishableKey,
       APP_URL: "http://127.0.0.1:4173",
+      SUPABASE_SERVICE_ROLE_KEY:
+        process.env["SUPABASE_SERVICE_ROLE_KEY"] || localEnv.SUPABASE_SERVICE_ROLE_KEY || "",
     },
   },
   projects: [

@@ -96,3 +96,9 @@ The operational review initially found 24 successful cron dispatches per job ove
 Run `npm run check`, `npm audit --audit-level=moderate`, `node scripts/security-review.mjs` and the default Playwright suite. Install browser binaries first. For authenticated staging, prepare the disposable video with `node scripts/prepare-qa-video.mjs`, then invoke `node scripts/admin-modules-live.mjs --staging-project=<configured-staging-ref> --project=<profile>` once per profile. This runner requires ignored staging credentials and refuses the wrong project. Set `NCAP_LIGHTHOUSE=1` for the audit run. Never run authenticated destructive fixtures on production.
 
 The GitHub workflow now checks full reachable history/build secrets and dependencies in addition to its existing typecheck, lint, unit/integration, build and five-profile Playwright checks. Final CI run and synchronized Git state are reported with the final commit in the task completion report; this document avoids a self-referential commit SHA.
+
+Authentication follow-up (4 October 2026): see [User / Authentication verification](AUTHENTICATION_VERIFICATION.md).
+It records profile persistence, session/password hardening, durable account-audit UUIDs and
+staging migration/configuration verification. SMTP delivery, CAPTCHA, production HTTPS
+redirects and the delivered-email lifecycle remain release gates; the historical whole-system
+verification above does not certify those gates.

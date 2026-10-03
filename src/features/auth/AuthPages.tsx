@@ -1,3 +1,4 @@
+import { authAction } from "@/auth/action-result";
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -195,6 +196,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
+  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const submit = async (e: FormEvent) => {
@@ -208,7 +210,9 @@ export function LoginPage() {
     if (Object.keys(next).length) return;
     setBusy(true);
     setFormError("");
-    const result = await signInAccount({ data: { email: email.trim(), password } });
+    const result = await authAction(() =>
+      signInAccount({ data: { email: email.trim(), password, remember } }),
+    );
     setBusy(false);
     if (!result.ok) {
       setFormError(result.message);
@@ -248,7 +252,12 @@ export function LoginPage() {
         />
         <div className="flex items-center justify-between gap-3 text-sm">
           <label className="flex items-center gap-2">
-            <input type="checkbox" className="size-4 accent-violet" />
+            <input
+              checked={remember}
+              onChange={(event) => setRemember(event.target.checked)}
+              type="checkbox"
+              className="size-4 accent-violet"
+            />
             Remember me on this device
           </label>
           <AppLink href="/forgot-password" className="font-semibold text-primary">
@@ -309,14 +318,16 @@ export function RegisterPage() {
     if (Object.keys(n).length) return;
     setBusy(true);
     setFormError("");
-    const result = await registerAccount({
-      data: {
-        name: form.name.trim(),
-        email: form.email.trim(),
-        password: form.password,
-        language: form.language,
-      },
-    });
+    const result = await authAction(() =>
+      registerAccount({
+        data: {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          language: form.language,
+        },
+      }),
+    );
     setBusy(false);
     if (!result.ok) {
       setFormError(result.message);
@@ -457,7 +468,7 @@ export function VerifyEmailPage() {
     if (!validEmail(email)) return;
     setBusy(true);
     setError("");
-    const result = await resendVerification({ data: { email } });
+    const result = await authAction(() => resendVerification({ data: { email } }));
     setBusy(false);
     if (!result.ok) {
       setError(result.message);
@@ -513,7 +524,7 @@ export function ForgotPasswordPage() {
     }
     setError("");
     setBusy(true);
-    const result = await requestPasswordReset({ data: { email: email.trim() } });
+    const result = await authAction(() => requestPasswordReset({ data: { email: email.trim() } }));
     setBusy(false);
     if (!result.ok) {
       setError(result.message);
@@ -576,7 +587,7 @@ export function ResetPasswordPage() {
     }
     setBusy(true);
     setError("");
-    const result = await updatePassword({ data: { password } });
+    const result = await authAction(() => updatePassword({ data: { password } }));
     setBusy(false);
     if (!result.ok) {
       setError(result.message);

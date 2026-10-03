@@ -157,22 +157,22 @@ interface SessionPreferencesValue {
 }
 const SessionPreferencesContext = createContext<SessionPreferencesValue | null>(null);
 
-function sessionFromAuth(user: AuthUser | null, previous: Session = GUEST): Session {
+function sessionFromAuth(user: AuthUser | null): Session {
   if (!user) return GUEST;
   return {
     role: user.role === "super_admin" ? "admin" : "learner",
     name: user.displayName,
     email: user.email,
     joinedAt: user.createdAt.slice(0, 10),
-    interests: previous.interests.length ? previous.interests : ["Phishing", "Password Security"],
+    interests: user.interests ?? [],
     notifications: user.notifications,
     phone: user.phone,
-    avatar: previous.avatar,
+    avatar: user.avatar,
   };
 }
 
 function withAuthenticatedDemoState(state: StoreState, user: AuthUser | null): StoreState {
-  const session = sessionFromAuth(user, state.session);
+  const session = sessionFromAuth(user);
   if (session.role !== "learner")
     return { ...state, session, attempts: [], questions: [], quizDrafts: {} };
   return {
@@ -238,14 +238,7 @@ export function NcapProvider({
     if (!ready) return;
     const persistedState = {
       ...state,
-      session: {
-        ...state.session,
-        role: "guest" as const,
-        name: "",
-        email: "",
-        joinedAt: "",
-        phone: "",
-      },
+      session: GUEST,
     };
     window.localStorage.setItem(
       STORAGE_KEY,

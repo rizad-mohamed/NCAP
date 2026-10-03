@@ -3,7 +3,22 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   SUPABASE_URL: z.string().url().max(2048),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(20).max(4096),
-  APP_URL: z.string().url().max(2048),
+  APP_URL: z
+    .string()
+    .url()
+    .max(2048)
+    .refine((value) => {
+      const url = new URL(value);
+      return (
+        !url.username &&
+        !url.password &&
+        url.pathname === "/" &&
+        !url.search &&
+        !url.hash &&
+        (url.protocol === "https:" ||
+          (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname)))
+      );
+    }, "Use an HTTPS origin, or local HTTP for development."),
 });
 
 export type ServerAuthEnv = z.infer<typeof serverEnvSchema>;

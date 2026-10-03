@@ -1,3 +1,4 @@
+import { authAction } from "@/auth/action-result";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -1259,11 +1260,11 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const navigate = useNavigate();
   const stats = useLearnerStats();
   const certificates = useCertificates();
-  const [name, setName] = useState(store.session.name);
-  const [language, setLanguage] = useState<LanguageCode>(activeLanguage);
-  const [phone, setPhone] = useState(store.session.phone);
-  const [interests, setInterests] = useState<string[]>(store.session.interests);
-  const [notifications, setNotifications] = useState(store.session.notifications);
+  const [name, setName] = useState(auth.user?.displayName ?? "");
+  const [language, setLanguage] = useState<LanguageCode>(auth.user?.language ?? activeLanguage);
+  const [phone, setPhone] = useState(auth.user?.phone ?? "");
+  const [interests, setInterests] = useState<string[]>(auth.user?.interests ?? []);
+  const [notifications, setNotifications] = useState(auth.user?.notifications ?? true);
   const [saving, setSaving] = useState(false);
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -1277,14 +1278,17 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
       return;
     }
     setSaving(true);
-    const result = await updateAccountProfile({
-      data: {
-        displayName: name.trim(),
-        language,
-        phone: phone.trim(),
-        notifications,
-      },
-    });
+    const result = await authAction(() =>
+      updateAccountProfile({
+        data: {
+          displayName: name.trim(),
+          language,
+          phone: phone.trim(),
+          notifications,
+          interests,
+        },
+      }),
+    );
     setSaving(false);
     if (!result.ok) {
       toast.error(result.message);
@@ -1381,7 +1385,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             <span>
               <strong className="block text-sm">Learning notifications</strong>
               <span className="text-xs text-muted-foreground">
-                Demo preference only; no emails or push notifications are sent.
+                Your preference is saved; no learning emails or push notifications are sent.
               </span>
             </span>
             <input
@@ -1405,7 +1409,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   return (
     <div className="container-ncap max-w-5xl py-2">
       <PageHeader
-        eyebrow="Learner profile · Demo data"
+        eyebrow="Learner profile"
         title="Your profile"
         description="A concise view of your learning identity and progress."
         actions={
@@ -1456,7 +1460,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             <div>
               <dt className="text-xs text-muted-foreground">Learning notifications</dt>
               <dd className="mt-1 font-semibold">
-                {store.session.notifications ? "Enabled (demo preference)" : "Disabled"}
+                {store.session.notifications ? "Enabled" : "Disabled"}
               </dd>
             </div>
           </dl>

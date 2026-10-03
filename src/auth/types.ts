@@ -9,6 +9,8 @@ export interface AuthUser {
   language: "en" | "si" | "ta";
   phone: string;
   notifications: boolean;
+  interests?: string[];
+  avatar?: import("zod").infer<typeof import("@/domain/auth-profile").avatarSchema> | undefined;
   createdAt: string;
 }
 

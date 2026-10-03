@@ -1,5 +1,8 @@
 # Supabase authentication setup
 
+See [Authentication verification and release gates](AUTHENTICATION_VERIFICATION.md) for the
+current staging configuration, finalization migrations, security results, and production requirements.
+
 For persistent Learning content, progress, bookmarks and media, follow [Learning deployment and operations](LEARNING.md).
 For the persistent Quiz module, follow [Quiz deployment](QUIZ.md) after applying Learning.
 
@@ -24,7 +27,9 @@ select to_regclass('public.profiles') as profiles_table;
 
 The result must be `public.profiles`.
 
-The application intentionally does not use or require a service-role key.
+User/session/profile operations use the publishable key and user RLS. Shared authentication
+throttling additionally requires a server-only `SUPABASE_SERVICE_ROLE_KEY` host secret. Never
+expose it in frontend configuration. Configure trusted ingress as described in the verification report.
 
 ## Provision the first Super Admin
 
@@ -43,13 +48,15 @@ browser-accessible database grant. New users always receive the `learner` role.
 
 ## Auth URL configuration
 
-Set the Supabase Auth **Site URL** to the deployed `APP_URL`. Add these redirect URLs:
+Set the Supabase Auth **Site URL** to the deployed `APP_URL`. Allow only these exact callbacks:
 
-- `http://localhost:8080/auth/callback`
-- `http://localhost:8080/reset-password`
-- The equivalent `/auth/callback` and `/reset-password` URLs for each deployed environment
+- `<APP_URL>/auth/callback`
+- `<APP_URL>/auth/callback?next=%2Freset-password`
 
 Production deployments must use HTTPS.
+The confirmed staging worker currently uses `http://127.0.0.1:4173`. Its local URLs must be
+replaced with the actual HTTPS deployment origin before release. SMTP/email delivery and
+CAPTCHA remain explicit release gates.
 
 ## End-to-end test accounts
 

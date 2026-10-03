@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type DragEvent } from "react";
 import { ImagePlus, LoaderCircle, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { MediaAsset, VideoAsset } from "@/data/types";
+import { ProfileMediaService } from "@/services/profile-media";
 import { DemoMediaService, MEDIA_LIMITS } from "@/services/media";
 import { AwarenessMediaService } from "@/services/awareness-media";
 import { LearningMediaService } from "@/services/learning-media";
@@ -17,8 +18,9 @@ export function useMediaUrl(asset?: MediaAsset | VideoAsset, fallback?: string) 
       setUrl(fallback ?? "");
       return;
     }
-    const service =
-      asset.status === "ready"
+    const service = asset.storageKey.startsWith("data:image/")
+      ? ProfileMediaService
+      : asset.status === "ready"
         ? asset.storageKey.startsWith("learning-media/")
           ? LearningMediaService
           : AwarenessMediaService
@@ -75,7 +77,7 @@ export function MediaField({
   initialAlt?: string;
   guidance?: string;
   onChange: (asset: MediaAsset | undefined) => void;
-  storage?: "demo" | "awareness" | "learning";
+  storage?: "demo" | "awareness" | "learning" | "profile";
   acceptedTypes?: readonly string[];
 }) {
   const inputId = useId();
@@ -114,11 +116,13 @@ export function MediaField({
     setBusy(true);
     try {
       const saved =
-        storage === "learning"
-          ? ((await LearningMediaService.save(file, altText)) as MediaAsset)
-          : storage === "awareness"
-            ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
-            : await DemoMediaService.save(file, altText);
+        storage === "profile"
+          ? await ProfileMediaService.save(file, altText)
+          : storage === "learning"
+            ? ((await LearningMediaService.save(file, altText)) as MediaAsset)
+            : storage === "awareness"
+              ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
+              : await DemoMediaService.save(file, altText);
       onChange(saved);
       setFile(null);
       toast.success(

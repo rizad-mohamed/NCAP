@@ -62,7 +62,10 @@ const CONTENT_SECURITY_POLICY = [
 function withSecurityHeaders(response: Response, request: Request) {
   const headers = new Headers(response.headers);
   headers.set("x-content-type-options", "nosniff");
-  headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  headers.set(
+    "referrer-policy",
+    headers.get("referrer-policy") ?? "strict-origin-when-cross-origin",
+  );
   headers.set("x-frame-options", "DENY");
   headers.set("permissions-policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
   // Awareness uploads and private signed downloads use only this configured Storage origin.

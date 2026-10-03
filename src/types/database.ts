@@ -27,6 +27,8 @@ export interface Database {
           language: "en" | "si" | "ta";
           phone: string;
           notifications: boolean;
+          interests: string[];
+          avatar: Json;
           created_at: string;
           updated_at: string;
         };
@@ -39,6 +41,8 @@ export interface Database {
           language?: "en" | "si" | "ta";
           phone?: string;
           notifications?: boolean;
+          interests?: string[];
+          avatar?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -48,6 +52,8 @@ export interface Database {
           language?: "en" | "si" | "ta";
           phone?: string;
           notifications?: boolean;
+          interests?: string[];
+          avatar?: Json;
           updated_at?: string;
         };
         Relationships: [];
@@ -55,6 +61,10 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
+      auth_consume_attempt: {
+        Args: { bucket_key: string; max_attempts: number; window_seconds: number };
+        Returns: boolean;
+      };
       certificate_registry: {
         Args: {
           page_offset: number;
