@@ -1,58 +1,174 @@
-# NCAP - National Cybersecurity Awareness Platform
+# NCAP — National Cybersecurity Awareness Platform
 
 [![Frontend checks](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml/badge.svg)](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](package.json)
 
-NCAP is an accessible cybersecurity awareness, learning, and assessment platform designed for Sri Lanka. It combines public awareness resources, structured lessons, learner progress, and administration tools in a responsive application.
+NCAP is a Sri Lanka-focused cybersecurity awareness, learning and assessment platform. It helps the public find practical guidance, learners build and assess knowledge, and administrators maintain content, accounts and programme reports. This repository contains **NCAP v1.0 (Foundation Release)**: a responsive application with Supabase-backed core workflows, undergoing production-release preparation.
 
-## Current status - September 28, 2026
+Project initiation and foundation development through the current `ncap_v1.0` were carried out by [Rizad Mohamed](https://www.linkedin.com/in/rizad-mohamed/).
 
-Authentication, Awareness, and Learning use Supabase-backed services. Awareness and Learning are deployed and verified on the configured **staging** project. Public HTTPS frontend hosting, production authentication origins, backup/restore verification, and operational alerting remain release gates.
+NCAP is not an official incident-reporting channel or a substitute for approved government cybersecurity policy.
 
-| Area                         | Current implementation                                                                                                                                                                        |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication               | Supabase Auth, server-managed HTTP-only session cookies, protected profiles, learner/Super Admin roles, registration, verification, login, recovery, and password management                  |
-| Awareness                    | Persistent catalogue of 60 published resources across seven types; search/filtering, administration, publication, private managed media, and scheduled cleanup                                |
-| Learning                     | Persistent catalogue of 11 topics, five modules, and 18 lessons; structured authoring, publication, progress, bookmarks, video resume, dashboard statistics, audit history, and managed media |
-| Assessments and certificates | Demonstration quiz/question data, attempts, badges, achievements, and certificate previews; authoritative assessment and certificate services remain future work                              |
-| Other administration         | User-management, announcements, and broader reporting interfaces retain demonstration behavior; they are not full Supabase Auth administration or production analytics                        |
+## Project status
 
-The latest staging Learning verification recorded 163 passing unit/integration tests, two opt-in hosted Awareness tests skipped, 50 passing focused Learning tests, and nine passing live Chromium scenarios across the full run and corrected image-only rerun. See [Learning verification](supabase/LEARNING_VERIFICATION.md) and [Awareness readiness](supabase/AWARENESS_READINESS.md) for the evidence, scope, and remaining gates. These records do not certify a public production deployment.
+**As of 4 October 2026: production release is BLOCKED.** Core features and backend migrations have staging verification; public production deployment has not been performed or certified by the current release evidence.
 
-## Features
+- **Backend:** Supabase staging, with Auth, profiles, Awareness, Learning, Quiz, Dashboard, Users, Reports, Certificates and Announcements persistence.
+- **Application:** Nitro Cloudflare Worker build exercised locally against staging. Remote public HTTPS hosting and deployed-origin checks remain outstanding.
+- **Quality:** the `main` workflow runs checks, build, dependency/secret review and default browser tests. Authenticated staging tests are opt-in; a green CI badge does not certify email delivery or production infrastructure.
+- **Release decision:** [Authentication verification](supabase/AUTHENTICATION_VERIFICATION.md) and [full-stack verification](supabase/FULL_STACK_VERIFICATION.md) define the current gates. Newer authentication work resolves the older report's missing durable account-audit identities and supersedes its exclusion of authentication.
 
-- Awareness articles, cyber tips, news/updates, posters, infographics, videos, and best practices
-- Searchable Learning catalogue with structured lessons, knowledge checks, and transcripts
-- Account-scoped completion, bookmarks, activity, and video resume that persist across sessions/devices
-- Super Admin topic/module/lesson and Awareness authoring, ordering, publication, and media management
-- Server and database authorization, optimistic version checks, and Learning audit records
-- Responsive layouts, keyboard navigation, reduced-motion support, and an English interface with a localization foundation
-- Timed demonstration quizzes backed by 48 seeded questions
+### Completion estimate
 
-## Technology and architecture
+These are **engineering estimates**, not measured coverage, certification or production approval. They concern the current Foundation Release scope, excluding later national-platform ambitions.
 
-- React 19, TypeScript, TanStack Start, Router, and Query
-- Tailwind CSS 4, Radix UI primitives, and Lucide icons
-- TanStack server functions, Supabase Auth, PostgreSQL RPCs, Row Level Security, and private Storage
-- Supabase Edge Functions and scheduled media cleanup
-- Zod, ESLint, Prettier, Vitest, Testing Library, PGlite, Playwright, and axe-core
-- Nitro Cloudflare Module build target
+| Area                                      | Estimate | Evidence and remaining work                                                                                                                                                |
+| ----------------------------------------- | -------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core features / frontend UX               |      95% | Principal public, learner and admin workflows exist; incomplete localization, notification delivery and media/device validation remain.                                    |
+| Backend / full-stack                      |      95% | Authoritative persistence, guarded RPCs, RLS and staging workflows exist; announcement audit and scale boundaries need work.                                               |
+| Security / testing maturity               |      85% | Database, IDOR, cross-browser, secret/dependency and accessibility checks exist; delivered email, CAPTCHA, native Safari media, load testing and further hardening remain. |
+| Production / operations readiness         |      35% | Worker target, staging migrations and cleanup are present; public hosting, SMTP, monitoring and proven recovery are unverified.                                            |
+| **Overall Foundation Release completion** |  **83%** | Weighted estimate: features 35%, backend 30%, security/testing 20%, operations 15%; rounded from 83.25%.                                                                   |
 
-```text
-Browser: React UI + TanStack Router/Query
-  -> TanStack Start server functions
-     -> Supabase Auth + protected profiles
-     -> Awareness repository -> PostgreSQL + private Storage
-     -> Learning repository  -> PostgreSQL + private Storage
-  -> Local demo repository for remaining demonstration domains
+Estimates derive from current source/service paths, 21 versioned migrations through `202610040003`, test infrastructure and the latest verification records. Operational gates remain mandatory regardless of the overall percentage.
 
-Scheduled maintenance -> protected Edge Functions -> retired/expired media cleanup
+## Feature and module status
+
+**Implemented** means code and persistence exist. **Staging verified** refers to documented scenarios, not exhaustive production validation. Historical catalogue counts describe seed/verification snapshots, not a guaranteed current inventory.
+
+Documented catalogue baselines include 60 Awareness resources across seven types, 11 Learning topics, five modules and 18 lessons, and five quizzes with 48 questions. Administrator edits can change these totals. Responsive layouts, keyboard navigation, reduced-motion support and automated reflow/accessibility checks remain part of the interface foundation.
+
+| Module                            | Implemented behavior                                                                                                                                                                                                                                                                                                                                                                                                          | Verification boundary / remaining work                                                                                                                                                                                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User / Authentication             | Registration, verification/resend, login/logout, PKCE callback, recovery/reset, server-validated sessions, remember-me cookie lifetime, persistent profile/preferences/interests/avatar, learner/Super Admin authorization, active-account checks, shared rate counters and account audit. Password changes verify current password; recovery requires recent verified recovery evidence; other refresh sessions are revoked. | Core API/database and disposable authenticated lifecycle verified in staging. Real delivered verification/recovery email, production SMTP, HTTPS origins/redirects, CAPTCHA tokens and deployed ingress remain release gates. No self-service account deletion screen. |
+| Awareness                         | Articles, Cyber Tips, Demo Updates/news, Best Practices, Posters, Infographics and Videos; search/type/topic filtering, admin CRUD, publication, version conflicts, audit and managed private media.                                                                                                                                                                                                                          | Persistent backend and staging authoring/media checks. Demo Updates is a resource type, not a claim that Awareness data is browser-local. Seed transcripts/chapters do not supply licensed production video binaries.                                                  |
+| Learning                          | Topics, modules, lessons, typed content blocks, knowledge checks, transcripts, account-owned progress/completion/bookmarks/activity, video resume, media, admin authoring and publication.                                                                                                                                                                                                                                    | Staging persistence, isolation and authoring verified. Published lesson content is readable through public Data API policies even though the lesson UI requires sign-in; progress remains private.                                                                     |
+| Quiz                              | Published catalogue, server deadlines, randomized question selection, persistent attempt snapshots/answers and resume, server scoring, history/results, retake limits/cooldowns and admin quiz/question CRUD/publication.                                                                                                                                                                                                     | Staging API/browser verified. Private answer/attempt internals deny direct client reads. Old browser-demo attempts are not imported as verified results. Catalogue/history aggregation and polling need load evaluation.                                               |
+| Dashboard / learner progress      | Authoritative progress, completed lessons, quiz scores, server-measured learning hours, earned badges, paginated activity, next-lesson recommendations and admin overview analytics.                                                                                                                                                                                                                                          | Staging verified. Recommendations are deterministic; time before the time-session migration cannot be reconstructed. Focus/visibility heartbeats and one open session prevent multiplying credit through tabs.                                                         |
+| Administrator — Users             | Real Auth identities/profiles, name/email search, role/status filters, server sorting/pagination, Learning/Quiz detail aggregates, role/status controls, restriction reasons and transactional audit.                                                                                                                                                                                                                         | Staging authorization and account lifecycle verified. Self-access changes are denied; the final active Super Admin is protected. Durable actor/target UUID snapshots survive deletion; earlier missing identities cannot be reconstructed.                             |
+| Administrator — Lessons / Content | Learning topics/modules/lessons, quiz questions and Awareness workspaces; publish/unpublish, previews, typed editing, optimistic versions, audit snapshots and managed media.                                                                                                                                                                                                                                                 | Staging CRUD/preview verified. Defined transactional deletion and learner-state cascades require confirmation; snapshots are revision evidence, not a rollback UI. No approval hierarchy or scheduled content-publication workflow.                                    |
+| Administrator — Reports           | Authoritative profile, Learning and Quiz sources; date/module/quiz filters, charts/tables, paginated rows, filtered CSV and print; active Super Admin checks on server and database.                                                                                                                                                                                                                                          | Staging filters/export/print and authorization verified. Pages are bounded at 100 rows; CSV rejects more than 10,000 filtered rows rather than truncating. Central durable export-event auditing is absent.                                                            |
+| Administrator — Certificates      | 100% published module-lesson completion and best quiz score ≥80% eligibility; persistent registry, issuance, duplicate protection, immutable evidence/template snapshots, revocation, owner visibility, anonymous reference verification, audit and server PDF.                                                                                                                                                               | Staging lifecycle and Latin/Sinhala/Tamil PDF rendering verified. Public verification omits learner identity. Registry verification is not external cryptographic signing or official accreditation. PDFs are generated on demand, not stored.                         |
+| Administrator — Announcements     | Database persistence, admin create/edit/delete, active dates, audience selection (All Learners, New Learners, Administrators), and learner Dashboard display filtered by dates/audience.                                                                                                                                                                                                                                      | Schedule/audience rules exist; learner display verified in staging. No dedicated actor/before/after mutation audit, delivery service or per-user read state.                                                                                                           |
+| Media / uploads                   | Private Awareness/Learning buckets, authorized signed upload/read URLs, validation/finalization, immutable paths, transactional replacement and scheduled abandoned/retired-object cleanup.                                                                                                                                                                                                                                   | Staging upload/signing/replacement/cleanup verified. Limits and URL/cache revocation boundaries are below. No transcoding or malware-scanning pipeline.                                                                                                                |
+| Localization                      | English (`en`), Sinhala (`si`) and Tamil (`ta`) language selection, saved profile language, document language and dictionaries for selected navigation/auth/action/dashboard strings; local fonts.                                                                                                                                                                                                                            | Partial interface localization: many forms/admin screens and seeded/authored content remain English. Certificate PDFs support Latin, Sinhala and Tamil text; other scripts return validation errors. Translation review/content governance remains work.               |
+| Notifications                     | Scheduled announcement display, persistent profile notification preference, and Auth email request/callback flows.                                                                                                                                                                                                                                                                                                            | No general notification inbox/read receipts or push, SMS or application notification-email delivery. Saving the preference does not create a delivery channel. Auth inbox delivery remains unverified.                                                                 |
+| Security                          | Auth/cookie controls, RLS, independent server/RPC authorization, CSRF, typed input validation, throttling, domain audit, private media, safe errors, dependency/secret scanning and authorization/IDOR tests.                                                                                                                                                                                                                 | Significant automated/staging coverage; production controls and residual hardening remain. No formal SOC or penetration-test certification.                                                                                                                            |
+| Testing                           | Vitest/Testing Library, PGlite PostgreSQL/RLS integration, live hosted checks, Playwright across five browser profiles, axe/reflow checks, Lighthouse review and security scans.                                                                                                                                                                                                                                              | Default CI excludes privileged staging scenarios without opt-in. Browser emulation is not physical-device evidence; Windows WebKit media limitations are explicit.                                                                                                     |
+| Deployment / operations           | Supabase staging migrations/seeds, cleanup Edge Functions and hourly scheduling; Cloudflare Worker target and GitHub validation pipeline.                                                                                                                                                                                                                                                                                     | CI validates builds; it does not publish the application. Public HTTPS hosting, production secrets/origins, monitoring/alert delivery and database plus Storage recovery drills remain unverified.                                                                     |
+
+## Runtime architecture
+
+Main routes use authoritative server services. Awareness and Learning use repository adapters; Quiz, Dashboard, Users, Reports and Certificates use dedicated server-function/query hooks. Legacy seed/demo adapters and browser state still exist in the tree, but are not authoritative production records for these workflows.
+
+```mermaid
+flowchart TB
+    browser["Public · Learner · Super Admin"]
+    ui["React 19 UI<br/>TanStack Router + Query"]
+    worker["TanStack Start server functions<br/>Nitro · Cloudflare Worker target"]
+    domains["Auth · Awareness · Learning · Quiz<br/>Dashboard · Users · Reports · Certificates"]
+    browser --> ui --> worker --> domains
+
+    subgraph backend["Supabase backend"]
+        auth["Auth<br/>PKCE · identity · refresh sessions"]
+        db["PostgreSQL<br/>Profiles · domain records · audits<br/>RLS · guarded RPCs · constraints"]
+        storage["Private Storage<br/>Awareness + Learning media"]
+        jobs["Scheduled cleanup<br/>Edge Functions"]
+        auth --> db
+        jobs --> db
+        jobs --> storage
+    end
+
+    domains --> auth
+    domains --> db
+    domains --> storage
+    ui -. "Authorized signed media URLs" .-> storage
+
+    classDef client fill:#EAF4FF,stroke:#2563EB,color:#0F172A
+    classDef server fill:#F0EDFF,stroke:#7C3AED,color:#0F172A
+    classDef data fill:#E8FAF0,stroke:#059669,color:#0F172A
+    class browser,ui client
+    class worker,domains server
+    class auth,db,storage,jobs data
 ```
 
-Awareness and Learning records are excluded from persisted demo state. Their backend adapters are authoritative, with caches scoped by account and administrator/public access. Other domains still use browser-local demonstration storage; clearing browser data can remove those demo records.
+Sessions use server-managed cookies. Session/profile/domain requests use the publishable key with the user's identity and database policies. **Only shared authentication throttling uses the server service-role client** in the application. Maintenance Edge Functions use privileged server credentials separately. Media URLs are issued after authorization and read directly from Storage.
 
-## Local setup
+## Technology stack
 
-Use Node.js 22 or newer and npm. A configured Supabase project is required for working authentication, Awareness, and Learning.
+| Layer               | Technology                                                 | Role                                                                 |
+| ------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| Language            | 🔷 TypeScript 5.8                                          | Typed application, domain and service contracts                      |
+| Interface           | ⚛️ React 19, TanStack Router / Query                       | Components, typed routes, query caching/mutations                    |
+| Server / build      | TanStack Start, Vite 8, Nitro 3 beta                       | Server functions, SSR and production packaging                       |
+| Hosting target      | ☁️ Cloudflare Workers, Wrangler                            | Generated `cloudflare-module` Worker and local Worker tests          |
+| Backend             | 🗄️ Supabase, PostgreSQL, Auth, Storage                     | Identity, persistence, RLS/RPCs and private objects                  |
+| Validation / UI     | Zod, Tailwind CSS 4, Radix UI, Lucide                      | Input schemas, styling, accessible primitives and icons              |
+| Reports / documents | Recharts, pdf-lib, fontkit                                 | Admin charts and server certificate PDFs                             |
+| Tests               | Vitest, Testing Library, PGlite, Playwright, axe-core      | Unit/component, PostgreSQL integration, browser/accessibility checks |
+| Quality / delivery  | Lighthouse review script, ESLint, Prettier, GitHub Actions | Lab audits, code quality and CI validation                           |
+
+Exact versions and scripts are maintained in [package.json](package.json) and [package-lock.json](package-lock.json). Lighthouse is invoked by the review tool; it is not a default CI step.
+
+## Repository structure
+
+Paths are relative to the Git repository root (the IDE folder may be named `ncap_v1.0`).
+
+```text
+.github/workflows/      CI validation
+design-system/         Design reference and guidance
+e2e/                   Playwright scenarios and fixtures
+public/                Static assets, fonts and headers
+scripts/               Deployment, seed, cleanup and security tools
+src/
+  auth/                Session contracts and authentication UI state
+  components/          Shared interface components
+  data/                Types and original seed/demo content
+  domain/              Validation and domain rules
+  features/            Public, learner and administrator interfaces
+  routes/              Typed file-based routes and HTTP endpoints
+  server/              Server-only Auth and domain services
+  services/            Repository adapters and query hooks
+  state/               Application state and preferences
+  *.functions.ts       TanStack server-function entry points
+supabase/
+  functions/           Protected media-cleanup Edge Functions
+  migrations/          Ordered schema, grants, policies and RPCs
+  *seed.sql            Catalogue seed SQL
+```
+
+## Database and backend
+
+Supabase Auth owns identities; profile triggers create learner profiles and synchronize email. Privileged roles cannot be assigned through registration metadata. PostgreSQL owns content, learner state, attempts, announcements, badges, certificates and audit records.
+
+RLS and restricted grants protect direct Data API access. Server functions validate input and active authoritative profiles; guarded RPCs independently authorize sensitive actions and perform transactional changes. Quiz answers/scoring and certificate eligibility are database-controlled. Definer functions use protected search paths. The PostgREST pre-request hook rejects inactive accounts with older JWTs.
+
+Learning, Quiz and Awareness use optimistic versions and audit evidence. User role/status and certificate issue/revoke/template changes are audited; announcement mutations and centralized denied-action/export events are gaps. Account-security audit UUID snapshots survive profile deletion; this does not guarantee identical retention across all domain audits.
+
+Private Storage holds managed media; PDFs are generated from stored snapshots. Backend migrations are forward corrections with recorded history. Read [authentication setup](supabase/README.md) and module operations guides before changing schema, roles or media policies.
+
+## Environment configuration
+
+Copy the placeholder-only [.env.example](.env.example) to ignored `.env.local`. This table lists **names and purposes only**; obtain actual values from the environment owner.
+
+| Variable                    | Scope / purpose                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_URL`              | Application runtime: backend endpoint; public configuration, not a credential                                                   |
+| `SUPABASE_PUBLISHABLE_KEY`  | Application runtime: client-safe key; user RLS still applies                                                                    |
+| `APP_URL`                   | Application runtime: canonical origin, redirects and origin-aware output; HTTPS required except localhost/127.0.0.1 development |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Server-only host secret:** required for shared Auth throttling; also used by authorized operator/test and cleanup tools       |
+| `AUTH_TRUST_PROXY`          | Server-only ingress setting: `cloudflare` only behind trusted ingress that overwrites `cf-connecting-ip`                        |
+| `SUPABASE_ACCESS_TOKEN`     | **Operator-only secret:** Supabase management deployment/verification tools; not application runtime configuration              |
+| `AWARENESS_CLEANUP_TOKEN`   | **Edge Function / scheduler secret:** Awareness maintenance authorization                                                       |
+| `LEARNING_CLEANUP_TOKEN`    | **Edge Function / scheduler secret:** Learning maintenance authorization                                                        |
+
+`.env`, other `.env.*`, `.dev.vars` and local operator/test files are ignored except `.env.example`. Keep privileged credentials in ignored local files or host/service secret configuration. **Never commit them, put them in `VITE_` variables, expose them to frontend bundles, or log them.** Server import protection rejects client imports of `src/server/` code.
+
+Missing throttle secrets or unavailable throttle service fail Auth mutations closed. Local HTTP uses a shared development source; other HTTPS hosts need an implemented trusted-source adapter. SMTP and CAPTCHA need provider configuration; current forms do not yet submit CAPTCHA tokens.
+
+## Local development
+
+Use **Node.js 22 or newer** and npm with the committed lockfile. A configured Supabase project with ordered migrations is required for backend features; demo fixtures do not substitute for it.
 
 ```sh
 git clone https://github.com/rizad-mohamed/NCAP.git
@@ -61,124 +177,138 @@ npm ci
 cp .env.example .env.local
 ```
 
-On Windows PowerShell, use `Copy-Item .env.example .env.local` for the last step. The application files are at the Git repository root.
-
-Configure the server runtime in `.env.local`:
-
-```dotenv
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-APP_URL=http://localhost:8080
-```
-
-Follow [authentication setup](supabase/README.md), [Awareness operations](supabase/AWARENESS.md), and [Learning operations](supabase/LEARNING.md) to apply migrations in order, provision the first Super Admin, seed content, and configure maintenance. An empty Supabase project does not contain the required schema or catalogue. Do not rerun initial schema SQL against an already migrated project.
+In PowerShell use `Copy-Item .env.example .env.local`; if execution policy blocks npm's PowerShell wrapper, use `npm.cmd`. Configure the variables above, apply documented staging schema/catalogues, and provision the first Super Admin using [the setup guide](supabase/README.md).
 
 ```sh
 npm run dev
 ```
 
-Development runs at `http://localhost:8080`.
+Development serves `http://localhost:8080`. Set the development origin and exact Auth callbacks consistently; browser E2E uses a separate built Worker at `http://127.0.0.1:4173`. The documented staging Auth allowlist is for that test Worker, so adjust it deliberately for another local origin.
 
-## Environment files and credentials
+| Command                                                                  | Purpose                                                   |
+| ------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `npm run dev`                                                            | Vite development server on port 8080                      |
+| `npm run build`                                                          | Production Nitro/Cloudflare output in `.output`           |
+| `npm run preview`                                                        | Vite build preview; E2E uses Wrangler instead             |
+| `npm run typecheck` / `npm run lint`                                     | TypeScript and ESLint checks                              |
+| `npm test` / `npm run test:watch`                                        | Vitest run / watch                                        |
+| `npm run security:scan`                                                  | Repository secret-pattern scanner                         |
+| `npm run check`                                                          | Typecheck, lint, tests, secret scan and build             |
+| `npm run test:e2e`                                                       | Build and run Playwright                                  |
+| `npm run format`                                                         | Format supported repository files; modifies files         |
+| `npm run awareness:seed` / `npm run learning:seed` / `npm run quiz:seed` | Documented operator catalogue import/generation workflows |
+| `npm run awareness:cleanup` / `npm run learning:cleanup`                 | Documented operator media maintenance                     |
 
-- `.env.example` is the tracked, placeholder-only runtime template.
-- `.env`, `.env.*`, `.dev.vars`, `.dev.vars.*`, and local operator/test files are ignored, except `.env.example`.
-- Keep service-role keys, management tokens, database passwords, cleanup tokens, and disposable test credentials in ignored operator files or the relevant service's secret configuration.
-- The application runtime uses the publishable key with the caller's session and RLS. It does not require a service-role key.
-- Never put privileged credentials in `VITE_` variables, browser bundles, tracked files, command arguments, or logs. Operator scripts consume process environment; follow the operations guides for loading it safely.
-- CI's default checks use placeholder runtime settings and require no staging credentials. Live authenticated verification is a separate opt-in operation against disposable staging accounts.
+Review seed/cleanup guides before running them remotely. An empty backend needs both schema and catalogue setup.
 
-## Commands
+## Database and migration workflow
 
-| Command                                                  | Purpose                                                           |
-| -------------------------------------------------------- | ----------------------------------------------------------------- |
-| `npm run dev`                                            | Start development on port 8080                                    |
-| `npm run build`                                          | Create the production Nitro/Cloudflare build in `.output`         |
-| `npm run preview`                                        | Preview a production build locally                                |
-| `npm run typecheck`                                      | Validate TypeScript                                               |
-| `npm run lint`                                           | Run ESLint and configured formatting rules                        |
-| `npm test`                                               | Run Vitest unit and integration tests                             |
-| `npm run test:watch`                                     | Run Vitest in watch mode                                          |
-| `npm run security:scan`                                  | Scan tracked and unignored source files for known secret patterns |
-| `npm run check`                                          | Run typecheck, lint, Vitest, secret scan, and production build    |
-| `npm run test:e2e`                                       | Build and run Playwright browser tests                            |
-| `npm run format`                                         | Format supported repository files                                 |
-| `npm run awareness:seed` / `npm run learning:seed`       | Run documented operator catalogue imports                         |
-| `npm run awareness:cleanup` / `npm run learning:cleanup` | Run documented operator media maintenance                         |
+1. Inspect history and choose isolated **staging** first. Apply filenames in ascending order: Auth/profiles → Awareness → Learning → Quiz → Dashboard/Users → Reports/Certificates/audit → Auth finalization.
+2. Use documented Supabase SQL Editor/CLI workflows or repository operator scripts. Scripts inspect dependencies and record migrations transactionally. They are not all general production deployers: authentication mutation scripts refuse projects other than confirmed staging.
+3. Import Learning before Quiz, which references module IDs. Seed workflows use stable identities and documented conflict behavior to preserve edits; never import fabricated learner history or demo certificates.
+4. Verify history, grants/RLS, RPC authorization and workflows, then promote reviewed forward migrations through an operator-controlled release process.
 
-Review the operations guides before running seed or cleanup commands against a remote project.
+Existing operator verification commands include:
 
-## Verification and CI
+```sh
+node scripts/auth-deploy.mjs inspect
+node scripts/users-deploy.mjs verify
+node scripts/admin-modules-deploy.mjs verify
+```
 
-The **Frontend checks** workflow runs on pushes and pull requests: locked dependency installation, `npm run check`, browser installation, and Playwright across Chromium, Firefox, WebKit, and mobile browser profiles. Vitest uses two workers for predictable resource use.
+These need operator configuration and remote access. For staging apply modes, seed flags, maintenance provisioning and recovery use [Auth](supabase/README.md), [Awareness](supabase/AWARENESS.md), [Learning](supabase/LEARNING.md), [Quiz](supabase/QUIZ.md), [Dashboard](supabase/DASHBOARD.md), [Users](supabase/USERS.md) and [administrator modules](supabase/ADMIN_MODULES.md).
+
+**Do not destructively reset populated environments or rerun initial schema SQL blindly.** Preserve applied migrations and add forward corrections. A local snapshot or seed catalogue is not a database-and-object backup.
+
+## Media and authoring
+
+The lesson editor supports headings, paragraphs, lists, callouts, examples, knowledge checks, ordering, deletion and undo/redo. Content renders as escaped text. Lessons accept HTTPS YouTube/Vimeo links, direct HTTPS MP4/WebM URLs and managed uploads; published video lessons require transcripts. Native playback supports speed, fullscreen, persisted resume and completion on ending.
+
+| Asset                       | Current limits / storage                                                                                                                            |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Awareness / Learning images | JPEG/PNG/WebP; 5 MiB; 4096 × 4096 pixels; validated metadata and alt text                                                                           |
+| Learning video              | MP4/WebM; 50 MiB; four hours; private `learning-media`                                                                                              |
+| Awareness video             | MP4/WebM; product/bucket ceiling 100 MiB and four hours, but documented staging project ceiling is **50 MiB per upload**; private `awareness-media` |
+| Profile avatar              | Inline JPEG/PNG/WebP in protected profile JSON; 256 KiB; 1024 × 1024; raster validation and database constraints; removal saves null                |
+| Certificate logo / PDF      | Optional PNG/JPEG logo reuses private Learning media; PDF generated server-side, with no stored PDF lifecycle                                       |
+
+Upload preparation/finalization validate size, MIME/signature, dimensions and video metadata. Replacement attaches new objects transactionally and retires unreferenced old objects. Protected scheduled Edge Functions clean expired abandoned uploads and retry retired objects; failures retain queue entries.
+
+Issued signed URLs remain usable until expiry after unpublishing; CDN-cached responses may outlast origin deletion. Learning image URLs last 60 seconds and videos last validated duration plus five minutes (up to four hours five minutes). Container inspection has bounded metadata requirements; unsupported files may need re-exporting. Transcoding, synchronized caption tracks, malware scanning and licensed production video supply are not complete services. Native macOS/iOS Safari media remains unverified.
+
+## Testing and quality
+
+The current authentication verification records **226 passing unit/integration tests and two opt-in hosted Awareness tests skipped** on 4 October 2026. Counts are a dated run result, not total coverage; use fresh output for later changes. Older module counts describe earlier revisions.
+
+- **Unit/component/integration:** Vitest and Testing Library cover rules, safe errors, query behavior, Auth actions, media and PDFs.
+- **Database/RLS:** PGlite applies production PostgreSQL migrations to test ownership, grants, RPCs, transactions, scoring, account safeguards and audit. Live staging tests cover hosted Auth/Storage behavior PGlite cannot fully emulate.
+- **Browser:** Playwright tests built Workers across Chromium, Firefox, WebKit, Mobile Chrome and Mobile Safari. Authenticated workflows use disposable staging accounts; traces are disabled for the Auth credential lifecycle. Default skips are not passing live coverage.
+- **Accessibility/performance:** axe, viewport/reflow checks and Lighthouse lab review. Full-stack evidence records accessibility 100 on seven audited routes, but homepage mobile-lab LCP remained 8.83 s; this is not a production SLA or complete manual accessibility audit.
+- **Security:** authorization/IDOR and active-account regressions, repository/history/build secret scans and npm dependency audit.
 
 ```sh
 npm run check
+npm audit --audit-level=moderate
+node scripts/security-review.mjs
 npx playwright install
 npm run test:e2e
 ```
 
-PGlite tests exercise migrations, RLS, ownership, transactional mutations, and integrity using a local PostgreSQL harness. Browser tests run against the built Worker. Scenarios requiring a seeded hosted backend or authenticated users skip unless their documented opt-in settings are supplied; a green default CI run does not imply that live staging scenarios ran.
+With an existing build, `npx playwright test` runs the browser configuration. `node scripts/lighthouse-review.mjs` performs separate lab review; it needs the built Worker, Chromium and disposable staging configuration for authenticated routes and invokes Lighthouse through npm. Read [full-stack verification](supabase/FULL_STACK_VERIFICATION.md) before live tools; they mutate disposable accounts/content and must not target production users.
 
-Use the disposable-account procedures and environment flags in [the Supabase guide](supabase/README.md), [Awareness operations](supabase/AWARENESS.md), and [Learning operations](supabase/LEARNING.md) for live verification. Authoring scenarios mutate catalogue data and must use staging fixtures.
+[Frontend checks](.github/workflows/ci.yml) runs on pushes and pull requests with Node 22: `npm ci`, `npm run check`, dependency audit, extended secret review, browser installation and default Playwright. Vitest and CI browser workers are bounded at two. CI does not deploy the Worker, run privileged staging fixtures by default, certify delivered email, or run Lighthouse.
 
-## Learning media and authoring
+## Security
 
-The lesson editor supports typed headings, paragraphs, lists, callouts, examples, knowledge checks, reordering, deletion, and undo/redo. Content renders as escaped text.
+Sessions are validated server-side against Supabase Auth and active authoritative profiles. Cookies force HttpOnly/SameSite=Lax and Secure on HTTPS; remember-me chooses session versus persistent expiry. Auth callbacks are uncached, suppress referrers and reject unsafe redirects. Authenticated domain responses are private/uncached. CSRF middleware, HTTPS-aware security headers, Zod validation, restricted grants and RLS supplement server authorization.
 
-Lessons support HTTPS YouTube/Vimeo links, direct HTTPS MP4/WebM URLs, and managed uploads. Learning images are limited to 5 MiB and 4096 by 4096 pixels; videos to **50 MiB and four hours**, matching the deployed project limit. Published video lessons require transcripts. Native playback supports speed controls, fullscreen, persisted resume, and completion on ending.
+Shared attempt counters are atomic, service-only and keyed with HMAC digests rather than raw identities/IPs. Source and action/identity bounds fail closed; native Auth limits govern direct Supabase calls. Deployers must review trusted ingress, upstream limits and proxy egress behavior. Private objects require authorized signing; safe errors omit database details.
 
-Private Storage, authorized signed URLs, server-side byte validation, and protected scheduled cleanup govern managed media. Previously issued URLs may remain usable until expiry, and CDN caching can outlast origin deletion. See the module operations guides for lifecycle and recovery details.
+Refresh-token revocation does not instantly invalidate every issued JWT; suspended-account checks block application/Data API use, but the request hook does not cover Storage or Realtime. Future private policies there must enforce active status. CSP still permits inline scripts/styles; MFA and nonce-based CSP are future hardening. Announcements lack dedicated audit history, and centralized durable denied-action/export events are absent. Define retention/export policy before privileged account deletion cascades dependent records. No formal security certification is claimed.
 
-## Repository structure
+For responsible disclosure, contact the repository maintainer privately through the [maintainer profile](https://github.com/rizad-mohamed). Do not publish credentials, personal data or actionable vulnerability details in public issues. No formal security-response SLA is currently defined.
 
-```text
-.github/workflows/       Frontend CI
- design-system/         Design reference and guidance
- e2e/                   Playwright scenarios and fixtures
- public/                Static assets and security headers
- scripts/               Secret scan, import, and maintenance tools
- src/
-   auth/                Authentication contracts and helpers
-   components/          Shared UI
-   data/                Seed and demonstration data
-   domain/              Validation and domain rules
-   features/            Public, learner, and admin features
-   routes/              Typed file-based routes
-   server/              Server-only authentication and backend services
-   services/            Repository adapters and query hooks
-   state/               Application state providers
- supabase/
-   functions/           Media cleanup Edge Functions
-   migrations/          Versioned schema, grants, and RLS
-   README.md            Authentication setup
-```
+## Deployment and production-release gates
 
-## Deployment and remaining work
-
-The backend is deployed to staging; a public HTTPS frontend has not been deployed. The configured local application origin and Supabase Auth site URL are not yet aligned for production.
+The build targets the `ncap-v1-0` Cloudflare Worker through Nitro's generated Wrangler configuration. Backend staging migrations and protected hourly media cleanup are deployed according to verification reports; cleanup permission corrections passed live checks. GitHub Actions validates changes but contains no application deployment job. Production hosting/runtime configuration remains an operator task.
 
 Before public release:
 
-1. Select and deploy the HTTPS frontend origin with server runtime configuration.
-2. Align `APP_URL`, Supabase Site URL, and allowed authentication redirects.
-3. Repeat public, learner, and administrator smoke tests on that hosted origin.
-4. Establish database **and Storage object** backups, verify a staging restore, and assign an operations owner.
-5. Verify cleanup-failure alerts and operational monitoring.
+1. **HTTPS hosting:** deploy the Worker, configure secrets/trusted ingress, align `APP_URL`, Supabase Site URL and exact callbacks, then verify cookies, CSRF, cache/security headers, redirects and public/learner/admin workflows on that origin.
+2. **Delivered Auth lifecycle:** configure production SMTP/sender domain and verify inbox/spam delivery, verification/resend, real recovery, expiry/replay denial and reset across supported browsers. PKCE links require the initiating browser; cross-device behavior is uncertified.
+3. **Bot/abuse protection:** supply CAPTCHA site key/secret and implement token submission before enabling Auth CAPTCHA. Review native Auth limits and supported IP forwarding with the deployed topology.
+4. **Recovery:** assign owners/recovery objectives; establish database **and Storage object** backups, retention and isolated restore drills. Last recorded inventory had no listed database backups and PITR disabled; restore proof is unavailable. Database metadata alone does not back up object bytes.
+5. **Operations:** verify monitoring, cleanup-failure alert delivery, quotas, on-call/incident response and session-revocation procedures. Cron dispatch success alone is not cleanup or alerting evidence.
+6. **Acceptance evidence:** close or explicitly disposition announcement audit gaps, homepage performance, native Safari/physical-device media and manual assistive-technology validation, and representative load/scalability testing before broader release-quality claims.
 
-The ignored pre-deployment snapshot is not a full database backup. The latest deployment report recorded no listed database backups and point-in-time recovery disabled. Prefer forward corrections to destructive schema rollback; preserve data and verify recovery before any reversal.
+Production readiness remains blocked even when local checks and staging workflows pass.
 
-Authoritative assessment attempts/certificates and administrator user APIs are implemented. Remaining release gates and measured performance/audit limitations are recorded in the [full-stack verification report](supabase/FULL_STACK_VERIFICATION.md). Localization and broader analytics remain future product work.
+## Roadmap
 
-## Documentation
+| Priority                  | Remaining scope                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Before production release | HTTPS/runtime/origins; SMTP and delivered Auth lifecycle; CAPTCHA integration; trusted ingress/quotas; monitoring/alerting; database/object recovery and incident procedures; acceptance evidence above.                                                                                                                                                                   |
+| Near-term improvements    | Announcement audit; durable denied-action/export events; homepage image/JavaScript optimization; measured catalogue/history pagination/polling improvements; native Safari media and physical-device/manual accessibility checks; reviewed Sinhala/Tamil interface/content coverage; defined notification channels/read state; MFA/CSP hardening and retention governance. |
+| Future platform evolution | Historical requirements discuss national/sector analytics, benchmarking, risk profiling, adaptive learning and policy-support indicators. These remain outside Foundation Release scope and need approved requirements, privacy/governance and data design before implementation.                                                                                          |
 
-- [Full-stack QA, security, performance and production verification](supabase/FULL_STACK_VERIFICATION.md)
-- [Supabase authentication setup](supabase/README.md)
-- [Awareness operations](supabase/AWARENESS.md), [verification](supabase/AWARENESS_VERIFICATION.md), and [readiness](supabase/AWARENESS_READINESS.md)
-- [Learning operations](supabase/LEARNING.md) and [deployment verification](supabase/LEARNING_VERIFICATION.md)
+No AI recommendation engine, national Cybersecurity Index, push/SMS delivery, cryptographically signed certificate service or formal compliance certification is claimed.
+
+## Documentation and contribution
+
+Use source/migrations and newer verification records to resolve conflicts with historical audits. Tie README changes to evidence, preserve accessibility/content integrity and run relevant checks before contributing. Follow [repository guidance](AGENTS.md); preserve published history and exclude local artifacts/credentials.
+
+- [Authentication setup](supabase/README.md) and [current verification / release gates](supabase/AUTHENTICATION_VERIFICATION.md)
+- [Full-stack QA, security, browser and Lighthouse verification](supabase/FULL_STACK_VERIFICATION.md)
+- [Awareness operations](supabase/AWARENESS.md), [verification](supabase/AWARENESS_VERIFICATION.md) and [readiness](supabase/AWARENESS_READINESS.md)
+- [Learning operations](supabase/LEARNING.md) and [verification](supabase/LEARNING_VERIFICATION.md)
+- [Quiz deployment / authorization](supabase/QUIZ.md)
+- [Dashboard / announcements deployment](supabase/DASHBOARD.md)
+- [Administrator Users operations](supabase/USERS.md)
+- [Administrator content, reports and certificates](supabase/ADMIN_MODULES.md)
 - [Backend reference architecture](supabase/AWARENESS_REFERENCE_ARCHITECTURE.md)
-- [Project intelligence and original gap audit](PROJECT_INTELLIGENCE.md) - read alongside the newer module verification reports
-- [Implementation status](IMPLEMENTATION_STATUS.md)
+- [Original intelligence / gap audit](PROJECT_INTELLIGENCE.md) and [historical implementation status](IMPLEMENTATION_STATUS.md) — these include superseded browser-demo descriptions
 - [Design-system guidance](design-system/ncap-sri-lanka/MASTER.md)
 
-NCAP is not an official incident-reporting channel or a substitute for approved government cybersecurity policy.
+## License
+
+No license file is currently tracked, and `package.json` marks the package private without declaring a license. Public visibility does not itself grant an open-source license; obtain permission from the owner before redistribution. No license badge or terms are invented here.
