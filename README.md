@@ -1,7 +1,7 @@
 # NCAP — National Cybersecurity Awareness Platform
 
 [![Frontend checks](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml/badge.svg)](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript&logoColor=white)](package.json)
 
 NCAP is a Sri Lanka-focused cybersecurity awareness, learning and assessment platform. It helps the public find practical guidance, learners build and assess knowledge, and administrators maintain content, accounts and programme reports. This repository contains **NCAP v1.0 (Foundation Release)**: a responsive application with Supabase-backed core workflows, undergoing production-release preparation.
 
@@ -59,56 +59,98 @@ Documented catalogue baselines include 60 Awareness resources across seven types
 
 ## Runtime architecture
 
-Main routes use authoritative server services. Awareness and Learning use repository adapters; Quiz, Dashboard, Users, Reports and Certificates use dedicated server-function/query hooks. Legacy seed/demo adapters and browser state still exist in the tree, but are not authoritative production records for these workflows.
+**NCAP is a full-stack React application built with TanStack Start. It does not use Next.js.** The browser displays the interface, the application server checks requests, and Supabase stores identities, records and media.
+
+Read the diagram from top to bottom. Each box describes a responsibility first, with the technology underneath. Arrows show requests; results return to the user through the application.
 
 ```mermaid
 flowchart TB
-    browser["Public · Learner · Super Admin"]
-    ui["React 19 UI<br/>TanStack Router + Query"]
-    worker["TanStack Start server functions<br/>Nitro · Cloudflare Worker target"]
-    domains["Auth · Awareness · Learning · Quiz<br/>Dashboard · Users · Reports · Certificates"]
-    browser --> ui --> worker --> domains
+    people["1. People use NCAP<br/>Public visitors, learners and administrators"]
+    interface["2. Website in the browser<br/>React: pages and controls<br/>TanStack Router: navigation<br/>TanStack Query: fetching and caching data"]
+    server["3. Application server checks requests<br/>TanStack Start: server functions and page rendering<br/>Validates input, identity and permissions<br/>Nitro packages it for Cloudflare Workers"]
 
-    subgraph backend["Supabase backend"]
-        auth["Auth<br/>PKCE · identity · refresh sessions"]
-        db["PostgreSQL<br/>Profiles · domain records · audits<br/>RLS · guarded RPCs · constraints"]
-        storage["Private Storage<br/>Awareness + Learning media"]
-        jobs["Scheduled cleanup<br/>Edge Functions"]
-        auth --> db
-        jobs --> db
-        jobs --> storage
+    people -->|"Open pages and take actions"| interface
+    interface -->|"Request content or submit changes"| server
+
+    subgraph supabase["4. Supabase provides backend services"]
+        identity["Sign-in and accounts<br/>Supabase Auth"]
+        records["Content and learner records<br/>PostgreSQL database<br/>Ownership rules and guarded database functions"]
+        files["Images, videos and logos<br/>Private Supabase Storage"]
     end
 
-    domains --> auth
-    domains --> db
-    domains --> storage
-    ui -. "Authorized signed media URLs" .-> storage
+    server -->|"Check sign-in sessions"| identity
+    server -->|"Read or update permitted records"| records
+    server -->|"Authorize uploads and downloads"| files
 
-    classDef client fill:#EAF4FF,stroke:#2563EB,color:#0F172A
-    classDef server fill:#F0EDFF,stroke:#7C3AED,color:#0F172A
-    classDef data fill:#E8FAF0,stroke:#059669,color:#0F172A
-    class browser,ui client
-    class worker,domains server
-    class auth,db,storage,jobs data
+    cleanup["Background media cleanup<br/>Scheduled Supabase Edge Functions"]
+    cleanup -->|"Check expired or unused uploads"| records
+    cleanup -->|"Remove eligible files"| files
+
+    classDef peopleStyle fill:#EAF4FF,stroke:#2563EB,color:#0F172A
+    classDef applicationStyle fill:#F0EDFF,stroke:#7C3AED,color:#0F172A
+    classDef backendStyle fill:#E8FAF0,stroke:#059669,color:#0F172A
+    class people,interface peopleStyle
+    class server applicationStyle
+    class identity,records,files,cleanup backendStyle
 ```
 
-Sessions use server-managed cookies. Session/profile/domain requests use the publishable key with the user's identity and database policies. **Only shared authentication throttling uses the server service-role client** in the application. Maintenance Edge Functions use privileged server credentials separately. Media URLs are issued after authorization and read directly from Storage.
+For example, completing a lesson sends a request from the browser to a TanStack Start server function. The server checks the signed-in account, and the database enforces permissions before saving progress. The interface then refreshes the learner's progress. For media, the server authorizes a temporary signed URL; the browser uploads or reads the file directly from private Storage.
+
+The same architecture serves Authentication, Awareness, Learning, Quiz, Dashboard, administrator Users, Reports, Certificates and Announcements. Awareness and Learning use repository adapters; the other main domains use dedicated server-function/query hooks. Legacy seed/demo adapters remain in the tree but are not authoritative records for these workflows.
+
+The backend has two cooperating parts: **TypeScript application services** handle requests and validation; **Supabase PostgreSQL** provides persistence, row-level security (RLS) and guarded remote procedure calls (RPCs) for transactional rules such as quiz scoring and certificate eligibility. There is no separate Express or NestJS application.
+
+Sessions use server-managed cookies. Normal session/profile/domain requests use the publishable key with the user's identity and database policies. Only shared authentication throttling uses the server service-role client in the application. Maintenance Edge Functions use privileged server credentials separately.
+
+**Deployment boundary:** Cloudflare Workers is the configured application hosting target, not a claim of completed public deployment. The built Worker has been tested locally against Supabase staging.
 
 ## Technology stack
 
-| Layer               | Technology                                                 | Role                                                                 |
-| ------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| Language            | 🔷 TypeScript 5.8                                          | Typed application, domain and service contracts                      |
-| Interface           | ⚛️ React 19, TanStack Router / Query                       | Components, typed routes, query caching/mutations                    |
-| Server / build      | TanStack Start, Vite 8, Nitro 3 beta                       | Server functions, SSR and production packaging                       |
-| Hosting target      | ☁️ Cloudflare Workers, Wrangler                            | Generated `cloudflare-module` Worker and local Worker tests          |
-| Backend             | 🗄️ Supabase, PostgreSQL, Auth, Storage                     | Identity, persistence, RLS/RPCs and private objects                  |
-| Validation / UI     | Zod, Tailwind CSS 4, Radix UI, Lucide                      | Input schemas, styling, accessible primitives and icons              |
-| Reports / documents | Recharts, pdf-lib, fontkit                                 | Admin charts and server certificate PDFs                             |
-| Tests               | Vitest, Testing Library, PGlite, Playwright, axe-core      | Unit/component, PostgreSQL integration, browser/accessibility checks |
-| Quality / delivery  | Lighthouse review script, ESLint, Prettier, GitHub Actions | Lab audits, code quality and CI validation                           |
+The versions below are resolved versions from the committed [package-lock.json](package-lock.json), verified on 4 October 2026. [package.json](package.json) declares dependency ranges and scripts; ranges can differ from resolved versions. Supabase-managed PostgreSQL/Auth/Storage and Cloudflare services do not have application dependency versions in this lockfile.
 
-Exact versions and scripts are maintained in [package.json](package.json) and [package-lock.json](package-lock.json). Lighthouse is invoked by the review tool; it is not a default CI step.
+### Frontend and full-stack framework
+
+| Technology              | Resolved version                        | What it does in NCAP                                         |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| 🔷 TypeScript           | 5.9.3                                   | Typed frontend and server application code                   |
+| ⚛️ React / React DOM    | 19.2.8                                  | Renders the interface                                        |
+| **TanStack Start**      | **1.168.32**                            | **Project framework:** server rendering and server functions |
+| TanStack Router         | 1.170.18                                | Typed, file-based navigation                                 |
+| TanStack Query          | 5.102.8                                 | Server-data fetching, caching and mutations                  |
+| Tailwind CSS            | 4.3.3                                   | Styling and responsive layouts                               |
+| Radix UI / Lucide React | Component-specific versions in lockfile | Accessible UI primitives and icons                           |
+| React Hook Form / Zod   | 7.87.0 / 3.25.76                        | Form handling and input validation                           |
+| Recharts                | 2.15.4                                  | Administrator charts                                         |
+
+### Backend, build and hosting
+
+| Technology                               | Resolved version / service   | What it does in NCAP                                                |
+| ---------------------------------------- | ---------------------------- | ------------------------------------------------------------------- |
+| TanStack Start server functions          | 1.168.32                     | Request handling, validation, authorization and domain services     |
+| Vite                                     | 8.1.5                        | Development server and application builds                           |
+| Nitro                                    | 3.0.260603-beta              | Packages the server for the Cloudflare Worker target                |
+| ☁️ Cloudflare Workers / Wrangler         | Hosting target / CLI 4.147.0 | Application runtime target and local Worker tooling                 |
+| Supabase PostgreSQL                      | Managed database             | Persistent records, RLS, grants, constraints and transactional RPCs |
+| Supabase Auth                            | Managed identity service     | Registration, sign-in, verification, recovery and refresh sessions  |
+| Supabase Storage                         | Managed object storage       | Private media and signed upload/download URLs                       |
+| Supabase Edge Functions / scheduled jobs | Managed maintenance services | Background media cleanup                                            |
+| Supabase JS / Supabase SSR               | 2.116.0 / 0.12.7             | Backend requests and cookie-based session integration               |
+| pdf-lib / fontkit                        | 1.17.1 / 1.1.1               | Server-generated certificates with font support                     |
+
+### Testing, quality and development tools
+
+| Technology              | Resolved version / configuration         | Purpose                                                           |
+| ----------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
+| Vitest                  | 4.1.11                                   | Unit and integration tests                                        |
+| Testing Library / jsdom | Package-specific versions in lockfile    | Component tests and simulated browser environment                 |
+| PGlite                  | 0.5.8                                    | PostgreSQL migration, RLS and RPC integration tests               |
+| Playwright              | 1.62.1                                   | Browser end-to-end tests                                          |
+| axe-core / Lighthouse   | Package-specific / review-script tooling | Accessibility and performance checks                              |
+| ESLint / Prettier       | 9.39.5 / 3.9.6                           | Linting and formatting                                            |
+| GitHub Actions          | Node 22 CI workflow                      | Checks, build, security review and default browser suite          |
+| Node.js / npm           | Node ≥22; npm with committed lockfile    | Development/build tooling; application deployment targets Workers |
+
+Custom secret scanners and npm dependency audits complement these tools. Lighthouse is invoked separately by the review script, not by default CI. Self-hosted Atkinson Hyperlegible and Noto Sans Sinhala/Tamil fonts support interface and certificate text.
 
 ## Repository structure
 
