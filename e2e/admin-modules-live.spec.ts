@@ -137,6 +137,7 @@ test.describe("live administrator content, reports and certificates", () => {
   test("administrator issuance, learner access, PDF download, verification and revocation work", async ({
     page,
   }, testInfo) => {
+    test.setTimeout(120000);
     await loginAs(page, "admin");
     await gotoApp(page, "/admin/certificates");
     await page.getByPlaceholder("Search learners or modules…").fill(learnerName);

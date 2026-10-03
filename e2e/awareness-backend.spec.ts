@@ -131,11 +131,10 @@ test.describe("Awareness on migrated Supabase", () => {
       .click();
     expect((await download).suggestedFilename()).toMatch(/\.png$/);
     await gotoApp(page, "/awareness/infographics");
-    await page
-      .getByRole("button", { name: /Open|View/ })
-      .first()
-      .click();
+    await page.getByRole("button", { name: "Open infographic", exact: true }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await gotoApp(page, "/awareness/videos");
     await page
       .getByRole("button", { name: /Open transcript preview/ })

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, rm } from "node:fs/promises";
 import { randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
@@ -432,6 +432,12 @@ try {
     await run(process.execPath, ["scripts/lighthouse-review.mjs"], testEnv);
 } finally {
   const cleanupErrors = [];
+  await mkdir(".qa.local", { recursive: true });
+  const recoveryManifest = `.qa.local/fixture-${suffix}.json`;
+  await writeFile(
+    recoveryManifest,
+    JSON.stringify({ suffix, adminId, learnerId, outsiderId, baselineData }, null, 2),
+  );
   try {
     if (adminId && learnerId) {
       const assets = await sql(
@@ -468,6 +474,8 @@ try {
       delete from public.learning_modules where id='${moduleId}';
       delete from public.learning_modules where title='Learning image verification ${suffix}';
       delete from public.learning_topics where id='${topicId}';
+      -- Preserve the active-resource constraint when a failed test leaves media attached.
+      update public.awareness_media_assets set state='retired',updated_at=now() where uploaded_by='${adminId}';
       delete from public.awareness_resources where created_by='${adminId}';
       delete from public.awareness_media_assets where uploaded_by='${adminId}';
       delete from public.learning_media_assets where uploaded_by='${adminId}';
@@ -484,9 +492,14 @@ try {
         and not exists(select 1 from public.quiz_definitions q where q.id=coalesce(a.after_data->>'quiz_id',a.before_data->>'quiz_id'));
       commit;`);
     }
-  } catch {
+  } catch (error) {
+    // sql() only exposes HTTP status, never query text or credentials.
+    console.error(error instanceof Error ? error.message : "Disposable cleanup request failed.");
     cleanupErrors.push("Disposable staging record cleanup failed.");
   }
+  // Keep ownership intact and retain the identifier-only manifest if record
+  // cleanup fails; deleting the administrator would erase fixture ownership.
+  if (cleanupErrors.length) throw new Error(cleanupErrors.join(" "));
   for (const [id, role] of [
     [outsiderId, "privacy learner"],
     [learnerId, "learner"],
@@ -505,6 +518,7 @@ try {
     throw new Error(
       "Staging content/progress integrity differs from the baseline after cleanup; investigate before release.",
     );
+  await rm(recoveryManifest, { force: true });
   if (adminId || learnerId)
     console.log(
       "Disposable staging accounts, content, activity and certificates removed; all 11 content/progress table digests match the baseline.",

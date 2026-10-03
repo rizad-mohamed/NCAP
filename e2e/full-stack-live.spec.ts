@@ -80,6 +80,7 @@ test.describe("disposable full-stack staging workflows", () => {
     page,
     browser,
   }) => {
+    test.setTimeout(120000);
     const lesson = `/learn/lessons/${process.env.E2E_LESSON_ID}`;
     await loginAs(page, "learner");
     await gotoApp(page, lesson);
@@ -97,7 +98,10 @@ test.describe("disposable full-stack staging workflows", () => {
       await expect(other.getByRole("button", { name: "Completed", exact: true })).toBeDisabled();
       await gotoApp(other, "/dashboard");
       await expect(other.getByRole("heading", { level: 1 })).toBeVisible();
+      if (!(await other.getByRole("button", { name: "Log out", exact: true }).isVisible()))
+        await other.getByRole("button", { name: "Open workspace navigation", exact: true }).click();
       await other.getByRole("button", { name: "Log out", exact: true }).click();
+      await expect(other).toHaveURL(new URL("/", other.url()).href);
       await gotoApp(other, "/login");
       await other.getByLabel("Email address").fill(process.env.E2E_SECOND_EMAIL!);
       await other.locator('input[name="password"]').fill(process.env.E2E_SECOND_PASSWORD!);

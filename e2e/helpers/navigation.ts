@@ -1,11 +1,11 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 export async function gotoApp(page: Page, path: string) {
-  const destination = new URL(path, page.url()).href;
+  const destination = new URL(path, test.info().project.use.baseURL ?? page.url()).href;
   // Exercise visible application navigation when available. This also avoids
   // racing a full-document goto against the hydrated router in Firefox.
   const link = page
-    .locator(`a[href=${JSON.stringify(path)}]`)
+    .locator(`a[href=${JSON.stringify(path)}]:not([target="_blank"])`)
     .filter({ visible: true })
     .first();
   if (await link.count()) await link.click();
