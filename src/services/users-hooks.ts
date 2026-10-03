@@ -44,9 +44,10 @@ export function useChangeAdminUser() {
   return useMutation({
     mutationFn: (value: { target: string; role?: AdminUser["role"]; status?: AdminUser["status"]; reason?: string }) =>
       unwrap<void>(changeAdminUser({ data: value })),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      void queryClient.invalidateQueries({ queryKey: ["admin-user-details"] });
-    },
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-user-details"] }),
+      ]),
   });
 }
