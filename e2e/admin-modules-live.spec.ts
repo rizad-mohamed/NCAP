@@ -1,3 +1,4 @@
+import { gotoApp } from "./helpers/navigation";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { loginAs } from "./helpers/auth";
@@ -21,7 +22,7 @@ test.describe("live administrator content, reports and certificates", () => {
     page,
   }) => {
     await loginAs(page, "admin");
-    await page.goto("/admin/lessons");
+    await gotoApp(page, "/admin/lessons");
     await page.getByRole("button", { name: "Add lesson" }).click();
     const editor = page.getByRole("dialog", { name: "Add lesson" });
     await editor.getByLabel("Title *").fill(lessonTitle);
@@ -57,7 +58,7 @@ test.describe("live administrator content, reports and certificates", () => {
     await expect(page.getByText("Lesson deleted", { exact: true })).toBeVisible();
     await expect(page.getByText(editedLessonTitle, { exact: true })).toHaveCount(0);
 
-    await page.goto("/admin/questions");
+    await gotoApp(page, "/admin/questions");
     await page.getByRole("button", { name: new RegExp(quizTitle) }).click();
     await page.getByRole("button", { name: "Add question" }).click();
     const questionEditor = page.getByRole("dialog", { name: "Question editor" });
@@ -88,7 +89,7 @@ test.describe("live administrator content, reports and certificates", () => {
     page,
   }) => {
     await loginAs(page, "admin");
-    await page.goto("/admin/reports");
+    await gotoApp(page, "/admin/reports");
     await page.getByLabel("Module").selectOption(moduleId);
     await page.getByRole("button", { name: "Generate report" }).click();
     await expect(page.getByRole("cell", { name: quizTitle, exact: true })).toBeVisible();
@@ -108,7 +109,7 @@ test.describe("live administrator content, reports and certificates", () => {
   test("the existing Awareness workspace persists edits and publication", async ({ page }) => {
     const title = `Live awareness ${process.env.E2E_RUN_ID}`;
     await loginAs(page, "admin");
-    await page.goto("/admin/awareness/cyber-tips", { waitUntil: "networkidle" });
+    await gotoApp(page, "/admin/awareness/cyber-tips");
     await page.getByRole("button", { name: "Create cyber tip" }).click();
     await page.getByLabel("Title *").fill(title);
     await page.getByLabel("Tip text").fill("Verify unexpected requests through a trusted contact.");
@@ -120,14 +121,14 @@ test.describe("live administrator content, reports and certificates", () => {
     await page.getByLabel("Tip text").fill("Pause, then verify through a trusted contact.");
     await page.getByRole("button", { name: "Save record" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.goto("/awareness/tips", { waitUntil: "networkidle" });
+    await gotoApp(page, "/awareness/tips");
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await page.goto("/admin/awareness/cyber-tips", { waitUntil: "networkidle" });
+    await gotoApp(page, "/admin/awareness/cyber-tips");
     await page.getByRole("button", { name: `Unpublish ${title}` }).click();
     await expect(page.getByRole("button", { name: `Publish ${title}` })).toBeVisible();
-    await page.goto("/awareness/tips", { waitUntil: "networkidle" });
+    await gotoApp(page, "/awareness/tips");
     await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
-    await page.goto("/admin/awareness/cyber-tips", { waitUntil: "networkidle" });
+    await gotoApp(page, "/admin/awareness/cyber-tips");
     await page.getByRole("button", { name: `Delete ${title}` }).click();
     await page.getByRole("button", { name: "Delete content" }).click();
     await expect(page.getByRole("cell", { name: title, exact: true })).toHaveCount(0);
@@ -137,7 +138,7 @@ test.describe("live administrator content, reports and certificates", () => {
     page,
   }, testInfo) => {
     await loginAs(page, "admin");
-    await page.goto("/admin/certificates");
+    await gotoApp(page, "/admin/certificates");
     await page.getByPlaceholder("Search learners or modules…").fill(learnerName);
     const row = page
       .getByRole("row")
@@ -162,14 +163,14 @@ test.describe("live administrator content, reports and certificates", () => {
     });
 
     await loginAs(page, "learner");
-    await page.goto("/certificates");
+    await gotoApp(page, "/certificates");
     await expect(page.getByRole("heading", { name: moduleTitle })).toBeVisible();
     await expect(page.getByText(`NCAP-${reference}`, { exact: false })).toBeVisible();
-    await page.goto(`/verify-certificate?reference=${reference}`);
+    await gotoApp(page, `/verify-certificate?reference=${reference}`);
     await expect(page.getByRole("heading", { name: "Verified certificate" })).toBeVisible();
 
     await loginAs(page, "admin");
-    await page.goto("/admin/certificates");
+    await gotoApp(page, "/admin/certificates");
     await page.getByPlaceholder("Search learners or modules…").fill(learnerName);
     page.once("dialog", (dialog) => dialog.accept("Disposable live verification complete"));
     await page
@@ -179,7 +180,7 @@ test.describe("live administrator content, reports and certificates", () => {
       .getByRole("button", { name: "Revoke" })
       .click();
     await expect(page.getByText("Certificate revoked")).toBeVisible();
-    await page.goto(`/verify-certificate?reference=${reference}`);
+    await gotoApp(page, `/verify-certificate?reference=${reference}`);
     await expect(
       page.getByRole("heading", { name: "Invalid / unverified certificate" }),
     ).toBeVisible();

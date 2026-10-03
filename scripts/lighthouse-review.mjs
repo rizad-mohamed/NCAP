@@ -49,6 +49,13 @@ const worker = spawn(
 );
 let context;
 async function login(role) {
+  // Lighthouse instruments the audited browser. Start a fresh Playwright process
+  // before using its injected locator scripts for the next account login.
+  await context.close();
+  context = await chromium.launchPersistentContext(profile, {
+    headless: true,
+    args: ["--remote-debugging-port=9222"],
+  });
   await context.clearCookies();
   const page = await context.newPage();
   try {

@@ -1,3 +1,4 @@
+import { gotoApp } from "./helpers/navigation";
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { loginAs } from "./helpers/auth";
@@ -11,7 +12,7 @@ test("Learning module images validate, upload, replace and retire through the ba
   );
   test.setTimeout(120_000);
   await loginAs(page, "admin");
-  await page.goto("/admin/topics");
+  await gotoApp(page, "/admin/topics");
   await page.getByRole("tab", { name: "modules", exact: true }).click();
   await page.getByRole("button", { name: "Create module" }).click();
   const dialog = page.getByRole("dialog");

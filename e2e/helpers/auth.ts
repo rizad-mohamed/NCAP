@@ -30,4 +30,7 @@ export async function loginAs(page: Page, role: TestRole) {
   await page.locator('input[name="password"]').fill(account.password!);
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL(account.destination, { timeout: 20000 });
+  // Firefox can expose the destination URL before its full-document login
+  // redirect finishes. Do not let the next workflow abort that navigation.
+  await page.waitForURL(account.destination, { waitUntil: "networkidle", timeout: 20000 });
 }

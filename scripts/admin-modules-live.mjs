@@ -147,6 +147,8 @@ try {
     insert into public.learning_lessons(id,module_id,topic_id,title,summary,difficulty,minutes,display_order,status)
       values('${lessonId}','${moduleId}','${topicId}','Eligibility lesson ${suffix}','Disposable eligibility evidence','Beginner',10,1,'Published');
     insert into public.learning_module_objectives(module_id,position,text) values('${moduleId}',1,'Learn safely');
+    insert into public.learning_lesson_objectives(lesson_id,position,text) values('${lessonId}',1,'Choose safe actions');
+    insert into public.learning_lesson_blocks(lesson_id,position,content) values('${lessonId}',1,'{"kind":"paragraph","text":"Disposable staging lesson content."}');
     insert into public.quiz_definitions(id,module_id,title,slug,description,topic,difficulty,passing_percent,eligibility_percent,question_count,status)
       values('${quizId}','${moduleId}','${quizTitle}','live-assessment-${suffix}','Disposable assessment','Live Safety','Beginner',70,80,1,'Published');
     insert into public.quiz_questions(id,quiz_id,prompt,topic,difficulty,explanation,status)
@@ -213,6 +215,40 @@ try {
       .error
   )
     throw new Error("Learner unexpectedly changed their own administrator role.");
+  const userPage = await adminClient.rpc("admin_users_list", {
+    page_offset: 0,
+    page_limit: 1,
+    search_text: suffix,
+    sort_field: "email",
+    sort_direction: "asc",
+  });
+  const nextUserPage = await adminClient.rpc("admin_users_list", {
+    page_offset: 1,
+    page_limit: 1,
+    search_text: suffix,
+    sort_field: "email",
+    sort_direction: "asc",
+  });
+  if (
+    userPage.error ||
+    nextUserPage.error ||
+    userPage.data?.total !== 3 ||
+    userPage.data?.items?.length !== 1 ||
+    nextUserPage.data?.items?.length !== 1 ||
+    userPage.data.items[0].id === nextUserPage.data.items[0].id
+  )
+    throw new Error("Live administrator user search, sorting or pagination failed.");
+  if (
+    !(
+      await adminClient.rpc("admin_user_change", {
+        target: adminId,
+        new_role: "learner",
+        new_status: null,
+        reason: "Forged self-demotion",
+      })
+    ).error
+  )
+    throw new Error("Administrator unexpectedly changed their own access.");
   if (
     !(await learnerClient.rpc("certificate_issue", { learner: learnerId, module_target: moduleId }))
       .error
