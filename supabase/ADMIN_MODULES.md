@@ -40,13 +40,15 @@ The PDF endpoint renders server-side from `certificate_document`, using the stor
 
 ## Applied staging migrations
 
-All five migrations were applied and verified on 2026-10-03:
+The original five migrations were applied and verified on 2026-10-03:
 
 - `202610030001_certificates.sql`
 - `202610030002_admin_reports.sql`
 - `202610030003_public_request_guard.sql`
 - `202610030004_admin_content_audit.sql`
 - `202610030005_publication_eligibility.sql`
+
+Full-stack validation subsequently applied `202610030006_certificate_lock_order.sql` to prevent lock inversion during concurrent certificate issuance and content editing, and `202610030007_maintenance_request_permissions.sql` to restore the server maintenance role's access to the existing Data API request guard. All seven migration history entries were verified. See [the full-stack verification report](FULL_STACK_VERIFICATION.md) for the current browser matrix, Lighthouse results, fixes and release gates; the results below describe the earlier administrator-module validation.
 
 Verification confirmed all five history entries, four RLS-enabled tables, nine secured public RPCs, four read-only authenticated table grants, sixteen indexes and twenty-five constraints. The Awareness audit trigger function has protected execution permissions. Anonymous administrator RPC requests are denied; public invalid-reference verification succeeds safely. The publication eligibility migration makes the existing published-content rule explicit; it does not change the existing visibility helper's behavior.
 

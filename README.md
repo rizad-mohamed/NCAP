@@ -168,10 +168,11 @@ Before public release:
 
 The ignored pre-deployment snapshot is not a full database backup. The latest deployment report recorded no listed database backups and point-in-time recovery disabled. Prefer forward corrections to destructive schema rollback; preserve data and verify recovery before any reversal.
 
-Further product work includes authoritative assessment attempts/certificates, user administration APIs, broader analytics, localization, and continued accessibility verification.
+Authoritative assessment attempts/certificates and administrator user APIs are implemented. Remaining release gates and measured performance/audit limitations are recorded in the [full-stack verification report](supabase/FULL_STACK_VERIFICATION.md). Localization and broader analytics remain future product work.
 
 ## Documentation
 
+- [Full-stack QA, security, performance and production verification](supabase/FULL_STACK_VERIFICATION.md)
 - [Supabase authentication setup](supabase/README.md)
 - [Awareness operations](supabase/AWARENESS.md), [verification](supabase/AWARENESS_VERIFICATION.md), and [readiness](supabase/AWARENESS_READINESS.md)
 - [Learning operations](supabase/LEARNING.md) and [deployment verification](supabase/LEARNING_VERIFICATION.md)

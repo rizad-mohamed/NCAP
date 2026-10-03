@@ -18,6 +18,6 @@ After applying the migration, verify as a learner and a Super Admin:
 3. Create and activate an announcement in `/admin/announcements`. It should appear for the intended learners within its scheduled dates.
 4. Confirm direct writes to `dashboard_user_badges`, `dashboard_learning_sessions`, Learning completions, and Quiz attempts are denied for learners. Confirm learner B sees none of learner A's Dashboard history. Confirm admin RPCs reject learner tokens.
 
-Run `npm run check` and `npx vitest run src/server/dashboard/database.integration.test.ts src/features/admin/DashboardSections.test.tsx` before release. The integration test applies the production migrations to PGlite and tests the actual PostgreSQL RLS and RPC behaviour.
+Run `npm run check` and `npx vitest run src/server/dashboard/database.integration.test.ts src/services/report-hooks.test.ts` before release. The integration test applies the production migrations to PGlite and tests the actual PostgreSQL RLS and RPC behaviour. Current full-stack evidence and release gates are in [FULL_STACK_VERIFICATION.md](FULL_STACK_VERIFICATION.md).
 
-Admin reports show accurate totals and charts for the selected range. Attempt rows are paginated at 100 per page; CSV export downloads the visible page. The user overview is paginated at 20 learners per page. Learner activity is paginated at 20 events per page.
+Admin reports show totals and charts for the selected range. Attempt rows are paginated at 100 per page; CSV export downloads the complete filtered result, with a 10,000-row limit that produces an explicit error. The user overview is paginated at 20 accounts per page. Learner activity is paginated at 20 events per page.
