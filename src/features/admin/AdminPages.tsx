@@ -1,3 +1,8 @@
+import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
+import { CertificatePreview } from "@/components/common/CertificatePreview";
+import { LessonBlockView } from "@/features/learning/LearningPages";
+import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
+import type { StoredCertificateTemplate } from "@/domain/certificates";
 import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { useAdminQuizSummary } from "@/services/quiz-hooks";
 import { useAdminDashboard } from "@/services/dashboard-hooks";
@@ -70,7 +75,6 @@ import { LessonContentBuilder } from "@/components/admin/LessonContentBuilder";
 import { LessonVideoField } from "@/components/admin/LessonVideoField";
 import {
   announcementStatus,
-  evaluateCertificateEligibility,
   isDuplicateTopic,
   normalizeTopicName,
   topicSlug,
@@ -132,7 +136,12 @@ export function AdminDashboardPage() {
   const quizSummary = useAdminQuizSummary();
   const dashboard = useAdminDashboard();
   const metrics = [
-    { label: "Total learners", value: dashboard.data?.users ?? 0, icon: <Users />, tone: "violet" as const },
+    {
+      label: "Total learners",
+      value: dashboard.data?.users ?? 0,
+      icon: <Users />,
+      tone: "violet" as const,
+    },
     {
       label: "Active learners",
       value: dashboard.data?.activeLearners ?? 0,
@@ -164,7 +173,9 @@ export function AdminDashboardPage() {
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       {dashboard.isPending && <p role="status">Loading administration metrics…</p>}
-      {dashboard.isError && <p role="alert">Administration metrics are unavailable. Please refresh.</p>}
+      {dashboard.isError && (
+        <p role="alert">Administration metrics are unavailable. Please refresh.</p>
+      )}
       <PageHeader
         eyebrow="Administration"
         title="Overview"
@@ -176,7 +187,10 @@ export function AdminDashboardPage() {
         ))}
       </section>
       <Suspense fallback={<ChartLoading />}>
-        <AdminDashboardCharts quizTrend={quizSummary.data?.trend ?? []} topicEngagement={dashboard.data?.topicEngagement ?? []} />
+        <AdminDashboardCharts
+          quizTrend={quizSummary.data?.trend ?? []}
+          topicEngagement={dashboard.data?.topicEngagement ?? []}
+        />
       </Suspense>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-xl border bg-white p-6">
@@ -442,6 +456,8 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
   const deleteLesson = useRemoveRepositoryRecord(repository, "lessons");
   const queryClient = useQueryClient();
   const [reordering, setReordering] = useState(false);
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  const [previewAnswers, setPreviewAnswers] = useState<Record<number, number>>({});
   const moveLesson = async (lesson: Lesson, direction: -1 | 1) => {
     const siblings = s.lessons
       .filter((l) => l.moduleId === lesson.moduleId)
@@ -661,6 +677,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                     <div className="flex justify-end gap-1">
                       <button
                         className={iconBtn}
+                        disabled={saveLesson.isPending || deleteLesson.isPending}
                         onClick={() => setEditing(item)}
                         aria-label={`Edit ${title}`}
                       >
@@ -668,6 +685,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                       </button>
                       <button
                         className={iconBtn}
+                        disabled={saveLesson.isPending || deleteLesson.isPending}
                         onClick={() => toggle(item)}
                         aria-label={`${item.status === "Published" ? "Unpublish" : "Publish"} ${title}`}
                       >
@@ -675,6 +693,17 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                       </button>
                       {kind === "lessons" && (
                         <>
+                          <button
+                            className={iconBtn}
+                            disabled={saveLesson.isPending || deleteLesson.isPending}
+                            onClick={() => {
+                              setPreviewAnswers({});
+                              setPreviewLesson(item as Lesson);
+                            }}
+                            aria-label={`Preview ${title}`}
+                          >
+                            <Eye className="size-4" />
+                          </button>
                           <button
                             className={iconBtn}
                             disabled={
@@ -716,6 +745,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                       )}
                       <button
                         className={cn(iconBtn, "hover:border-destructive hover:text-destructive")}
+                        disabled={saveLesson.isPending || deleteLesson.isPending}
                         onClick={() => remove(item.id)}
                         aria-label={`Delete ${title}`}
                       >
@@ -737,6 +767,37 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
           </div>
         )}
       </div>
+      <Dialog open={!!previewLesson} onOpenChange={(open) => !open && setPreviewLesson(null)}>
+        <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Preview {previewLesson?.title}</DialogTitle>
+            <DialogDescription>{previewLesson?.summary}</DialogDescription>
+          </DialogHeader>
+          {previewLesson && (
+            <article>
+              {previewLesson.video && (
+                <LessonVideoPlayer
+                  lessonId={previewLesson.id}
+                  learnerKey="administrator-preview"
+                  title={previewLesson.title}
+                  video={previewLesson.video}
+                  preview
+                />
+              )}
+              {previewLesson.blocks.map((block, index) => (
+                <LessonBlockView
+                  key={index}
+                  block={block}
+                  selected={previewAnswers[index]}
+                  onSelect={(answer) =>
+                    setPreviewAnswers((values) => ({ ...values, [index]: answer }))
+                  }
+                />
+              ))}
+            </article>
+          )}
+        </DialogContent>
+      </Dialog>
       <ContentEditor
         key={editing === "new" ? "new" : (editing?.id ?? "closed")}
         kind={kind}
@@ -1391,59 +1452,57 @@ function ContentEditor({
 export function AdminCertificatesPage() {
   const store = useNcap();
   const [view, setView] = useState<"registry" | "template">("registry");
-  const [template, setTemplate] = useState(store.certificateTemplate);
-  const certificateModules = store.modules.filter((module) => module.status === "Published");
-  const rows = certificateModules.length
-    ? store.users.map((user, index) => {
-        const module = certificateModules[index % certificateModules.length]!;
-        const moduleLessons = store.lessons.filter(
-          (lesson) => lesson.moduleId === module.id && lesson.status === "Published",
-        );
-        const completedLessonIds =
-          user.progressPercent === 100 ? moduleLessons.map((lesson) => lesson.id) : [];
-        const syntheticAttempts = user.attempts
-          ? [
-              {
-                id: `admin-${user.id}-${module.quizId}`,
-                quizId: module.quizId,
-                moduleId: module.id,
-                scorePercent: user.quizAverage,
-                correct: user.quizAverage,
-                total: 100,
-                seconds: 0,
-                completedAt: user.lastActivity,
-                byTopic: [],
-              },
-            ]
-          : [];
-        const eligibility = evaluateCertificateEligibility({
-          moduleId: module.id,
-          quizId: module.quizId,
-          lessons: store.lessons,
-          completedLessonIds,
-          attempts: syntheticAttempts,
-        });
-        const record = store.certificateRecords.find(
-          (item) =>
-            item.userId === user.id && item.moduleId === module.id && item.status === "Issued",
-        );
-        return { user, module, eligibility, record };
-      })
-    : [];
-  const saveTemplate = (event: FormEvent) => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [moduleId, setModuleId] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
+  const registry = useCertificates((page - 1) * 20, moduleId || null, search);
+  const settings = useCertificateTemplate();
+  const [template, setTemplate] = useState<StoredCertificateTemplate>({
+    title: "",
+    subtitle: "",
+    issuer: "",
+    body: "",
+    signatoryName: "",
+    signatoryTitle: "",
+    theme: "navy",
+    version: 1,
+  });
+  useEffect(() => {
+    if (settings.data) setTemplate(settings.data);
+  }, [settings.data]);
+  const rows = (registry.data?.items ?? []).map((item) => ({
+    user: { id: item.userId, name: item.learnerName },
+    module: { id: item.moduleId, title: item.moduleTitle },
+    eligibility: item.eligibility,
+    record: item.record ? { ...item.record, issuedAt: item.record.issued_at } : null,
+  }));
+  const saveTemplate = async (event: FormEvent) => {
     event.preventDefault();
-    if (!template.title.trim() || !template.issuer.trim() || !template.body.trim()) {
-      toast.error("Title, issuer, and certificate wording are required.");
-      return;
+    try {
+      await settings.save.mutateAsync(template);
+      toast.success("Certificate template saved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save template.");
     }
-    store.setCertificateTemplate({
-      ...template,
-      title: template.title.trim(),
-      issuer: template.issuer.trim(),
-      body: template.body.trim(),
-    });
-    store.logActivity("admin", "Updated the certificate template");
-    toast.success("Certificate template saved locally");
+  };
+  const issue = async (userId: string, moduleId: string) => {
+    try {
+      await registry.issue.mutateAsync({ userId, moduleId });
+      toast.success("Certificate issued");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to issue certificate.");
+    }
+  };
+  const revoke = async (id: string) => {
+    const reason = window.prompt("Reason for revoking this certificate:");
+    if (!reason?.trim()) return;
+    try {
+      await registry.revoke.mutateAsync({ id, reason });
+      toast.success("Certificate revoked");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to revoke certificate.");
+    }
   };
   return (
     <div className="container-ncap max-w-[1400px] py-2">
@@ -1470,6 +1529,45 @@ export function AdminCertificatesPage() {
           </div>
         }
       />
+      {(registry.isPending || settings.isPending) && (
+        <p role="status" className="mt-4">
+          Loading certificates…
+        </p>
+      )}
+      {(registry.isError || settings.isError) && (
+        <p role="alert" className="mt-4">
+          Certificate data unavailable. Please refresh.
+        </p>
+      )}
+      <CertificatePreview id={preview} onClose={() => setPreview(null)} />
+      {view === "registry" && (
+        <FilterToolbar>
+          <DashboardSearchInput
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            placeholder="Search learners or modules…"
+          />
+          <select
+            aria-label="Certificate module"
+            className={dashboardSelect}
+            value={moduleId}
+            onChange={(event) => {
+              setModuleId(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All modules</option>
+            {store.modules.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+          </select>
+        </FilterToolbar>
+      )}
       {view === "registry" ? (
         <div className="mt-7 overflow-x-auto rounded-xl border bg-white">
           <table className="w-full min-w-[1000px] text-left text-sm">
@@ -1493,7 +1591,7 @@ export function AdminCertificatesPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.user.id} className="border-t">
+                <tr key={`${r.user.id}:${r.module.id}`} className="border-t">
                   <td className="px-4 py-4 font-semibold">{r.user.name}</td>
                   <td className="px-4 py-4">{r.module.title}</td>
                   <td className="px-4 py-4">
@@ -1504,7 +1602,7 @@ export function AdminCertificatesPage() {
                     <span className="block">Best quiz: {r.eligibility.bestScore}%</span>
                   </td>
                   <td className="px-4 py-4">
-                    <StatusBadge value={r.record ? "Issued" : "Pending"} />
+                    <StatusBadge value={r.record?.status ?? "Pending"} />
                   </td>
                   <td className="px-4 py-4">{r.record?.issuedAt ?? "—"}</td>
                   <td className="px-4 py-4 font-mono text-xs">{r.record?.reference ?? "—"}</td>
@@ -1512,58 +1610,29 @@ export function AdminCertificatesPage() {
                     <div className="flex gap-2">
                       <button
                         className={outline}
-                        onClick={() =>
-                          toast.info(
-                            `Template preview is available on the Template tab for ${r.user.name}.`,
-                          )
-                        }
+                        disabled={!r.record}
+                        onClick={() => setPreview(r.record?.id ?? null)}
                       >
                         <Eye />
                         Preview
                       </button>
-                      {r.record ? (
+                      {r.record?.status === "Issued" ? (
                         <button
                           className={cn(outline, "text-destructive")}
-                          onClick={() => {
-                            if (window.confirm("Revoke this demo certificate?")) {
-                              store.setCertificateRecords(
-                                store.certificateRecords.map((record) =>
-                                  record.id === r.record!.id
-                                    ? {
-                                        ...record,
-                                        status: "Revoked",
-                                        revokedAt: new Date().toISOString().slice(0, 10),
-                                      }
-                                    : record,
-                                ),
-                              );
-                              store.logActivity("admin", `Revoked certificate for ${r.user.name}`);
-                              toast.success("Certificate revoked in demo state");
-                            }
-                          }}
+                          disabled={registry.revoke.isPending}
+                          onClick={() => void revoke(r.record!.id)}
                         >
                           Revoke
                         </button>
                       ) : (
                         <button
                           className={primary}
-                          disabled={!r.eligibility.eligible}
-                          onClick={() => {
-                            const issuedAt = new Date().toISOString().slice(0, 10);
-                            store.setCertificateRecords([
-                              ...store.certificateRecords,
-                              {
-                                id: `certificate-${crypto.randomUUID()}`,
-                                userId: r.user.id,
-                                moduleId: r.module.id,
-                                status: "Issued",
-                                issuedAt,
-                                reference: `NCAP-DEMO-${r.user.id.toUpperCase()}-${r.module.id.replace("m-", "").toUpperCase()}`,
-                              },
-                            ]);
-                            store.logActivity("admin", `Issued certificate for ${r.user.name}`);
-                            toast.success("Certificate marked issued");
-                          }}
+                          disabled={
+                            !r.eligibility.eligible ||
+                            registry.issue.isPending ||
+                            registry.isFetching
+                          }
+                          onClick={() => void issue(r.user.id, r.module.id)}
                         >
                           Mark issued
                         </button>
@@ -1574,11 +1643,25 @@ export function AdminCertificatesPage() {
               ))}
             </tbody>
           </table>
+          {!registry.isPending && !rows.length && (
+            <div className="p-6">
+              <EmptyState
+                title="No certificate records"
+                description="Adjust the search or module filter."
+              />
+            </div>
+          )}
+          <DashboardPagination
+            page={page}
+            pages={Math.max(1, Math.ceil((registry.data?.total ?? 0) / 20))}
+            count={registry.data?.total ?? 0}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <div className="mt-7 grid gap-6 xl:grid-cols-[420px_1fr]">
           <form
-            onSubmit={saveTemplate}
+            onSubmit={(event) => void saveTemplate(event)}
             className="grid content-start gap-4 rounded-xl border bg-white p-5"
           >
             <h2 className="text-xl font-semibold">Template settings</h2>
@@ -1667,14 +1750,18 @@ export function AdminCertificatesPage() {
             </label>
             <MediaField
               label="Certificate logo"
+              acceptedTypes={["image/png", "image/jpeg"]}
+              storage="learning"
               asset={template.logo}
               initialAlt="NCAP certificate logo"
-              guidance="A transparent or square logo works best."
+              guidance="Use a PNG or JPEG logo. Uploaded logos are stored securely."
               onChange={(logo) =>
                 setTemplate((value) => ({ ...value, ...(logo ? { logo } : { logo: undefined }) }))
               }
             />
-            <button className={primary}>Save template</button>
+            <button className={primary} disabled={!settings.data || settings.save.isPending}>
+              Save template
+            </button>
           </form>
           <section className="rounded-xl border bg-white p-4 md:p-8">
             <div
@@ -1688,20 +1775,20 @@ export function AdminCertificatesPage() {
               )}
             >
               <ShieldCheck className="mx-auto size-12 text-primary" aria-hidden="true" />
-              <p className="meta mt-5 text-primary">{template.issuer} · Demonstration</p>
+              <p className="meta mt-5 text-primary">{template.issuer} · Template preview</p>
               <h2 className="mt-5 text-4xl font-semibold">
                 {template.title || "Certificate title"}
               </h2>
               <p className="mt-3 text-muted-foreground">{template.subtitle}</p>
               <p className="mx-auto mt-8 max-w-2xl">{template.body}</p>
-              <p className="mt-8 text-3xl font-semibold">Demo Learner</p>
+              <p className="mt-8 text-3xl font-semibold">Sample Learner</p>
               <p className="mt-3 text-xl">Digital Safety Fundamentals</p>
               <div className="mx-auto mt-12 max-w-xs border-t pt-2">
                 <p className="font-semibold">{template.signatoryName}</p>
                 <p className="text-sm text-muted-foreground">{template.signatoryTitle}</p>
               </div>
               <p className="mt-8 font-mono text-xs text-muted-foreground">
-                NCAP-DEMO-PREVIEW · Not cryptographically verifiable
+                Template preview · No certificate issued
               </p>
             </div>
             <button

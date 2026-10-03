@@ -39,10 +39,7 @@ import type { LanguageCode, LessonBlock, QuizAttempt, QuizQuestion, Topic } from
 import { NCAP_CONFIG } from "@/lib/config";
 import { useNcap, useLearnerStats } from "@/state/ncap-store";
 import { useI18n } from "@/lib/i18n";
-import {
-  calculateQuizResult,
-  evaluateCertificateEligibility,
-} from "@/domain/rules";
+import { calculateQuizResult } from "@/domain/rules";
 import { AppLink, PageCrumbs } from "@/components/layout/AppShell";
 import {
   DemoTag,
@@ -62,6 +59,7 @@ import { updateProfile as updateAccountProfile } from "@/auth/auth.functions";
 import { useAuth } from "@/auth/AuthProvider";
 import { useQuizCatalogue, useQuizHistory } from "@/services/quiz-hooks";
 import { useLearnerDashboard } from "@/services/dashboard-hooks";
+import { useCertificates } from "@/services/certificate-hooks";
 
 const primary = dashboardButton.primary;
 const outline = dashboardButton.secondary;
@@ -588,7 +586,7 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
   );
 }
 
-function LessonBlockView({
+export function LessonBlockView({
   block,
   selected,
   onSelect,
@@ -969,12 +967,15 @@ export function DashboardPage() {
     completedCount: dashboard.data?.statistics.completedCount ?? 0,
     totalLessons: dashboard.data?.statistics.totalLessons ?? 0,
     hours: Math.round(((dashboard.data?.learningSeconds ?? 0) / 3600) * 10) / 10,
-    moduleProgress: dashboard.data?.statistics.moduleProgress.map((progress) => ({
-      module: modules.find((module) => module.id === progress.id)!,
-      total: progress.total,
-      completed: progress.completed,
-      percent: progress.total ? Math.round(progress.completed * 100 / progress.total) : 0,
-    })).filter((progress) => progress.module) ?? [],
+    moduleProgress:
+      dashboard.data?.statistics.moduleProgress
+        .map((progress) => ({
+          module: modules.find((module) => module.id === progress.id)!,
+          total: progress.total,
+          completed: progress.completed,
+          percent: progress.total ? Math.round((progress.completed * 100) / progress.total) : 0,
+        }))
+        .filter((progress) => progress.module) ?? [],
     badges: dashboard.data?.badges ?? [],
   };
   const publishedLessons = store.lessons.filter(
@@ -985,10 +986,18 @@ export function DashboardPage() {
   const next =
     publishedLessons.find((l) => !store.completedLessons.includes(l.id)) ?? publishedLessons[0];
   if (dashboard.isPending || store.learningPending) {
-    return <div className="container-ncap py-8" role="status">Loading your dashboard…</div>;
+    return (
+      <div className="container-ncap py-8" role="status">
+        Loading your dashboard…
+      </div>
+    );
   }
   if (dashboard.isError || store.learningError || quizHistory.isError) {
-    return <div className="container-ncap py-8" role="alert">Your dashboard is unavailable. Please refresh and try again.</div>;
+    return (
+      <div className="container-ncap py-8" role="alert">
+        Your dashboard is unavailable. Please refresh and try again.
+      </div>
+    );
   }
   if (!next) {
     return (
@@ -1222,138 +1231,26 @@ export function DashboardPage() {
           </p>
         )}
         <div className="mt-4 flex gap-2">
-          {activityOffset > 0 && <button className={outline} onClick={() => setActivityOffset(Math.max(0, activityOffset - 20))}>Previous activity</button>}
-          {(dashboard.data?.activities.length ?? 0) === 20 && <button className={outline} onClick={() => setActivityOffset(activityOffset + 20)}>More activity</button>}
+          {activityOffset > 0 && (
+            <button
+              className={outline}
+              onClick={() => setActivityOffset(Math.max(0, activityOffset - 20))}
+            >
+              Previous activity
+            </button>
+          )}
+          {(dashboard.data?.activities.length ?? 0) === 20 && (
+            <button className={outline} onClick={() => setActivityOffset(activityOffset + 20)}>
+              More activity
+            </button>
+          )}
         </div>
       </section>
     </div>
   );
 }
 
-export function CertificatesPage() {
-  const store = useNcap();
-  const modules = useModules();
-  const stats = useLearnerStats();
-  const [preview, setPreview] = useState<string | null>(null);
-  const selected = modules.find((m) => m.id === preview);
-  return (
-    <div className="container-ncap max-w-6xl py-2">
-      <PageHeader
-        eyebrow="My achievements · Demo certificates"
-        title="Certificates"
-        description={`In this demo, eligibility requires full module completion and a quiz score of at least ${NCAP_CONFIG.certificateThresholdPercent}%. This is not official national policy.`}
-      />
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        {modules
-          .filter((module) => module.status === "Published")
-          .map((m) => {
-            const eligible = stats.certificateEligible.some((x) => x.id === m.id);
-            const issued = store.issuedCertificates.find((c) => c.moduleId === m.id);
-            const progress = stats.moduleProgress.find((p) => p.module.id === m.id)!;
-            const score = stats.bestScore(m.quizId);
-            return (
-              <article
-                key={m.id}
-                className={cn("rounded-xl border bg-white p-6", eligible && "border-success/50")}
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className={cn(
-                      "grid size-12 place-items-center rounded-xl",
-                      eligible ? "bg-success-soft text-success" : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {eligible ? <Award /> : <LockKeyhole />}
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-md px-2 py-1 text-xs font-semibold",
-                      eligible ? "bg-success-soft text-success" : "bg-muted",
-                    )}
-                  >
-                    {issued ? "Issued" : eligible ? "Eligible" : "Not yet eligible"}
-                  </span>
-                </div>
-                <h2 className="mt-6 text-xl font-semibold">{m.title}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Module {progress.percent}% complete · Best quiz {score || 0}%
-                </p>
-                {issued && (
-                  <p className="mt-3 font-mono text-xs text-muted-foreground">
-                    {issued.reference} · {issued.issuedAt}
-                  </p>
-                )}
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {eligible && !issued && (
-                    <button
-                      onClick={() => {
-                        store.issueCertificate(m.id);
-                        toast.success("Demo certificate issued");
-                      }}
-                      className={primary}
-                    >
-                      Issue demo certificate
-                    </button>
-                  )}
-                  {(eligible || issued) && (
-                    <button onClick={() => setPreview(m.id)} className={outline}>
-                      Preview
-                    </button>
-                  )}
-                  {!eligible && (
-                    <AppLink href={`/learn/modules/${m.id}`} className={outline}>
-                      Continue learning
-                    </AppLink>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-      </div>
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Certificate preview"
-        >
-          <div className="print-surface w-full max-w-4xl bg-white p-4 shadow-overlay md:p-8">
-            <div className="border-8 border-double border-primary p-8 text-center md:p-14">
-              <ShieldCheck className="mx-auto size-12 text-primary" />
-              <p className="meta mt-5 text-violet">{store.certificateTemplate.issuer} · Demo</p>
-              <h2 className="mt-5 text-4xl font-semibold">{store.certificateTemplate.title}</h2>
-              <p className="mt-2 text-muted-foreground">{store.certificateTemplate.subtitle}</p>
-              <p className="mt-7 text-muted-foreground">{store.certificateTemplate.body}</p>
-              <p className="mt-3 text-3xl font-semibold">{store.session.name || "Demo Learner"}</p>
-              <p className="mt-7 text-muted-foreground">for completing the learning module</p>
-              <p className="mt-2 text-2xl font-semibold">{selected.title}</p>
-              <div className="mx-auto mt-10 max-w-xs border-t pt-2">
-                <p className="font-semibold">{store.certificateTemplate.signatoryName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {store.certificateTemplate.signatoryTitle}
-                </p>
-              </div>
-              <p className="mt-8 font-mono text-xs text-muted-foreground">
-                {store.issuedCertificates.find((c) => c.moduleId === selected.id)?.reference ??
-                  `NCAP-DEMO-${selected.id}`}{" "}
-                · Frontend demonstration only
-              </p>
-            </div>
-            <div className="no-print mt-4 flex justify-end gap-2">
-              <button onClick={() => setPreview(null)} className={outline}>
-                Close
-              </button>
-              <button onClick={() => window.print()} className={primary}>
-                <Printer />
-                Print / Save as PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+export { LearnerCertificatesPage as CertificatesPage } from "@/features/learning/LearnerCertificatesPage";
 
 export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const store = useNcap();
@@ -1361,6 +1258,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const { language: activeLanguage, setLanguage: setActiveLanguage } = useI18n();
   const navigate = useNavigate();
   const stats = useLearnerStats();
+  const certificates = useCertificates();
   const [name, setName] = useState(store.session.name);
   const [language, setLanguage] = useState<LanguageCode>(activeLanguage);
   const [phone, setPhone] = useState(store.session.phone);
@@ -1535,7 +1433,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <StatCard label="Progress" value={`${stats.overall}%`} />
             <StatCard label="Completed lessons" value={stats.completedCount} />
-            <StatCard label="Certificates" value={store.issuedCertificates.length} />
+            <StatCard label="Certificates" value={certificates.data?.issuedCount ?? 0} />
           </div>
           <h3 className="mt-7 font-semibold">Interests</h3>
           <div className="mt-3 flex flex-wrap gap-2">

@@ -22,6 +22,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as VerifyCertificateRouteImport } from './routes/verify-certificate'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin.announcements'
@@ -52,6 +53,7 @@ import { Route as LearnModulesModuleIdRouteImport } from './routes/learn.modules
 import { Route as QuizzesQuizIdIndexRouteImport } from './routes/quizzes.$quizId.index'
 import { Route as QuizzesQuizIdResultsRouteImport } from './routes/quizzes.$quizId.results'
 import { Route as QuizzesQuizIdRunRouteImport } from './routes/quizzes.$quizId.run'
+import { Route as ApiCertificatesCertificateIdPdfRouteImport } from './routes/api.certificates.$certificateId.pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -116,6 +118,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyCertificateRoute = VerifyCertificateRouteImport.update({
+  id: '/verify-certificate',
+  path: '/verify-certificate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -268,6 +275,12 @@ const QuizzesQuizIdRunRoute = QuizzesQuizIdRunRouteImport.update({
   path: '/quizzes/$quizId/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCertificatesCertificateIdPdfRoute =
+  ApiCertificatesCertificateIdPdfRouteImport.update({
+    id: '/api/certificates/$certificateId/pdf',
+    path: '/api/certificates/$certificateId/pdf',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -283,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-certificate': typeof VerifyCertificateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/articles': typeof AdminArticlesRoute
@@ -313,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/admin/awareness/': typeof AdminAwarenessIndexRoute
   '/awareness/articles/': typeof AwarenessArticlesIndexRoute
   '/quizzes/$quizId/': typeof QuizzesQuizIdIndexRoute
+  '/api/certificates/$certificateId/pdf': typeof ApiCertificatesCertificateIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -327,6 +342,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-certificate': typeof VerifyCertificateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/articles': typeof AdminArticlesRoute
@@ -357,6 +373,7 @@ export interface FileRoutesByTo {
   '/admin/awareness': typeof AdminAwarenessIndexRoute
   '/awareness/articles': typeof AwarenessArticlesIndexRoute
   '/quizzes/$quizId': typeof QuizzesQuizIdIndexRoute
+  '/api/certificates/$certificateId/pdf': typeof ApiCertificatesCertificateIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -373,6 +390,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/verify-certificate': typeof VerifyCertificateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/articles': typeof AdminArticlesRoute
@@ -403,6 +421,7 @@ export interface FileRoutesById {
   '/admin/awareness/': typeof AdminAwarenessIndexRoute
   '/awareness/articles/': typeof AwarenessArticlesIndexRoute
   '/quizzes/$quizId/': typeof QuizzesQuizIdIndexRoute
+  '/api/certificates/$certificateId/pdf': typeof ApiCertificatesCertificateIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -420,6 +439,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-certificate'
     | '/verify-email'
     | '/admin/announcements'
     | '/admin/articles'
@@ -450,6 +470,7 @@ export interface FileRouteTypes {
     | '/admin/awareness/'
     | '/awareness/articles/'
     | '/quizzes/$quizId/'
+    | '/api/certificates/$certificateId/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -464,6 +485,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-certificate'
     | '/verify-email'
     | '/admin/announcements'
     | '/admin/articles'
@@ -494,6 +516,7 @@ export interface FileRouteTypes {
     | '/admin/awareness'
     | '/awareness/articles'
     | '/quizzes/$quizId'
+    | '/api/certificates/$certificateId/pdf'
   id:
     | '__root__'
     | '/'
@@ -509,6 +532,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/verify-certificate'
     | '/verify-email'
     | '/admin/announcements'
     | '/admin/articles'
@@ -539,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/awareness/'
     | '/awareness/articles/'
     | '/quizzes/$quizId/'
+    | '/api/certificates/$certificateId/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -555,6 +580,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VerifyCertificateRoute: typeof VerifyCertificateRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AwarenessKindRoute: typeof AwarenessKindRoute
@@ -571,6 +597,7 @@ export interface RootRouteChildren {
   QuizzesQuizIdRunRoute: typeof QuizzesQuizIdRunRoute
   AwarenessArticlesIndexRoute: typeof AwarenessArticlesIndexRoute
   QuizzesQuizIdIndexRoute: typeof QuizzesQuizIdIndexRoute
+  ApiCertificatesCertificateIdPdfRoute: typeof ApiCertificatesCertificateIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -664,6 +691,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-certificate': {
+      id: '/verify-certificate'
+      path: '/verify-certificate'
+      fullPath: '/verify-certificate'
+      preLoaderRoute: typeof VerifyCertificateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify-email': {
@@ -876,6 +910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizzesQuizIdRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/certificates/$certificateId/pdf': {
+      id: '/api/certificates/$certificateId/pdf'
+      path: '/api/certificates/$certificateId/pdf'
+      fullPath: '/api/certificates/$certificateId/pdf'
+      preLoaderRoute: typeof ApiCertificatesCertificateIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -929,6 +970,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VerifyCertificateRoute: VerifyCertificateRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AwarenessKindRoute: AwarenessKindRoute,
@@ -945,6 +987,7 @@ const rootRouteChildren: RootRouteChildren = {
   QuizzesQuizIdRunRoute: QuizzesQuizIdRunRoute,
   AwarenessArticlesIndexRoute: AwarenessArticlesIndexRoute,
   QuizzesQuizIdIndexRoute: QuizzesQuizIdIndexRoute,
+  ApiCertificatesCertificateIdPdfRoute: ApiCertificatesCertificateIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

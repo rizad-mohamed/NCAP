@@ -333,13 +333,3 @@ export interface CertificateTemplate {
   theme: "navy" | "blue" | "teal";
   logo?: MediaAsset | undefined;
 }
-
-export interface CertificateRecord {
-  id: string;
-  userId: string;
-  moduleId: string;
-  status: "Issued" | "Revoked";
-  issuedAt: string;
-  revokedAt?: string;
-  reference: string;
-}

@@ -67,6 +67,7 @@ export function MediaField({
   guidance,
   onChange,
   storage = "demo",
+  acceptedTypes = MEDIA_LIMITS.accepted,
 }: {
   label?: string;
   asset?: MediaAsset | undefined;
@@ -75,6 +76,7 @@ export function MediaField({
   guidance?: string;
   onChange: (asset: MediaAsset | undefined) => void;
   storage?: "demo" | "awareness" | "learning";
+  acceptedTypes?: readonly string[];
 }) {
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -96,6 +98,10 @@ export function MediaField({
 
   const choose = (next?: File) => {
     if (!next) return;
+    if (!acceptedTypes.includes(next.type)) {
+      toast.error("This file type is not supported for this image.");
+      return;
+    }
     setFile(next);
   };
   const drop = (event: DragEvent<HTMLDivElement>) => {
@@ -197,7 +203,7 @@ export function MediaField({
       <input
         id={inputId}
         type="file"
-        accept={MEDIA_LIMITS.accepted.join(",")}
+        accept={acceptedTypes.join(",")}
         className="sr-only"
         onChange={(event) => choose(event.target.files?.[0])}
       />

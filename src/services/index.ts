@@ -2,8 +2,6 @@ import type {
   Announcement,
   Article,
   BestPractice,
-  CertificateRecord,
-  CertificateTemplate,
   CyberTip,
   DemoUser,
   Infographic,
@@ -104,12 +102,9 @@ export interface NcapRepository {
   announcements: RepositoryCollection<Announcement>;
   users: RepositoryCollection<DemoUser>;
   attempts: RepositoryCollection<QuizAttempt>;
-  certificateRecords: RepositoryCollection<CertificateRecord>;
   media: RepositoryCollection<MediaAsset>;
   readQuizDraft(quizId: string, signal?: AbortSignal): Promise<QuizDraftAttempt | null>;
   saveQuizDraft(draft: QuizDraftAttempt, signal?: AbortSignal): Promise<void>;
-  readCertificateTemplate(signal?: AbortSignal): Promise<CertificateTemplate>;
-  saveCertificateTemplate(template: CertificateTemplate, signal?: AbortSignal): Promise<void>;
 }
 
 export const repositoryKeys = {

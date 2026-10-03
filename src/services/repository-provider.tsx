@@ -42,8 +42,6 @@ export function NcapRepositoryProvider({ children }: { children: ReactNode }) {
       users: store.users,
       attempts: store.attempts,
       quizDrafts: store.quizDrafts,
-      certificateTemplate: store.certificateTemplate,
-      certificateRecords: store.certificateRecords,
     };
     const mutations: LocalDemoMutations = {
       setLessons: store.setLessons,
@@ -61,8 +59,6 @@ export function NcapRepositoryProvider({ children }: { children: ReactNode }) {
       setUsers: store.setUsers,
       saveQuizDraft: store.saveQuizDraft,
       clearQuizDraft: store.clearQuizDraft,
-      setCertificateTemplate: store.setCertificateTemplate,
-      setCertificateRecords: store.setCertificateRecords,
     };
     return { ...createLocalDemoRepository(() => snapshot, mutations), ...awareness, ...learning };
   }, [store, awareness, learning]);

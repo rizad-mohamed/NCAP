@@ -1,13 +1,10 @@
+import { useContentReport, exportFilteredReport } from "@/services/report-hooks";
 import { useState, type FormEvent } from "react";
 import { Download, Printer, Plus, Edit3, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useNcap } from "@/state/ncap-store";
-import { useAdminQuizSummary, useQuizCatalogue } from "@/services/quiz-hooks";
-import {
-  useAdminDashboard,
-  useDashboardReport,
-  useDashboardAnnouncements,
-} from "@/services/dashboard-hooks";
+import { useQuizCatalogue } from "@/services/quiz-hooks";
+import { useDashboardAnnouncements } from "@/services/dashboard-hooks";
 import type { Announcement } from "@/data/types";
 import { PageHeader, StatCard, EmptyState } from "@/components/common/primitives";
 import {
@@ -25,8 +22,6 @@ const outline = dashboardButton.secondary;
 
 export function AdminReportsPage() {
   const store = useNcap();
-  const dashboard = useAdminDashboard();
-  const quiz = useAdminQuizSummary();
   const catalogue = useQuizCatalogue(true);
   const [filters, setFilters] = useState({ range: "Last 6 months", moduleId: "", quizId: "" });
   const [generated, setGenerated] = useState(filters);
@@ -40,29 +35,27 @@ export function AdminReportsPage() {
             Math.ceil((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86400000),
           )
         : 183;
-  const report = useDashboardReport(
+  const report = useContentReport(
     days,
     generated.moduleId || null,
     generated.quizId || null,
     (attemptPage - 1) * 100,
   );
   const attempts = report.data?.attempts ?? [];
-  const exportCsv = () => {
-    const escape = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
-    const rows = [
-      "Completed at,Quiz,Module,Score percent",
-      ...attempts.map((item) =>
-        [item.completedAt, item.quizTitle, item.moduleTitle, item.scorePercent]
-          .map(escape)
-          .join(","),
-      ),
-    ];
-    const url = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `ncap-dashboard-report-page-${attemptPage}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const [exporting, setExporting] = useState(false);
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      await exportFilteredReport({
+        days,
+        moduleId: generated.moduleId || null,
+        quizId: generated.quizId || null,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to export report.");
+    } finally {
+      setExporting(false);
+    }
   };
   return (
     <div className="container-ncap max-w-[1400px] py-2">
@@ -72,9 +65,13 @@ export function AdminReportsPage() {
         description="Generate learning and assessment summaries from saved records."
         actions={
           <>
-            <button className={outline} onClick={exportCsv} disabled={!report.data}>
+            <button
+              className={outline}
+              onClick={() => void exportCsv()}
+              disabled={!report.data || exporting}
+            >
               <Download />
-              Export page CSV
+              {exporting ? "Exporting…" : "Export CSV"}
             </button>
             <button className={outline} onClick={() => window.print()}>
               <Printer />
@@ -161,7 +158,7 @@ export function AdminReportsPage() {
         />
         <StatCard
           label="Completion rate"
-          value={`${dashboard.data?.completionRate ?? 0}%`}
+          value={`${report.data?.completionRate ?? 0}%`}
           tone="success"
         />
         <StatCard label="Completed lessons" value={report.data?.completedLessons ?? 0} />
@@ -169,7 +166,11 @@ export function AdminReportsPage() {
           label="Learning hours"
           value={Math.round(((report.data?.learningSeconds ?? 0) / 3600) * 10) / 10}
         />
-        <StatCard label="Published quizzes" value={quiz.data?.publishedQuizzes ?? 0} tone="ember" />
+        <StatCard
+          label="Published quizzes"
+          value={report.data?.publishedQuizzes ?? 0}
+          tone="ember"
+        />
       </section>
       <AdminReportCharts
         quizRows={report.data?.quizRows ?? []}

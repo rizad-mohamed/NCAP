@@ -13,12 +13,14 @@ export function LessonVideoPlayer({
   title,
   video,
   onComplete,
+  preview = false,
 }: {
   lessonId: string;
   learnerKey: string;
   title: string;
   video: LessonVideo;
   onComplete?: () => void;
+  preview?: boolean;
 }) {
   const element = useRef<HTMLVideoElement>(null);
   const lastStoredSecond = useRef(-1);
@@ -33,7 +35,7 @@ export function LessonVideoPlayer({
   const sourceUrl = useMediaUrl(video.kind === "upload" ? video.asset : undefined, directUrl);
   const sourceKey = video.kind === "upload" ? video.asset.storageKey : external?.url;
   const { resume, saveResume, session } = useNcap();
-  const authenticated = session.role !== "guest";
+  const authenticated = session.role !== "guest" && !preview;
   const saver = useRef(saveResume);
   saver.current = saveResume;
   const loadedSource = useRef("");

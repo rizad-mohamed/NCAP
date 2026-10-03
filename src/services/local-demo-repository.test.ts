@@ -40,16 +40,6 @@ describe("local demo repository", () => {
       users: [...demoUsers],
       attempts: [],
       quizDrafts: {},
-      certificateTemplate: {
-        title: "Certificate",
-        subtitle: "Demo",
-        issuer: "NCAP",
-        body: "Completed",
-        signatoryName: "Director",
-        signatoryTitle: "Programme Director",
-        theme: "navy",
-      },
-      certificateRecords: [],
     };
     mutations = {
       setLessons: (records) => {
@@ -99,12 +89,6 @@ describe("local demo repository", () => {
         delete next[quizId];
         snapshot.quizDrafts = next;
       },
-      setCertificateTemplate: (template) => {
-        snapshot.certificateTemplate = template;
-      },
-      setCertificateRecords: (records) => {
-        snapshot.certificateRecords = records;
-      },
     };
   });
 
@@ -117,7 +101,7 @@ describe("local demo repository", () => {
     expect(snapshot.articles.find((record) => record.id === first.id)?.title).toBe("Updated title");
   });
 
-  it("supports drafts and certificate settings through the same boundary", async () => {
+  it("supports quiz drafts through the local boundary", async () => {
     const repository = createLocalDemoRepository(() => snapshot, mutations);
     const draft = {
       quizId: "quiz-1",
@@ -131,12 +115,6 @@ describe("local demo repository", () => {
     };
     await repository.saveQuizDraft(draft);
     expect(await repository.readQuizDraft("quiz-1")).toEqual(draft);
-
-    await repository.saveCertificateTemplate({
-      ...snapshot.certificateTemplate,
-      title: "Updated certificate",
-    });
-    expect((await repository.readCertificateTemplate()).title).toBe("Updated certificate");
   });
 
   it("normalizes cancellation and keeps static catalogue collections read-only", async () => {

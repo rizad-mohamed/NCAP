@@ -18,8 +18,6 @@ import type {
   Announcement,
   Article,
   BestPractice,
-  CertificateRecord,
-  CertificateTemplate,
   CyberTip,
   DemoUser,
   Infographic,
@@ -34,7 +32,6 @@ import type {
   VideoResource,
 } from "@/data/types";
 import { persistedStateEnvelopeSchema, recoverPersistedSections } from "@/domain/validation";
-import { evaluateCertificateEligibility } from "@/domain/rules";
 import type { AuthUser } from "@/auth/types";
 import { useLearningStore } from "@/services/learning-hooks";
 import { useRouterState } from "@tanstack/react-router";
@@ -58,7 +55,6 @@ interface StoreState {
   bookmarks: string[];
   attempts: QuizAttempt[];
   activities: ActivityItem[];
-  issuedCertificates: { moduleId: string; issuedAt: string; reference: string }[];
   lessons: Lesson[];
   modules: LearningModule[];
   articles: Article[];
@@ -73,8 +69,6 @@ interface StoreState {
   announcements: Announcement[];
   users: DemoUser[];
   quizDrafts: Record<string, QuizDraftAttempt>;
-  certificateTemplate: CertificateTemplate;
-  certificateRecords: CertificateRecord[];
 }
 
 const GUEST: Session = {
@@ -87,23 +81,12 @@ const GUEST: Session = {
   phone: "",
 };
 
-const seedCertificateTemplate: CertificateTemplate = {
-  title: "Certificate of Completion",
-  subtitle: "National Cybersecurity Awareness Platform · Foundation Release",
-  issuer: "NCAP Sri Lanka",
-  body: "This recognises the successful completion of the learning module and its assessment.",
-  signatoryName: "Programme Director",
-  signatoryTitle: "National Cybersecurity Awareness Platform",
-  theme: "navy",
-};
-
 const emptyState = (): StoreState => ({
   session: GUEST,
   completedLessons: [],
   bookmarks: [],
   attempts: [],
   activities: [],
-  issuedCertificates: [],
   lessons: [],
   modules: [],
   articles: [],
@@ -122,8 +105,6 @@ const emptyState = (): StoreState => ({
     phone: "",
   })),
   quizDrafts: {},
-  certificateTemplate: seedCertificateTemplate,
-  certificateRecords: [],
 });
 
 const STORAGE_KEY = "ncap.demo.v2";
@@ -149,7 +130,6 @@ interface StoreValue extends StoreState {
   toggleBookmark: (lessonId: string) => Promise<boolean>;
   completeLesson: (lessonId: string) => Promise<void>;
   recordAttempt: (attempt: Omit<QuizAttempt, "id" | "completedAt">) => QuizAttempt;
-  issueCertificate: (moduleId: string) => void;
   logActivity: (kind: ActivityItem["kind"], label: string) => void;
   setLessons: (next: Lesson[]) => void;
   setModules: (next: LearningModule[]) => void;
@@ -166,8 +146,6 @@ interface StoreValue extends StoreState {
   setUsers: (next: DemoUser[]) => void;
   saveQuizDraft: (draft: QuizDraftAttempt) => void;
   clearQuizDraft: (quizId: string) => void;
-  setCertificateTemplate: (next: CertificateTemplate) => void;
-  setCertificateRecords: (next: CertificateRecord[]) => void;
   resetDemo: () => void;
 }
 
@@ -325,31 +303,6 @@ export function NcapProvider({
     return full;
   }, []);
 
-  const issueCertificate = useCallback((moduleId: string) => {
-    setState((s) => {
-      if (s.issuedCertificates.some((c) => c.moduleId === moduleId)) return s;
-      const reference = `NCAP-DEMO-${moduleId.replace("m-", "").slice(0, 4).toUpperCase()}-${Math.floor(
-        1000 + Math.random() * 8999,
-      )}`;
-      return {
-        ...s,
-        issuedCertificates: [
-          ...s.issuedCertificates,
-          { moduleId, issuedAt: now().slice(0, 10), reference },
-        ],
-        activities: [
-          {
-            id: uid("ac"),
-            kind: "certificate" as const,
-            label: `Certificate issued for ${s.modules.find((m) => m.id === moduleId)?.title ?? moduleId}`,
-            at: now(),
-          },
-          ...s.activities,
-        ].slice(0, 30),
-      };
-    });
-  }, []);
-
   const setLessons = useCallback(
     (next: Lesson[]) => setState((s) => ({ ...s, lessons: next })),
     [],
@@ -409,14 +362,6 @@ export function NcapProvider({
       return { ...s, quizDrafts };
     });
   }, []);
-  const setCertificateTemplate = useCallback(
-    (next: CertificateTemplate) => setState((s) => ({ ...s, certificateTemplate: next })),
-    [],
-  );
-  const setCertificateRecords = useCallback(
-    (next: CertificateRecord[]) => setState((s) => ({ ...s, certificateRecords: next })),
-    [],
-  );
 
   const resetDemo = useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY);
@@ -430,7 +375,6 @@ export function NcapProvider({
       ready,
       updateProfile,
       recordAttempt,
-      issueCertificate,
       logActivity,
       setLessons,
       setModules,
@@ -447,8 +391,6 @@ export function NcapProvider({
       setUsers,
       saveQuizDraft,
       clearQuizDraft,
-      setCertificateTemplate,
-      setCertificateRecords,
       resetDemo,
       ...learning,
     }),
@@ -457,7 +399,6 @@ export function NcapProvider({
       ready,
       updateProfile,
       recordAttempt,
-      issueCertificate,
       logActivity,
       setLessons,
       setModules,
@@ -474,8 +415,6 @@ export function NcapProvider({
       setUsers,
       saveQuizDraft,
       clearQuizDraft,
-      setCertificateTemplate,
-      setCertificateRecords,
       resetDemo,
       learning,
     ],
@@ -542,16 +481,6 @@ export function useLearnerStats() {
       attempts
         .filter((a) => a.quizId === quizId)
         .reduce((max, a) => Math.max(max, a.scorePercent), 0);
-    const certificateEligible = modules.filter(
-      (module) =>
-        evaluateCertificateEligibility({
-          moduleId: module.id,
-          quizId: module.quizId,
-          lessons,
-          completedLessonIds: completedLessons,
-          attempts,
-        }).eligible,
-    );
     const earnedBadges = new Set<string>();
     if (completed.length >= 1) earnedBadges.add("b-first-lesson");
     if (best("q-phishing") >= 80) earnedBadges.add("b-phishing");
@@ -568,7 +497,6 @@ export function useLearnerStats() {
       hours: Math.round(((statistics?.minutes ?? minutes) / 60) * 10) / 10,
       moduleProgress,
       bestScore: best,
-      certificateEligible,
       badges: badgeCatalogue.map((b) => ({ ...b, earned: earnedBadges.has(b.id) })),
     };
   }, [completedLessons, attempts, lessons, modules, statistics]);

@@ -2,8 +2,6 @@ import type {
   Announcement,
   Article,
   BestPractice,
-  CertificateRecord,
-  CertificateTemplate,
   CyberTip,
   DemoUser,
   Infographic,
@@ -37,8 +35,6 @@ export interface LocalDemoSnapshot {
   users: DemoUser[];
   attempts: QuizAttempt[];
   quizDrafts: Record<string, QuizDraftAttempt>;
-  certificateTemplate: CertificateTemplate;
-  certificateRecords: CertificateRecord[];
 }
 
 export interface LocalDemoMutations {
@@ -57,8 +53,6 @@ export interface LocalDemoMutations {
   setUsers(records: DemoUser[]): void;
   saveQuizDraft(draft: QuizDraftAttempt): void;
   clearQuizDraft(quizId: string): void;
-  setCertificateTemplate(template: CertificateTemplate): void;
-  setCertificateRecords(records: CertificateRecord[]): void;
 }
 
 function assertNotAborted(signal?: AbortSignal) {
@@ -117,7 +111,6 @@ function mediaAssets(snapshot: LocalDemoSnapshot) {
     ...snapshot.infographics.map((record) => record.image),
     ...snapshot.videos.map((record) => record.poster),
     ...snapshot.users.map((record) => record.avatar),
-    snapshot.certificateTemplate.logo,
   ].filter((record): record is MediaAsset => Boolean(record));
   return [...new Map(records.map((record) => [record.id, record])).values()];
 }
@@ -141,10 +134,6 @@ export function createLocalDemoRepository(
     announcements: collection(() => read().announcements, mutations.setAnnouncements),
     users: collection(() => read().users, mutations.setUsers),
     attempts: collection(() => read().attempts),
-    certificateRecords: collection(
-      () => read().certificateRecords,
-      mutations.setCertificateRecords,
-    ),
     media: collection(() => mediaAssets(read())),
     async readQuizDraft(quizId, signal) {
       assertNotAborted(signal);
@@ -153,14 +142,6 @@ export function createLocalDemoRepository(
     async saveQuizDraft(draft, signal) {
       assertNotAborted(signal);
       mutations.saveQuizDraft(draft);
-    },
-    async readCertificateTemplate(signal) {
-      assertNotAborted(signal);
-      return read().certificateTemplate;
-    },
-    async saveCertificateTemplate(template, signal) {
-      assertNotAborted(signal);
-      mutations.setCertificateTemplate(template);
     },
   };
 }

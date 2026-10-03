@@ -128,7 +128,6 @@ const persistedSectionSchemas = {
   bookmarks: z.array(z.string()),
   attempts: z.array(recordWithId),
   activities: z.array(recordWithId),
-  issuedCertificates: z.array(z.object({ moduleId: z.string() }).passthrough()),
   lessons: z.array(recordWithId),
   modules: z.array(recordWithId),
   questions: z.array(recordWithId),
@@ -136,18 +135,6 @@ const persistedSectionSchemas = {
   announcements: z.array(recordWithId),
   users: z.array(recordWithId),
   quizDrafts: z.record(z.string(), z.object({ quizId: z.string() }).passthrough()),
-  certificateTemplate: z
-    .object({
-      title: z.string(),
-      subtitle: z.string(),
-      issuer: z.string(),
-      body: z.string(),
-      signatoryName: z.string(),
-      signatoryTitle: z.string(),
-      theme: z.enum(["navy", "blue", "teal"]),
-    })
-    .passthrough(),
-  certificateRecords: z.array(recordWithId),
 } satisfies Record<string, z.ZodTypeAny>;
 
 /** Keep independently valid demo-state sections and reset only corrupt sections. */
