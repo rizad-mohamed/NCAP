@@ -110,6 +110,12 @@ The versions below are resolved versions from the committed [package-lock.json](
 
 ### Frontend and full-stack framework
 
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](#frontend-and-full-stack-framework)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](#frontend-and-full-stack-framework)
+[![TanStack Start](https://img.shields.io/badge/TanStack_Start-111827?logo=tanstack&logoColor=white)](#frontend-and-full-stack-framework)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-0F172A?logo=tailwindcss&logoColor=38BDF8)](#frontend-and-full-stack-framework)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](#frontend-and-full-stack-framework)
+
 | Technology              | Resolved version                        | What it does in NCAP                                         |
 | ----------------------- | --------------------------------------- | ------------------------------------------------------------ |
 | 🔷 TypeScript           | 5.9.3                                   | Typed frontend and server application code                   |
@@ -123,6 +129,11 @@ The versions below are resolved versions from the committed [package-lock.json](
 | Recharts                | 2.15.4                                  | Administrator charts                                         |
 
 ### Backend, build and hosting
+
+[![Supabase](https://img.shields.io/badge/Supabase-1C1C1C?logo=supabase&logoColor=3FCF8E)](#backend-build-and-hosting)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](#backend-build-and-hosting)
+[![Cloudflare Workers target](https://img.shields.io/badge/Cloudflare_Workers-target-F38020?logo=cloudflare&logoColor=white)](#backend-build-and-hosting)
+[![Node.js](https://img.shields.io/badge/Node.js-417E38?logo=nodedotjs&logoColor=white)](#backend-build-and-hosting)
 
 | Technology                               | Resolved version / service   | What it does in NCAP                                                |
 | ---------------------------------------- | ---------------------------- | ------------------------------------------------------------------- |
@@ -138,6 +149,12 @@ The versions below are resolved versions from the committed [package-lock.json](
 | pdf-lib / fontkit                        | 1.17.1 / 1.1.1               | Server-generated certificates with font support                     |
 
 ### Testing, quality and development tools
+
+[![Vitest](https://img.shields.io/badge/Vitest-252529?logo=vitest&logoColor=6E9F18)](#testing-quality-and-development-tools)
+[![Testing Library](https://img.shields.io/badge/Testing_Library-E33332?logo=testinglibrary&logoColor=white)](#testing-quality-and-development-tools)
+[![ESLint](https://img.shields.io/badge/ESLint-4B32C3?logo=eslint&logoColor=white)](#testing-quality-and-development-tools)
+[![Prettier](https://img.shields.io/badge/Prettier-1A2B34?logo=prettier&logoColor=F7B93E)](#testing-quality-and-development-tools)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](#testing-quality-and-development-tools)
 
 | Technology              | Resolved version / configuration         | Purpose                                                           |
 | ----------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
