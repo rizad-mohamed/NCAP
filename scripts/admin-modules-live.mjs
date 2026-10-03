@@ -33,6 +33,10 @@ if (!process.argv.slice(2).includes(stagingFlag))
     "Provide the explicit staging project reference before running disposable authenticated tests.",
   );
 const playwrightArgs = process.argv.slice(2).filter((arg) => arg !== stagingFlag);
+if (playwrightArgs.filter((arg) => arg.startsWith("--project")).length > 1)
+  throw new Error(
+    "Run one browser profile per invocation so every profile receives fresh disposable fixtures.",
+  );
 const management = `https://api.supabase.com/v1/projects/${ref}/database/query`;
 async function sql(query, readOnly = false) {
   const response = await fetch(management, {
@@ -233,11 +237,34 @@ try {
   });
   if (report.error || report.data?.attemptCount !== 1 || report.data?.averageScore !== 90)
     throw new Error("Live authoritative report verification failed.");
+  const concurrentEdit = sql(`begin; select pg_advisory_xact_lock(726021); select pg_sleep(3);
+    update public.learning_modules set description=description where id='${moduleId}'; commit;`).then(
+    () => ({ ok: true }),
+    () => ({ ok: false }),
+  );
+  let editLockObserved = false;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const locks = await sql(
+      "select exists(select 1 from pg_locks where locktype='advisory' and objid=726021 and granted) as locked",
+      true,
+    );
+    if (locks[0]?.locked) {
+      editLockObserved = true;
+      break;
+    }
+  }
+  if (!editLockObserved) {
+    await concurrentEdit;
+    throw new Error("Concurrent content-edit lock could not be observed.");
+  }
   const issued = await adminClient.rpc("certificate_issue", {
     learner: learnerId,
     module_target: moduleId,
   });
+  if (!(await concurrentEdit).ok)
+    throw new Error("Concurrent certificate issuance/content edit failed.");
   if (issued.error || !issued.data?.reference) throw new Error("Live certificate issuance failed.");
+  console.log("Concurrent content edit and certificate issuance completed without deadlock.");
   const duplicate = await adminClient.rpc("certificate_issue", {
     learner: learnerId,
     module_target: moduleId,
@@ -346,6 +373,25 @@ try {
     testEnv,
   );
   console.log("Selected authenticated administrator and learner browser workflows passed.");
+  if (!playwrightArgs.some((arg) => arg.startsWith("--grep"))) {
+    const accountAudit = await sql(
+      `select action from public.admin_user_audit where actor_id='${adminId}' and target_id='${outsiderId}' order by id`,
+      true,
+    );
+    if (
+      JSON.stringify(accountAudit.map((row) => row.action)) !==
+      JSON.stringify([
+        "role_changed",
+        "role_changed",
+        "suspended",
+        "restored",
+        "disabled",
+        "activated",
+      ])
+    )
+      throw new Error("Administrator account-management audit sequence failed.");
+    console.log("All six administrator account-management changes have matching audit events.");
+  }
   if (process.env.NCAP_LIGHTHOUSE === "1")
     await run(process.execPath, ["scripts/lighthouse-review.mjs"], testEnv);
 } finally {
@@ -393,12 +439,12 @@ try {
       delete from public.learning_audit where actor_id='${adminId}';
       delete from public.quiz_audit where actor_id='${adminId}';
       delete from public.admin_user_audit where actor_id='${adminId}' or target_id in ('${learnerId}','${outsiderId}');
-      -- Remove orphaned audit fixtures from earlier interrupted runs of this harness.
+      -- Remove only this run's direct-SQL audit fixtures; preserve earlier history.
       delete from public.learning_audit a where actor_id is null and kind='lessons'
-        and coalesce(after_data->>'moduleId',before_data->>'moduleId') ~ '^m-live-[0-9a-f]{8}$'
+        and coalesce(after_data->>'moduleId',before_data->>'moduleId')='${moduleId}'
         and not exists(select 1 from public.learning_modules m where m.id=coalesce(a.after_data->>'moduleId',a.before_data->>'moduleId'));
       delete from public.quiz_audit a where actor_id is null and record_type='question'
-        and coalesce(after_data->>'quiz_id',before_data->>'quiz_id') ~ '^q-live-[0-9a-f]{8}$'
+        and coalesce(after_data->>'quiz_id',before_data->>'quiz_id')='${quizId}'
         and not exists(select 1 from public.quiz_definitions q where q.id=coalesce(a.after_data->>'quiz_id',a.before_data->>'quiz_id'));
       commit;`);
     }

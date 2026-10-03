@@ -34,6 +34,7 @@ const migrations = [
   "202610030003_public_request_guard",
   "202610030004_admin_content_audit",
   "202610030005_publication_eligibility",
+  "202610030006_certificate_lock_order",
 ];
 const mode = process.argv[2] ?? "inspect";
 const history = await sql(
@@ -68,14 +69,14 @@ if (mode === "apply") {
   }
 }
 const recorded = await sql(
-  "select version from supabase_migrations.schema_migrations where version in ('202610030001','202610030002','202610030003','202610030004','202610030005') order by version",
+  "select version from supabase_migrations.schema_migrations where version in ('202610030001','202610030002','202610030003','202610030004','202610030005','202610030006') order by version",
 );
 const tables = await sql(
   "select relname,relrowsecurity from pg_class where relnamespace='public'::regnamespace and relname in ('certificates','certificate_audit','certificate_templates','awareness_audit')",
 );
 console.log(JSON.stringify({ recorded: recorded.map((r) => r.version), tables }));
 if (["apply", "verify"].includes(mode)) {
-  if (recorded.length !== 5 || tables.length !== 4 || tables.some((row) => !row.relrowsecurity))
+  if (recorded.length !== 6 || tables.length !== 4 || tables.some((row) => !row.relrowsecurity))
     throw new Error("Migration/RLS verification failed.");
   const functions = await sql(`select p.proname,p.prosecdef,p.proconfig,
     has_function_privilege('anon',p.oid,'execute') anon_execute,

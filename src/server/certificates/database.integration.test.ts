@@ -63,6 +63,7 @@ describe("certificate registry, reports, transactions and RLS", () => {
     );
     await db.exec(await readFile("supabase/migrations/202610030001_certificates.sql", "utf8"));
     await db.exec(await readFile("supabase/migrations/202610030002_admin_reports.sql", "utf8"));
+    await db.exec(await readFile("supabase/migrations/202610030006_certificate_lock_order.sql", "utf8"));
     // The existing Awareness mutation table is represented here to exercise the
     // new audit trigger and actual database grants/RLS without its search extension.
     await db.exec(`create table public.awareness_resources(id uuid primary key default gen_random_uuid(),title text not null,status text not null default 'Draft',version integer not null default 1);
