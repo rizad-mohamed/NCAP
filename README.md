@@ -28,7 +28,7 @@ These are **engineering estimates**, not measured coverage, certification or pro
 | Backend / full-stack                      |      95% | Authoritative persistence, guarded RPCs, RLS and staging workflows exist; announcement audit and scale boundaries need work.                                               |
 | Security / testing maturity               |      85% | Database, IDOR, cross-browser, secret/dependency and accessibility checks exist; delivered email, CAPTCHA, native Safari media, load testing and further hardening remain. |
 | Production / operations readiness         |      35% | Worker target, staging migrations and cleanup are present; public hosting, SMTP, monitoring and proven recovery are unverified.                                            |
-| **Overall Foundation Release completion** |  **83%** | Weighted estimate: features 35%, backend 30%, security/testing 20%, operations 15%; rounded from 83.25%.                                                                   |
+| **Overall Foundation Release completion** |  **84%** | Weighted estimate: features 35%, backend 30%, security/testing 20%, operations 15%; weighted total 84%.                                                                    |
 
 Estimates derive from current source/service paths, 21 versioned migrations through `202610040003`, test infrastructure and the latest verification records. Operational gates remain mandatory regardless of the overall percentage.
 
