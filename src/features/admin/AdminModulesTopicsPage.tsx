@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Check, Edit3, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { quizzes } from "@/data/quizzes";
+import { useQuizCatalogue } from "@/services/quiz-hooks";
 import type { Difficulty, LearningModule, MediaAsset, Topic, TopicRecord } from "@/data/types";
 import { EmptyState, PageHeader } from "@/components/common/primitives";
 import { MediaField, useMediaUrl } from "@/components/common/MediaField";
@@ -85,6 +85,7 @@ export function AdminModulesTopicsPage() {
 }
 
 function ModulesPanel() {
+  const { data: quizzes = [] } = useQuizCatalogue(true);
   const repository = useRepository();
   const queryClient = useQueryClient();
   const { data: modules = [], isPending, error } = useRepositoryList(repository, "modules");
@@ -385,6 +386,7 @@ function ModuleEditor({
   onClose: () => void;
   onSave: (module: LearningModule) => Promise<void>;
 }) {
+  const { data: quizzes = [] } = useQuizCatalogue(true);
   const original = value === "new" ? null : value;
   const [title, setTitle] = useState(original?.title ?? "");
   const [description, setDescription] = useState(original?.description ?? "");

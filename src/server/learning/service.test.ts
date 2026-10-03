@@ -2,10 +2,17 @@ import { describe, it, expect, vi } from "vitest";
 import { requireLearningAdmin } from "./authorization";
 import type { LearningClient } from "./authorization";
 import { learningResult, learningDatabaseError } from "./errors";
-import { listLearningRecords, saveLearningRecord, updateLearningState } from "./service";
+import {
+  deleteLearningRecord,
+  listLearningRecords,
+  saveLearningRecord,
+  updateLearningState,
+} from "./service";
 function client(role = "learner", signedIn = true) {
   const rpc = vi.fn().mockResolvedValue({ data: { items: [], total: 0 }, error: null });
   const single = vi.fn().mockResolvedValue({ data: { role }, error: null });
+  const maybeSingle = vi.fn().mockResolvedValue({ data: { id: "q-authored" }, error: null });
+  const eq = vi.fn(() => ({ eq, single, maybeSingle }));
   const c = {
     auth: {
       getUser: vi.fn().mockResolvedValue({
@@ -13,12 +20,60 @@ function client(role = "learner", signedIn = true) {
         error: null,
       }),
     },
-    from: vi.fn(() => ({ select: () => ({ eq: () => ({ single }) }) })),
+    from: vi.fn(() => ({ select: () => ({ eq }) })),
     rpc,
   };
-  return { client: c as unknown as LearningClient, rpc };
+  return { client: c as unknown as LearningClient, rpc, maybeSingle, eq };
 }
 describe("Learning server authorization and safe errors", () => {
+  const authoredModule = {
+    id: "m-authored",
+    title: "Authored module",
+    description: "Live assessment relationship",
+    topicId: "t-safety",
+    topic: "Safety",
+    difficulty: "Beginner",
+    minutes: 10,
+    order: 1,
+    status: "Draft",
+    objectives: ["Learn safely"],
+    quizId: "q-authored",
+  };
+  it("accepts authored assessment relationships from the database rather than bundled seeds", async () => {
+    const c = client("super_admin");
+    await saveLearningRecord(c.client, { kind: "modules", record: authoredModule });
+    expect(c.eq).toHaveBeenCalledWith("id", "q-authored");
+    expect(c.eq).toHaveBeenCalledWith("module_id", "m-authored");
+    expect(c.rpc).toHaveBeenCalledWith(
+      "save_learning_record",
+      expect.objectContaining({ kind: "modules" }),
+    );
+  });
+  it("rejects missing or unrelated assessments and fails safely on lookup errors", async () => {
+    const c = client("super_admin");
+    c.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    await expect(
+      saveLearningRecord(c.client, { kind: "modules", record: authoredModule }),
+    ).rejects.toMatchObject({ code: "validation" });
+    c.maybeSingle.mockResolvedValueOnce({ data: null, error: { code: "unavailable" } });
+    await expect(
+      saveLearningRecord(c.client, { kind: "modules", record: authoredModule }),
+    ).rejects.toMatchObject({ code: "server" });
+    expect(c.rpc).not.toHaveBeenCalled();
+  });
+  it("allows the authoritative database to decide deletion after a seeded quiz is removed", async () => {
+    const c = client("super_admin");
+    await deleteLearningRecord(c.client, {
+      kind: "modules",
+      target: "m-fundamentals",
+      expected_version: 1,
+    });
+    expect(c.rpc).toHaveBeenCalledWith("delete_learning_record", {
+      kind: "modules",
+      target: "m-fundamentals",
+      expected_version: 1,
+    });
+  });
   it("rejects a queued mutation from an account that has since signed out", async () => {
     const c = client();
     await expect(

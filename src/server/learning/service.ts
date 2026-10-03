@@ -8,7 +8,6 @@ import {
   type LearningRecord,
   type LearningState,
 } from "@/domain/learning";
-import { quizzes } from "@/data/quizzes";
 import { RepositoryError } from "@/services";
 import type { Json } from "@/types/database";
 import { requireLearner, requireLearningAdmin, type LearningClient } from "./authorization";
@@ -27,12 +26,17 @@ export async function saveLearningRecord(client: LearningClient, input: unknown)
     .object({ kind: z.enum(learningKinds), record: z.unknown() })
     .parse(input);
   const payload = learningSchemas[kind].parse(record);
-  if (
-    "quizId" in payload &&
-    payload.quizId &&
-    !quizzes.some((q) => q.id === payload.quizId && q.moduleId === payload.id)
-  )
-    throw new RepositoryError("validation", "Choose an assessment belonging to this module.");
+  if ("quizId" in payload && payload.quizId) {
+    const { data: quiz, error } = await client
+      .from("quiz_definitions")
+      .select("id")
+      .eq("id", payload.quizId)
+      .eq("module_id", payload.id)
+      .maybeSingle();
+    learningDatabaseError(error);
+    if (!quiz)
+      throw new RepositoryError("validation", "Choose an assessment belonging to this module.");
+  }
   const { data, error } = await client.rpc("save_learning_record", {
     kind,
     payload: payload as Json,
@@ -49,11 +53,7 @@ export async function deleteLearningRecord(client: LearningClient, input: unknow
       expected_version: z.number().int().positive(),
     })
     .parse(input);
-  if (args.kind === "modules" && quizzes.some((q) => q.moduleId === args.target))
-    throw new RepositoryError(
-      "validation",
-      "This module has a configured assessment. Unpublish it instead.",
-    );
+  // The database's quiz foreign key protects linked modules, including dynamically authored quizzes.
   const { error } = await client.rpc("delete_learning_record", args);
   learningDatabaseError(error);
 }

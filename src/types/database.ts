@@ -7,6 +7,13 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: LearningTables & {
+      // Read-only relationship projection used by Learning's assessment validation.
+      quiz_definitions: {
+        Row: { id: string; module_id: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       learning_media_assets: AwarenessTable<Omit<AssetRow, "resource_id">>;
       awareness_resources: AwarenessTable<ResourceRow>;
       awareness_media_assets: AwarenessTable<AssetRow>;
