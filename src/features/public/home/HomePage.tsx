@@ -548,7 +548,7 @@ function LatestResources() {
       description: "New lessons, improved navigation and smarter bug fixes are now live.",
       image: "/images/home/resource-platform-update.jpg",
       alt: "Laptop displaying the NCAP learning dashboard",
-      action: "Read more",
+      action: "Read platform update",
       href: "/awareness/news",
       kind: "read" as const,
     },

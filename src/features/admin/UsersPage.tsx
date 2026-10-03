@@ -57,8 +57,10 @@ export function AdminUsersPage() {
         </label>
       </div>
     </div>
-    {users.isPending && <p role="status" className="my-4">Loading users…</p>}
-    {users.isError && <p role="alert" className="my-4">User records are unavailable. Please try again.</p>}
+    <div className="my-4 min-h-6">
+      {users.isPending && <p role="status">Loading users…</p>}
+      {users.isError && <p role="alert">User records are unavailable. Please try again.</p>}
+    </div>
     <ResponsiveTableContainer label="User records">
       <table className="w-full min-w-[1050px] text-left text-sm">
         <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground"><tr>

@@ -86,7 +86,7 @@ export function Brand({
     <AppLink
       href="/"
       className="inline-flex min-h-11 items-center gap-3 font-bold"
-      aria-label="NCAP National Cyber Awareness — Sri Lanka home"
+      aria-label={compact ? "NCAP National Cyber Awareness Sri Lanka home" : undefined}
     >
       <span
         className={cn(
@@ -114,6 +114,7 @@ export function Brand({
           />
         </span>
       </span>
+      <span className="sr-only">Sri Lanka home</span>
       {!compact && (
         <span className={cn("leading-tight", inverse ? "text-white" : "text-foreground")}>
           <span className="block text-lg tracking-[-0.03em]">NCAP</span>

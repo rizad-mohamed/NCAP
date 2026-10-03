@@ -2,12 +2,13 @@ import { chromium } from "@playwright/test";
 import { loadEnv } from "vite";
 import { execFileSync, spawn } from "node:child_process";
 import { realpathSync } from "node:fs";
-import { mkdir, readFile, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, readFile, writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 
 const config = loadEnv("development", process.cwd(), "");
 const origin = "http://127.0.0.1:4174";
+const summaries = [];
 const profile = await mkdtemp(join(tmpdir(), "ncap-lighthouse-"));
 const npmCli =
   process.platform === "win32"
@@ -110,6 +111,13 @@ async function audit(route, name) {
       issues,
     }),
   );
+  summaries.push({
+    route,
+    scores,
+    lcp: result.audits["largest-contentful-paint"].numericValue,
+    cls: result.audits["cumulative-layout-shift"].numericValue,
+  });
+  await writeFile("lighthouse-results.local", JSON.stringify(summaries, null, 2));
   if (result.runtimeError || !result.finalDisplayedUrl.startsWith(`${origin}${route}`))
     throw new Error(`Lighthouse ${name} audited an unexpected route or failed.`);
 }
