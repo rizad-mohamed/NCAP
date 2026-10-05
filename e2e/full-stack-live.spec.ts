@@ -150,6 +150,7 @@ test.describe("disposable full-stack staging workflows", () => {
   test("administrator filters, details, role and account status changes persist", async ({
     page,
   }) => {
+    test.setTimeout(120000);
     await loginAs(page, "admin");
     await gotoApp(page, "/admin/users");
     await page.getByRole("searchbox").fill(process.env.E2E_SECOND_EMAIL!);

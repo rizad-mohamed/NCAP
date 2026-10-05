@@ -176,6 +176,9 @@ test.describe("Awareness on migrated Supabase", () => {
       .setInputFiles({ name: "poster.png", mimeType: "image/png", buffer: await png("blue") });
     await page.getByLabel("Alternative text *").fill("Blue test poster");
     await page.getByRole("button", { name: "Use this image" }).click();
+    await expect(page.getByRole("progressbar", { name: "Upload progress" })).toHaveCount(0, {
+      timeout: 30000,
+    });
     await expect(page.getByText("Image uploaded. Save the record to attach it.")).toBeVisible();
     await page.getByRole("button", { name: "Save record" }).click();
     await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
@@ -191,6 +194,9 @@ test.describe("Awareness on migrated Supabase", () => {
       .locator('input[type="file"]')
       .setInputFiles({ name: "replacement.png", mimeType: "image/png", buffer: await png("red") });
     await page.getByRole("button", { name: "Use this image" }).click();
+    await expect(page.getByRole("progressbar", { name: "Upload progress" })).toHaveCount(0, {
+      timeout: 30000,
+    });
     await expect(page.getByText("Image uploaded. Save the record to attach it.")).toBeVisible();
     await page.getByRole("button", { name: "Save record" }).click();
     await page.reload({ waitUntil: "networkidle" });
