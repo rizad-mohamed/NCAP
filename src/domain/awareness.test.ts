@@ -119,10 +119,11 @@ describe("authoritative media validation", () => {
     expect(mediaInputSchema.safeParse({ ...video, sizeBytes: 104857601 }).success).toBe(false);
   });
   it("reads dimensions from PNG bytes and rejects disguised HTML", () => {
-    const bytes = new Uint8Array(32);
+    const bytes = new Uint8Array(33);
     bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
     bytes.set([73, 72, 68, 82], 12);
     const view = new DataView(bytes.buffer);
+    view.setUint32(8, 13);
     view.setUint32(16, 800);
     view.setUint32(20, 600);
     expect(inspectImage(bytes, "image/png")).toEqual({ width: 800, height: 600 });

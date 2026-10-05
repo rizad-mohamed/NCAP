@@ -2,6 +2,7 @@ import type { MediaAsset, VideoAsset } from "@/data/types";
 import { validateMediaFile, validateVideoFile } from "./media";
 import { unwrapAwareness } from "./awareness-repository";
 import { RepositoryError } from "@/services";
+import { uploadSignedMedia } from "./signed-media-upload";
 import {
   prepareAwarenessMedia,
   finishAwarenessMedia,
@@ -9,7 +10,11 @@ import {
   awarenessMediaUrl,
 } from "@/awareness/awareness.functions";
 export const AwarenessMediaService = {
-  async save(file: File, altText = ""): Promise<MediaAsset | VideoAsset> {
+  async save(
+    file: File,
+    altText = "",
+    onProgress?: (percent: number) => void,
+  ): Promise<MediaAsset | VideoAsset> {
     const metadata = file.type.startsWith("image/")
       ? await validateMediaFile(file)
       : await validateVideoFile(file);
@@ -25,13 +30,10 @@ export const AwarenessMediaService = {
       }),
     );
     try {
-      const response = await fetch(upload.signedUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type, "x-upsert": "false", "cache-control": "max-age=60" },
-        body: file,
-      });
-      if (!response.ok) throw new Error("The media upload failed. Try again.");
-      return await unwrapAwareness(finishAwarenessMedia({ data: upload.id }));
+      await uploadSignedMedia(file, upload.signedUrl, onProgress);
+      const asset = await unwrapAwareness(finishAwarenessMedia({ data: upload.id }));
+      onProgress?.(100);
+      return asset;
     } catch (error) {
       await unwrapAwareness(discardAwarenessMedia({ data: upload.id })).catch(() => undefined);
       if (error instanceof RepositoryError) throw error;

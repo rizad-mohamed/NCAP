@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { VideoAsset } from "@/data/types";
@@ -9,10 +10,21 @@ export function AwarenessVideoField({
   asset?: VideoAsset | undefined;
   onChange: (asset: VideoAsset | undefined) => void;
 }) {
+  const uiText = useInterfaceText();
+
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   return (
     <fieldset className="rounded-xl border p-4">
-      <legend className="px-1 text-sm font-semibold">Video file</legend>
+      {busy && (
+        <progress
+          aria-label={uiText("Upload progress")}
+          value={progress}
+          max={100}
+          className="w-full"
+        />
+      )}
+      <legend className="px-1 text-sm font-semibold">{uiText("Video file")}</legend>
       {asset && (
         <div className="mb-3 flex items-center gap-3">
           <span>{asset.fileName}</span>
@@ -21,7 +33,7 @@ export function AwarenessVideoField({
             className="min-h-11 rounded-lg border px-3"
             onClick={() => onChange(undefined)}
           >
-            Remove video
+            {uiText("Remove video")}{" "}
           </button>
         </div>
       )}
@@ -36,9 +48,10 @@ export function AwarenessVideoField({
             const file = event.target.files?.[0];
             if (!file) return;
             setBusy(true);
+            setProgress(0);
             try {
-              onChange((await AwarenessMediaService.save(file)) as VideoAsset);
-              toast.success("Video uploaded. Save the record to attach it.");
+              onChange((await AwarenessMediaService.save(file, "", setProgress)) as VideoAsset);
+              toast.success(uiText("Video uploaded. Save the record to attach it."));
             } catch (error) {
               toast.error(error instanceof Error ? error.message : "Video upload failed.");
             } finally {
@@ -48,7 +61,9 @@ export function AwarenessVideoField({
         />
       </label>
       <p className="mt-2 text-xs text-muted-foreground">
-        MP4 or WebM, up to 100 MiB and four hours. Include chapters and a transcript below.
+        {uiText(
+          "MP4 or WebM, up to 100 MiB and four hours. Include chapters and a transcript below.",
+        )}{" "}
       </p>
     </fieldset>
   );

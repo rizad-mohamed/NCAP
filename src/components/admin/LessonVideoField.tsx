@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 import { Film, Link2, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -19,9 +20,12 @@ export function LessonVideoField({
   onChange: (video: LessonVideo | undefined) => void;
   onBusyChange: (busy: boolean) => void;
 }) {
+  const uiText = useInterfaceText();
+
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
@@ -50,16 +54,17 @@ export function LessonVideoField({
   const saveUpload = async () => {
     if (!file) return;
     setBusy(true);
+    setProgress(0);
     onBusyChange(true);
     try {
-      const asset = (await LearningMediaService.save(file)) as VideoAsset;
+      const asset = (await LearningMediaService.save(file, "", setProgress)) as VideoAsset;
       if (!active.current) {
         await LearningMediaService.remove(asset);
         return;
       }
       onChange({ kind: "upload", asset, transcript: value?.transcript ?? "" });
       setFile(null);
-      toast.success("Video uploaded. Save the lesson to attach it.");
+      toast.success(uiText("Video uploaded. Save the lesson to attach it."));
     } catch (error) {
       if (active.current)
         toast.error(error instanceof Error ? error.message : "The video could not be prepared.");
@@ -73,27 +78,37 @@ export function LessonVideoField({
 
   return (
     <fieldset className="min-w-0 rounded-xl border p-4" disabled={busy} aria-busy={busy}>
-      <legend className="px-1 text-sm font-semibold">Lesson video (optional)</legend>
+      {busy && (
+        <progress
+          aria-label={uiText("Upload progress")}
+          value={progress}
+          max={100}
+          className="w-full"
+        />
+      )}
+      <legend className="px-1 text-sm font-semibold">{uiText("Lesson video (optional)")}</legend>
       <p className="text-sm text-muted-foreground">
-        Add a secure video link or upload a video. Text-only lessons can leave this off.
+        {uiText(
+          "Add a secure video link or upload a video. Text-only lessons can leave this off.",
+        )}{" "}
       </p>
       <label className="mt-4 block text-sm font-semibold">
-        Video source
+        {uiText("Video source")}{" "}
         <select
           value={source}
           onChange={(event) => chooseSource(event.target.value as "none" | "external" | "upload")}
           className={cn(dashboardSelect, "mt-1.5 sm:w-full")}
         >
-          <option value="none">No video</option>
-          <option value="external">YouTube, Vimeo, or direct video link</option>
-          <option value="upload">Upload MP4 or WebM</option>
+          <option value="none">{uiText("No video")}</option>
+          <option value="external">{uiText("YouTube, Vimeo, or direct video link")}</option>
+          <option value="upload">{uiText("Upload MP4 or WebM")}</option>
         </select>
       </label>
 
       {source === "external" && value?.kind === "external" && (
         <div className="mt-4 grid gap-3">
           <label className="text-sm font-semibold">
-            HTTPS video URL
+            {uiText("HTTPS video URL")}{" "}
             <span className="relative mt-1.5 block">
               <Link2
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -132,7 +147,7 @@ export function LessonVideoField({
                   controls
                   preload="metadata"
                   className="aspect-video w-full rounded-lg bg-black"
-                  aria-label="Uploaded lesson video preview"
+                  aria-label={uiText("Uploaded lesson video preview")}
                 />
               ) : (
                 <div className="grid aspect-video place-items-center rounded-lg bg-primary text-white">
@@ -142,8 +157,9 @@ export function LessonVideoField({
               <div className="min-w-0">
                 <p className="break-all text-sm font-semibold">{value.asset.fileName}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {Math.ceil(value.asset.durationSeconds / 60)} min · {value.asset.width} ×{" "}
-                  {value.asset.height} · {(value.asset.sizeBytes / 1024 / 1024).toFixed(1)} MiB
+                  {Math.ceil(value.asset.durationSeconds / 60)} {uiText("min ·")}{" "}
+                  {value.asset.width} × {value.asset.height} ·{" "}
+                  {(value.asset.sizeBytes / 1024 / 1024).toFixed(1)} {uiText("MiB")}{" "}
                 </p>
                 <button
                   type="button"
@@ -153,7 +169,7 @@ export function LessonVideoField({
                     setFile(null);
                   }}
                 >
-                  <Trash2 /> Remove video
+                  <Trash2 /> {uiText("Remove video")}{" "}
                 </button>
               </div>
             </div>
@@ -163,12 +179,14 @@ export function LessonVideoField({
               <p className="mt-2 text-sm font-semibold">
                 {file?.name ?? "Choose an MP4 or WebM video"}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">Up to 50 MiB and four hours.</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {uiText("Up to 50 MiB and four hours.")}
+              </p>
               <label
                 htmlFor={inputId}
                 className={cn(dashboardButton.secondary, "mt-3 cursor-pointer")}
               >
-                <Upload /> Choose video
+                <Upload /> {uiText("Choose video")}{" "}
               </label>
               <input
                 id={inputId}
@@ -195,16 +213,18 @@ export function LessonVideoField({
 
       {value && (
         <label className="mt-4 block text-sm font-semibold">
-          Video transcript
+          {uiText("Video transcript")}{" "}
           <textarea
             value={value.transcript}
             maxLength={50_000}
             onChange={(event) => onChange({ ...value, transcript: event.target.value })}
             className="mt-1.5 min-h-28 w-full rounded-lg border bg-white p-3 text-base"
-            placeholder="Paste the spoken content so the lesson remains accessible…"
+            placeholder={uiText("Paste the spoken content so the lesson remains accessible…")}
           />
           <span className="mt-1 block text-xs font-normal text-muted-foreground">
-            Required before publishing a video lesson. Learners can expand it below the player.
+            {uiText(
+              "Required before publishing a video lesson. Learners can expand it below the player.",
+            )}{" "}
           </span>
         </label>
       )}

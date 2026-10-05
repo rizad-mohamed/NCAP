@@ -11,9 +11,9 @@ export function inspectImage(bytes: Uint8Array, mime: string) {
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (
     mime === "image/png" &&
-    bytes.length >= 24 &&
-    ascii(bytes, 1, 3) === "PNG" &&
-    bytes[0] === 137 &&
+    bytes.length >= 33 &&
+    [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[index] === value) &&
+    v.getUint32(8) === 13 &&
     ascii(bytes, 12, 4) === "IHDR"
   )
     return { width: v.getUint32(16), height: v.getUint32(20) };
@@ -26,10 +26,13 @@ export function inspectImage(bytes: Uint8Array, mime: string) {
         p++;
         continue;
       }
-      if ([192, 193, 194, 195, 197, 198, 199, 201, 202, 203, 205, 206, 207].includes(marker))
-        return { width: v.getUint16(p + 7), height: v.getUint16(p + 5) };
       const length = v.getUint16(p + 2);
-      if (length < 2) break;
+      if (length < 2 || p + 2 + length > bytes.length) break;
+      if (
+        [192, 193, 194, 195, 197, 198, 199, 201, 202, 203, 205, 206, 207].includes(marker) &&
+        length >= 8
+      )
+        return { width: v.getUint16(p + 7), height: v.getUint16(p + 5) };
       p += 2 + length;
     }
   }
@@ -88,6 +91,7 @@ export function inspectVideo(head: Uint8Array, tail: Uint8Array, mime: string) {
       }
     }
   } else {
+    if (mime !== "video/webm") throw invalid();
     if (ascii(head, 0, 4) !== "\x1a\x45\xdf\xa3") throw invalid();
     const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
     let scale = 1000000,

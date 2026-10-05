@@ -201,9 +201,10 @@ describe("Awareness mutations and media lifecycle", () => {
     expect(storage.createSignedUrl).not.toHaveBeenCalled();
   });
   it("finalizes a verified image before it can be attached", async () => {
-    const png = new Uint8Array(32);
+    const png = new Uint8Array(33);
     png.set([137, 80, 78, 71, 13, 10, 26, 10]);
     png.set([73, 72, 68, 82], 12);
+    new DataView(png.buffer).setUint32(8, 13);
     new DataView(png.buffer).setUint32(16, 10);
     new DataView(png.buffer).setUint32(20, 10);
     const asset = {

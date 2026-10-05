@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useId, useState, type DragEvent } from "react";
 import { ImagePlus, LoaderCircle, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -80,10 +81,13 @@ export function MediaField({
   storage?: "demo" | "awareness" | "learning" | "profile";
   acceptedTypes?: readonly string[];
 }) {
+  const uiText = useInterfaceText();
+
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [altText, setAltText] = useState(asset?.altText ?? initialAlt);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
   const storedUrl = useMediaUrl(asset, fallbackUrl);
   const [localUrl, setLocalUrl] = useState("");
@@ -101,7 +105,7 @@ export function MediaField({
   const choose = (next?: File) => {
     if (!next) return;
     if (!acceptedTypes.includes(next.type)) {
-      toast.error("This file type is not supported for this image.");
+      toast.error(uiText("This file type is not supported for this image."));
       return;
     }
     setFile(next);
@@ -114,14 +118,15 @@ export function MediaField({
   const prepare = async () => {
     if (!file) return;
     setBusy(true);
+    setProgress(0);
     try {
       const saved =
         storage === "profile"
           ? await ProfileMediaService.save(file, altText)
           : storage === "learning"
-            ? ((await LearningMediaService.save(file, altText)) as MediaAsset)
+            ? ((await LearningMediaService.save(file, altText, setProgress)) as MediaAsset)
             : storage === "awareness"
-              ? ((await AwarenessMediaService.save(file, altText)) as MediaAsset)
+              ? ((await AwarenessMediaService.save(file, altText, setProgress)) as MediaAsset)
               : await DemoMediaService.save(file, altText);
       onChange(saved);
       setFile(null);
@@ -144,6 +149,14 @@ export function MediaField({
 
   return (
     <fieldset className="rounded-xl border p-4">
+      {busy && (
+        <progress
+          aria-label={uiText("Upload progress")}
+          value={progress}
+          max={100}
+          className="w-full"
+        />
+      )}
       <legend className="px-1 text-sm font-semibold">{label}</legend>
       {preview ? (
         <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
@@ -158,8 +171,8 @@ export function MediaField({
             </p>
             {asset && (
               <p className="text-xs text-muted-foreground">
-                {asset.width} × {asset.height} · {(asset.sizeBytes / 1024).toFixed(0)} KiB ·{" "}
-                {storage !== "demo" ? "Uploaded media" : "Local demo media"}
+                {asset.width} × {asset.height} · {(asset.sizeBytes / 1024).toFixed(0)}{" "}
+                {uiText("KiB ·")} {storage !== "demo" ? "Uploaded media" : "Local demo media"}
               </p>
             )}
             <div className="flex flex-wrap gap-2">
@@ -167,14 +180,14 @@ export function MediaField({
                 htmlFor={inputId}
                 className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-semibold"
               >
-                <RefreshCw className="size-4" /> Replace
+                <RefreshCw className="size-4" /> {uiText("Replace")}{" "}
               </label>
               <button
                 type="button"
                 onClick={remove}
                 className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold text-destructive"
               >
-                <Trash2 className="size-4" /> Remove
+                <Trash2 className="size-4" /> {uiText("Remove")}{" "}
               </button>
             </div>
           </div>
@@ -194,12 +207,14 @@ export function MediaField({
         >
           <div>
             <ImagePlus className="mx-auto size-8 text-primary" aria-hidden="true" />
-            <p className="mt-2 text-sm font-semibold">Drop an image here or choose a file</p>
+            <p className="mt-2 text-sm font-semibold">
+              {uiText("Drop an image here or choose a file")}
+            </p>
             <label
               htmlFor={inputId}
               className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white"
             >
-              <Upload className="size-4" /> Choose image
+              <Upload className="size-4" /> {uiText("Choose image")}{" "}
             </label>
           </div>
         </div>
@@ -212,17 +227,17 @@ export function MediaField({
         onChange={(event) => choose(event.target.files?.[0])}
       />
       <label className="mt-4 block text-sm font-semibold">
-        Alternative text *
+        {uiText("Alternative text *")}{" "}
         <input
           value={altText}
           onChange={(event) => setAltText(event.target.value)}
           maxLength={240}
           className="mt-1.5 h-11 w-full rounded-lg border px-3"
-          placeholder="Describe the image's useful information"
+          placeholder={uiText("Describe the image's useful information")}
         />
       </label>
       <p className="mt-2 text-xs text-muted-foreground">
-        JPEG, PNG, or WebP · up to 5 MiB and 4096 × 4096. {guidance}
+        {uiText("JPEG, PNG, or WebP · up to 5 MiB and 4096 × 4096.")} {guidance}
       </p>
       {file && (
         <button

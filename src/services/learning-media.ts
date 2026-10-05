@@ -3,6 +3,7 @@ import { LEARNING_VIDEO_MAX_BYTES } from "@/domain/learning-media";
 import { validateMediaFile, validateVideoFile } from "./media";
 import { unwrapLearning } from "./learning-repository";
 import { RepositoryError } from "@/services";
+import { uploadSignedMedia } from "./signed-media-upload";
 import {
   prepareLearningMedia,
   finishLearningMedia,
@@ -10,7 +11,11 @@ import {
   learningMediaUrl,
 } from "@/learning/learning.functions";
 export const LearningMediaService = {
-  async save(file: File, altText = ""): Promise<MediaAsset | VideoAsset> {
+  async save(
+    file: File,
+    altText = "",
+    onProgress?: (percent: number) => void,
+  ): Promise<MediaAsset | VideoAsset> {
     if (file.size > LEARNING_VIDEO_MAX_BYTES)
       throw new RepositoryError("validation", "Learning videos must be 50 MiB or smaller.");
     const metadata = file.type.startsWith("image/")
@@ -28,13 +33,10 @@ export const LearningMediaService = {
       }),
     );
     try {
-      const response = await fetch(upload.signedUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type, "x-upsert": "false", "cache-control": "max-age=60" },
-        body: file,
-      });
-      if (!response.ok) throw new Error("The media upload failed. Try again.");
-      return await unwrapLearning(finishLearningMedia({ data: upload.id }));
+      await uploadSignedMedia(file, upload.signedUrl, onProgress);
+      const asset = await unwrapLearning(finishLearningMedia({ data: upload.id }));
+      onProgress?.(100);
+      return asset;
     } catch (error) {
       await unwrapLearning(discardLearningMedia({ data: upload.id })).catch(() => undefined);
       if (error instanceof RepositoryError) throw error;
