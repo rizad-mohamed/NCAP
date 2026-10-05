@@ -1,7 +1,9 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Check, Edit3, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuizCatalogue } from "@/services/quiz-hooks";
+import { ContentTranslationEditor } from "@/components/admin/ContentTranslationEditor";
 import type { Difficulty, LearningModule, MediaAsset, Topic, TopicRecord } from "@/data/types";
 import { EmptyState, PageHeader } from "@/components/common/primitives";
 import { MediaField, useMediaUrl } from "@/components/common/MediaField";
@@ -49,18 +51,22 @@ const iconButton = dashboardButton.icon;
 const field = dashboardField;
 
 export function AdminModulesTopicsPage() {
+  const uiText = useInterfaceText();
+
   const [tab, setTab] = useState<"modules" | "topics">("topics");
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       <PageHeader
-        eyebrow="Administration · Learning structure"
-        title="Manage Modules & Topics"
-        description="Maintain the learning catalogue and its shared taxonomy from one repository-backed workspace."
+        eyebrow={uiText("Administration · Learning structure")}
+        title={uiText("Manage Modules & Topics")}
+        description={uiText(
+          "Maintain the learning catalogue and its shared taxonomy from one repository-backed workspace.",
+        )}
       />
       <div
         className="mt-7 flex gap-2 border-b"
         role="tablist"
-        aria-label="Manage modules and topics"
+        aria-label={uiText("Manage modules and topics")}
       >
         {(["modules", "topics"] as const).map((value) => (
           <button
@@ -85,6 +91,8 @@ export function AdminModulesTopicsPage() {
 }
 
 function ModulesPanel() {
+  const uiText = useInterfaceText();
+
   const { data: quizzes = [] } = useQuizCatalogue(true);
   const repository = useRepository();
   const queryClient = useQueryClient();
@@ -133,7 +141,7 @@ function ModulesPanel() {
     try {
       await repository.modules.replace(next);
       await queryClient.invalidateQueries({ queryKey: ["repository", "modules"] });
-      toast.success("Module order updated");
+      toast.success(uiText("Module order updated"));
     } catch (reason) {
       toast.error(reason instanceof Error ? reason.message : "Module order could not be updated.");
     }
@@ -142,46 +150,52 @@ function ModulesPanel() {
     <section id="modules-panel" role="tabpanel" className="pt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">Learning modules</h2>
+          <h2 className="text-2xl font-semibold">{uiText("Learning modules")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Published modules appear in this order on the learner catalogue.
+            {uiText("Published modules appear in this order on the learner catalogue.")}{" "}
           </p>
         </div>
         <button className={primary} onClick={() => setEditing("new")}>
-          <Plus className="size-4" /> Create module
+          <Plus className="size-4" /> {uiText("Create module")}{" "}
         </button>
       </div>
-      <FilterToolbar label="Filter learning modules">
-        <DashboardSearchInput value={search} onChange={setSearch} placeholder="Search modules…" />
+      <FilterToolbar label={uiText("Filter learning modules")}>
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={uiText("Search modules…")}
+        />
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          aria-label="Module publication filter"
+          aria-label={uiText("Module publication filter")}
           className={dashboardSelect}
         >
-          <option>All</option>
-          <option>Published</option>
-          <option>Draft</option>
+          <option>{uiText("All")}</option>
+          <option>{uiText("Published")}</option>
+          <option>{uiText("Draft")}</option>
         </select>
         <select
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
-          aria-label="Module topic filter"
+          aria-label={uiText("Module topic filter")}
           className={dashboardSelect}
         >
-          <option>All</option>
+          <option>{uiText("All")}</option>
           {[...new Set(modules.map((module) => module.topic))].map((value) => (
             <option key={value}>{value}</option>
           ))}
         </select>
-        <ResultCount>{filtered.length} modules</ResultCount>
+        <ResultCount>
+          {filtered.length} {uiText("modules")}
+        </ResultCount>
       </FilterToolbar>
       {isPending ? (
         <div
           className="mt-5 flex min-h-44 items-center justify-center rounded-xl border bg-white"
           aria-busy="true"
         >
-          <LoaderCircle className="mr-2 size-5 animate-spin" /> Loading modules…
+          <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading modules…")}{" "}
         </div>
       ) : error ? (
         <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
@@ -192,13 +206,13 @@ function ModulesPanel() {
           <table className="w-full min-w-[1000px] text-left text-sm">
             <thead className="bg-muted text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Module</th>
-                <th className="px-4 py-3">Topic</th>
-                <th className="px-4 py-3">Difficulty</th>
-                <th className="px-4 py-3">Duration</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Order</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{uiText("Module")}</th>
+                <th className="px-4 py-3">{uiText("Topic")}</th>
+                <th className="px-4 py-3">{uiText("Difficulty")}</th>
+                <th className="px-4 py-3">{uiText("Duration")}</th>
+                <th className="px-4 py-3">{uiText("Status")}</th>
+                <th className="px-4 py-3">{uiText("Order")}</th>
+                <th className="px-4 py-3 text-right">{uiText("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -212,7 +226,9 @@ function ModulesPanel() {
                   </td>
                   <td className="px-4 py-4">{module.topic}</td>
                   <td className="px-4 py-4">{module.difficulty}</td>
-                  <td className="px-4 py-4">{module.minutes} min</td>
+                  <td className="px-4 py-4">
+                    {module.minutes} {uiText("min")}
+                  </td>
                   <td className="px-4 py-4">
                     <span
                       className={cn(
@@ -261,6 +277,7 @@ function ModulesPanel() {
                       >
                         <Edit3 className="size-4" />
                       </button>
+                      <ContentTranslationEditor kind="modules" source={module} />
                       <button
                         className={iconButton}
                         onClick={() =>
@@ -292,7 +309,9 @@ function ModulesPanel() {
                         onClick={() =>
                           referenced(module)
                             ? toast.error(
-                                "This module is referenced by lessons, questions, or a quiz. Unpublish it instead of deleting it.",
+                                uiText(
+                                  "This module is referenced by lessons, questions, or a quiz. Unpublish it instead of deleting it.",
+                                ),
                               )
                             : setDeleting(module)
                         }
@@ -310,8 +329,8 @@ function ModulesPanel() {
       ) : (
         <div className="mt-5">
           <EmptyState
-            title="No modules found"
-            description="Adjust the filters or create a new learning module."
+            title={uiText("No modules found")}
+            description={uiText("Adjust the filters or create a new learning module.")}
           />
         </div>
       )}
@@ -337,13 +356,18 @@ function ModulesPanel() {
       <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{deleting?.title}”?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {uiText("Delete “")}
+              {deleting?.title}”?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the unreferenced module from the learning catalogue.
+              {uiText(
+                "This permanently removes the unreferenced module from the learning catalogue.",
+              )}{" "}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{uiText("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white"
               onClick={() => {
@@ -355,7 +379,7 @@ function ModulesPanel() {
                   .then(async () => {
                     if (module.image?.status === "ready")
                       await LearningMediaService.remove(module.image).catch(() => undefined);
-                    toast.success("Module deleted");
+                    toast.success(uiText("Module deleted"));
                   })
                   .catch((reason: unknown) =>
                     toast.error(
@@ -364,7 +388,7 @@ function ModulesPanel() {
                   );
               }}
             >
-              Delete module
+              {uiText("Delete module")}{" "}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -386,6 +410,8 @@ function ModuleEditor({
   onClose: () => void;
   onSave: (module: LearningModule) => Promise<void>;
 }) {
+  const uiText = useInterfaceText();
+
   const { data: quizzes = [] } = useQuizCatalogue(true);
   const original = value === "new" ? null : value;
   const [title, setTitle] = useState(original?.title ?? "");
@@ -426,7 +452,7 @@ function ModuleEditor({
       .map((item) => item.trim())
       .filter(Boolean);
     if (!title.trim() || !description.trim() || !topic || cleanObjectives.length === 0) {
-      toast.error("Title, description, topic, and at least one objective are required.");
+      toast.error(uiText("Title, description, topic, and at least one objective are required."));
       return;
     }
     const id = original?.id ?? `m-${crypto.randomUUID()}`;
@@ -437,7 +463,7 @@ function ModuleEditor({
           module.title.trim().toLowerCase() === title.trim().toLowerCase(),
       )
     ) {
-      toast.error("A module with this title already exists.");
+      toast.error(uiText("A module with this title already exists."));
       return;
     }
     const module: LearningModule = {
@@ -474,14 +500,18 @@ function ModuleEditor({
     <Dialog open={Boolean(value)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{original ? "Edit" : "Create"} learning module</DialogTitle>
+          <DialogTitle>
+            {original ? "Edit" : "Create"} {uiText("learning module")}
+          </DialogTitle>
           <DialogDescription>
-            Published records render immediately on the learner catalogue and related module views.
+            {uiText(
+              "Published records render immediately on the learner catalogue and related module views.",
+            )}{" "}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={(event) => void submit(event)} className="grid gap-4">
           <label className="text-sm font-semibold">
-            Module title *
+            {uiText("Module title *")}{" "}
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
@@ -491,7 +521,7 @@ function ModuleEditor({
             />
           </label>
           <label className="text-sm font-semibold">
-            Description *
+            {uiText("Description *")}{" "}
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -502,7 +532,7 @@ function ModuleEditor({
           </label>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm font-semibold">
-              Topic
+              {uiText("Topic")}{" "}
               <select
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
@@ -516,19 +546,19 @@ function ModuleEditor({
               </select>
             </label>
             <label className="text-sm font-semibold">
-              Difficulty
+              {uiText("Difficulty")}{" "}
               <select
                 value={difficulty}
                 onChange={(event) => setDifficulty(event.target.value as Difficulty)}
                 className={field}
               >
-                <option>Beginner</option>
-                <option>Intermediate</option>
-                <option>Advanced</option>
+                <option>{uiText("Beginner")}</option>
+                <option>{uiText("Intermediate")}</option>
+                <option>{uiText("Advanced")}</option>
               </select>
             </label>
             <label className="text-sm font-semibold">
-              Duration in minutes
+              {uiText("Duration in minutes")}{" "}
               <input
                 type="number"
                 min={1}
@@ -539,7 +569,7 @@ function ModuleEditor({
               />
             </label>
             <label className="text-sm font-semibold">
-              Display order
+              {uiText("Display order")}{" "}
               <input
                 type="number"
                 min={1}
@@ -552,24 +582,24 @@ function ModuleEditor({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold">
-              Publication status
+              {uiText("Publication status")}{" "}
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as LearningModule["status"])}
                 className={field}
               >
-                <option>Draft</option>
-                <option>Published</option>
+                <option>{uiText("Draft")}</option>
+                <option>{uiText("Published")}</option>
               </select>
             </label>
             <label className="text-sm font-semibold">
-              Related quiz
+              {uiText("Related quiz")}{" "}
               <select
                 value={quizId}
                 onChange={(event) => setQuizId(event.target.value)}
                 className={field}
               >
-                <option value="">No related assessment</option>
+                <option value="">{uiText("No related assessment")}</option>
                 {compatibleQuizzes.map((quiz) => (
                   <option key={quiz.id} value={quiz.id}>
                     {quiz.title}
@@ -579,7 +609,7 @@ function ModuleEditor({
             </label>
           </div>
           <label className="text-sm font-semibold">
-            Learning objectives (one per line) *
+            {uiText("Learning objectives (one per line) *")}{" "}
             <textarea
               value={objectives}
               onChange={(event) => setObjectives(event.target.value)}
@@ -589,7 +619,7 @@ function ModuleEditor({
           </label>
           <MediaField
             storage="learning"
-            label="Module image"
+            label={uiText("Module image")}
             asset={image}
             initialAlt={original?.image?.altText ?? title}
             guidance="A landscape image is recommended. This image appears on public featured-learning cards."
@@ -597,7 +627,7 @@ function ModuleEditor({
           />
           <DialogFooter>
             <button type="button" className={outline} onClick={onClose}>
-              Cancel
+              {uiText("Cancel")}{" "}
             </button>
             <button className={primary} disabled={saving}>
               {saving && <LoaderCircle className="size-4 animate-spin" />}
@@ -632,13 +662,16 @@ function ModulePreviewContent({
   module: LearningModule;
   lessonCount: number;
 }) {
+  const uiText = useInterfaceText();
+
   const src = useMediaUrl(module.image);
   return (
     <DialogContent className="max-w-2xl">
       <DialogHeader>
         <DialogTitle>{module.title}</DialogTitle>
         <DialogDescription>
-          {module.topic} · {module.difficulty} · {module.minutes} minutes · {module.status}
+          {module.topic} · {module.difficulty} · {module.minutes} {uiText("minutes ·")}{" "}
+          {module.status}
         </DialogDescription>
       </DialogHeader>
       {src && (
@@ -651,7 +684,7 @@ function ModulePreviewContent({
       <p className="leading-7 text-muted-foreground">{module.description}</p>
       <div className="rounded-xl border bg-muted/30 p-5">
         <p className="text-sm font-semibold">
-          {lessonCount} published lessons ·{" "}
+          {lessonCount} {uiText("published lessons ·")}{" "}
           {module.quizId ? "Related assessment configured" : "No related assessment"}
         </p>
         <ul className="mt-3 grid gap-2 text-sm">
@@ -665,6 +698,8 @@ function ModulePreviewContent({
 }
 
 function TopicsPanel() {
+  const uiText = useInterfaceText();
+
   const repository = useRepository();
   const queryClient = useQueryClient();
   const store = useNcap();
@@ -694,16 +729,16 @@ function TopicsPanel() {
     const nextName = normalizeTopicName(name);
     const original = editing === "new" ? null : editing;
     if (!nextName) {
-      toast.error("Topic name is required.");
+      toast.error(uiText("Topic name is required."));
       return;
     }
     if (isDuplicateTopic(topics, nextName, original?.id)) {
-      toast.error("A topic with this name already exists.");
+      toast.error(uiText("A topic with this name already exists."));
       return;
     }
     const slug = topicSlug(nextName);
     if (topics.some((topic) => topic.id !== original?.id && topic.slug === slug)) {
-      toast.error("Choose a topic name with a unique URL slug.");
+      toast.error(uiText("Choose a topic name with a unique URL slug."));
       return;
     }
     const now = new Date().toISOString().slice(0, 10);
@@ -729,32 +764,38 @@ function TopicsPanel() {
     <section id="topics-panel" role="tabpanel" className="pt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">Topics</h2>
+          <h2 className="text-2xl font-semibold">{uiText("Topics")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage Learning topics and their publication visibility.
+            {uiText("Manage Learning topics and their publication visibility.")}{" "}
           </p>
         </div>
         <button className={primary} onClick={() => open("new")}>
-          <Plus className="size-4" /> Create topic
+          <Plus className="size-4" /> {uiText("Create topic")}{" "}
         </button>
       </div>
-      <FilterToolbar label="Filter topics">
-        <DashboardSearchInput value={search} onChange={setSearch} placeholder="Search topics…" />
+      <FilterToolbar label={uiText("Filter topics")}>
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={uiText("Search topics…")}
+        />
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          aria-label="Topic status filter"
+          aria-label={uiText("Topic status filter")}
           className={dashboardSelect}
         >
-          <option>All</option>
-          <option>Active</option>
-          <option>Inactive</option>
+          <option>{uiText("All")}</option>
+          <option>{uiText("Active")}</option>
+          <option>{uiText("Inactive")}</option>
         </select>
-        <ResultCount>{filtered.length} topics</ResultCount>
+        <ResultCount>
+          {filtered.length} {uiText("topics")}
+        </ResultCount>
       </FilterToolbar>
       {isPending ? (
         <div className="mt-5 flex min-h-44 items-center justify-center">
-          <LoaderCircle className="mr-2 size-5 animate-spin" /> Loading topics…
+          <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading topics…")}{" "}
         </div>
       ) : error ? (
         <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
@@ -765,11 +806,11 @@ function TopicsPanel() {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-3">Topic</th>
-                <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">Usage</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{uiText("Topic")}</th>
+                <th className="px-4 py-3">{uiText("Slug")}</th>
+                <th className="px-4 py-3">{uiText("Usage")}</th>
+                <th className="px-4 py-3">{uiText("Status")}</th>
+                <th className="px-4 py-3 text-right">{uiText("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -815,7 +856,9 @@ function TopicsPanel() {
                         onClick={() => {
                           if (isReferenced(topic.name)) {
                             toast.error(
-                              "Referenced topics cannot be deleted. Deactivate this topic instead.",
+                              uiText(
+                                "Referenced topics cannot be deleted. Deactivate this topic instead.",
+                              ),
                             );
                             return;
                           }
@@ -823,7 +866,7 @@ function TopicsPanel() {
                             return;
                           void removeMutation
                             .mutateAsync({ id: topic.id, version: topic.version })
-                            .then(() => toast.success("Topic deleted"))
+                            .then(() => toast.success(uiText("Topic deleted")))
                             .catch((error: Error) => toast.error(error.message));
                         }}
                         aria-label={`Delete ${topic.name}`}
@@ -839,18 +882,25 @@ function TopicsPanel() {
         </div>
       ) : (
         <div className="mt-5">
-          <EmptyState title="No topics found" description="Adjust the filters or create a topic." />
+          <EmptyState
+            title={uiText("No topics found")}
+            description={uiText("Adjust the filters or create a topic.")}
+          />
         </div>
       )}
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing === "new" ? "Create" : "Edit"} topic</DialogTitle>
-            <DialogDescription>Topic names and URL slugs must remain unique.</DialogDescription>
+            <DialogTitle>
+              {editing === "new" ? "Create" : "Edit"} {uiText("topic")}
+            </DialogTitle>
+            <DialogDescription>
+              {uiText("Topic names and URL slugs must remain unique.")}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={(event) => void submit(event)} className="grid gap-4">
             <label className="text-sm font-semibold">
-              Topic name *
+              {uiText("Topic name *")}{" "}
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -861,9 +911,9 @@ function TopicsPanel() {
             </label>
             <DialogFooter>
               <button type="button" className={outline} onClick={() => setEditing(null)}>
-                Cancel
+                {uiText("Cancel")}{" "}
               </button>
-              <button className={primary}>Save topic</button>
+              <button className={primary}>{uiText("Save topic")}</button>
             </DialogFooter>
           </form>
         </DialogContent>

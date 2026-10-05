@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,12 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("flex flex-col gap-5 border-b border-border/80 pb-7 md:flex-row md:items-end md:justify-between", className)}>
+    <header
+      className={cn(
+        "flex flex-col gap-5 border-b border-border/80 pb-7 md:flex-row md:items-end md:justify-between",
+        className,
+      )}
+    >
       <div className="max-w-2xl">
         {eyebrow && (
           <p className="meta mb-3 flex items-center gap-2 text-violet">
@@ -25,9 +31,13 @@ export function PageHeader({
           </p>
         )}
         <h1 className="text-3xl font-bold md:text-4xl lg:text-[2.65rem]">{title}</h1>
-        {description && <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{description}</p>
+        )}
       </div>
-      {actions && <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">{actions}</div>}
+      {actions && (
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">{actions}</div>
+      )}
     </header>
   );
 }
@@ -45,7 +55,9 @@ export function SectionHeading({
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-2xl font-bold md:text-[1.75rem]">{title}</h2>
-        {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
+        )}
       </div>
       {action}
     </div>
@@ -75,7 +87,11 @@ export function StatCard({
     <div className={cn("panel min-w-0 p-5", tones[tone])}>
       <div className="flex items-start justify-between gap-3">
         <p className="meta text-muted-foreground">{label}</p>
-        {icon && <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/75 text-violet shadow-sm [&_svg]:size-5">{icon}</span>}
+        {icon && (
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/75 text-violet shadow-sm [&_svg]:size-5">
+            {icon}
+          </span>
+        )}
       </div>
       <p className="mt-4 font-mono text-3xl font-bold tracking-tight text-foreground">{value}</p>
       {hint && <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{hint}</p>}
@@ -96,7 +112,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-strong bg-card px-6 py-14 text-center shadow-panel">
-      {icon && <div className="mb-4 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-6">{icon}</div>}
+      {icon && (
+        <div className="mb-4 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-6">
+          {icon}
+        </div>
+      )}
       <h3 className="text-lg font-bold">{title}</h3>
       <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{description}</p>
       {action && <div className="mt-5">{action}</div>}
@@ -104,7 +124,13 @@ export function EmptyState({
   );
 }
 
-export function DemoTag({ label = "Demo data", className }: { label?: string; className?: string }) {
+export function DemoTag({
+  label = "Demo data",
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -118,9 +144,15 @@ export function DemoTag({ label = "Demo data", className }: { label?: string; cl
 }
 
 export function CardListSkeleton({ count = 3 }: { count?: number }) {
+  const uiText = useInterfaceText();
+
   return (
-    <div className="stagger-grid grid gap-4 md:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-live="polite">
-      <span className="sr-only">Loading content</span>
+    <div
+      className="stagger-grid grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <span className="sr-only">{uiText("Loading content")}</span>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="panel p-5">
           <Skeleton className="h-4 w-24" />
@@ -150,7 +182,10 @@ export function ProgressMeter({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={`${label}: ${value}% complete`}
-      className={cn("w-full overflow-hidden rounded-full bg-muted", size === "sm" ? "h-1.5" : "h-2")}
+      className={cn(
+        "w-full overflow-hidden rounded-full bg-muted",
+        size === "sm" ? "h-1.5" : "h-2",
+      )}
     >
       <div
         className="h-full w-full origin-left rounded-full bg-violet transition-transform duration-300"

@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -69,6 +70,8 @@ function useModules() {
   return useRepositoryList(repository, "modules").data ?? [];
 }
 export function LearningCataloguePage() {
+  const uiText = useInterfaceText();
+
   const { completedLessons, bookmarks, toggleBookmark, lessons } = useNcap();
   const modules = useModules();
   const [search, setSearch] = useState("");
@@ -103,28 +106,32 @@ export function LearningCataloguePage() {
   return (
     <div className="container-ncap max-w-7xl py-2">
       <PageHeader
-        eyebrow="Learning catalogue · English content"
-        title="Build practical digital confidence"
+        eyebrow={uiText("Learning catalogue · English content")}
+        title={uiText("Build practical digital confidence")}
         description={`${cards.length} published module${cards.length === 1 ? "" : "s"}, each made of short lessons and a related knowledge check.`}
         actions={
           <AppLink href="/learn/search" className={outline}>
             <Search />
-            Search all learning
+            {uiText("Search all learning")}{" "}
           </AppLink>
         }
       />
       <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 lg:flex-row">
         <label className="relative flex-1">
           <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
-          <span className="sr-only">Search modules</span>
+          <span className="sr-only">{uiText("Search modules")}</span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
-            placeholder="Search modules or topics…"
+            placeholder={uiText("Search modules or topics…")}
           />
         </label>
-        <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Module filters">
+        <div
+          className="flex gap-2 overflow-x-auto"
+          role="group"
+          aria-label={uiText("Module filters")}
+        >
           {["All", "Beginner", "Intermediate", "Completed", "In Progress"].map((f) => (
             <button
               key={f}
@@ -178,13 +185,17 @@ export function LearningCataloguePage() {
               <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{m.description}</p>
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span className="rounded-md bg-muted px-2 py-1">{m.difficulty}</span>
-                <span className="rounded-md bg-muted px-2 py-1">{lessonCount} lessons</span>
-                <span className="rounded-md bg-muted px-2 py-1">{m.minutes} min</span>
+                <span className="rounded-md bg-muted px-2 py-1">
+                  {lessonCount} {uiText("lessons")}
+                </span>
+                <span className="rounded-md bg-muted px-2 py-1">
+                  {m.minutes} {uiText("min")}
+                </span>
               </div>
               <div className="mt-auto pt-7">
                 <div className="mb-2 flex justify-between text-xs">
                   <span>
-                    {done} of {lessonCount} complete
+                    {done} {uiText("of")} {lessonCount} {uiText("complete")}{" "}
                   </span>
                   <span className="font-mono">{progress}%</span>
                 </div>
@@ -201,8 +212,8 @@ export function LearningCataloguePage() {
         <div className="mt-6">
           <EmptyState
             icon={<Search />}
-            title="No modules match"
-            description="Clear the search or choose a different progress filter."
+            title={uiText("No modules match")}
+            description={uiText("Clear the search or choose a different progress filter.")}
             action={
               <button
                 className={outline}
@@ -211,7 +222,7 @@ export function LearningCataloguePage() {
                   setFilter("All");
                 }}
               >
-                Clear filters
+                {uiText("Clear filters")}{" "}
               </button>
             }
           />
@@ -222,6 +233,8 @@ export function LearningCataloguePage() {
 }
 
 export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
+  const uiText = useInterfaceText();
+
   const { completedLessons, bookmarks, toggleBookmark, lessons } = useNcap();
   const modules = useModules();
   const quizCatalogue = useQuizCatalogue();
@@ -244,7 +257,7 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
             description={module.description}
           />
           <section className="mt-9">
-            <h2 className="text-xl font-semibold">What you will learn</h2>
+            <h2 className="text-xl font-semibold">{uiText("What you will learn")}</h2>
             <ul className="mt-4 grid gap-3 md:grid-cols-2">
               {module.objectives.map((o) => (
                 <li key={o} className="flex gap-3 rounded-lg border bg-white p-4 text-sm">
@@ -256,15 +269,17 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
           </section>
           <section className="mt-10">
             <SectionHeading
-              title="Lessons"
+              title={uiText("Lessons")}
               description={`${done} of ${ls.length} complete · Content is available in English`}
             />
             <div className="overflow-hidden rounded-xl border bg-white">
               {ls.length === 0 && (
                 <div className="p-6">
                   <EmptyState
-                    title="No published lessons"
-                    description="This module is not open for learning yet. Check again after content review."
+                    title={uiText("No published lessons")}
+                    description={uiText(
+                      "This module is not open for learning yet. Check again after content review.",
+                    )}
                   />
                 </div>
               )}
@@ -294,7 +309,7 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
                         <h3 className="font-semibold">{lesson.title}</h3>
                         {isCurrent && (
                           <span className="rounded-md bg-ember-soft px-2 py-0.5 text-xs font-semibold text-ember">
-                            Next
+                            {uiText("Next")}{" "}
                           </span>
                         )}
                       </div>
@@ -306,7 +321,7 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
                           <Clock3 className="size-3.5" aria-hidden="true" />
                         )}
                         {lesson.video ? "Video · " : ""}
-                        {lesson.minutes} min
+                        {lesson.minutes} {uiText("min")}{" "}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -341,18 +356,20 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
         </div>
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-xl border bg-white p-5">
-            <p className="meta text-muted-foreground">Module progress</p>
+            <p className="meta text-muted-foreground">{uiText("Module progress")}</p>
             <p className="mt-3 font-mono text-4xl font-bold">{progress}%</p>
             <div className="mt-4">
               <ProgressMeter value={progress} label={module.title} />
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-muted-foreground">Duration</dt>
-                <dd className="font-semibold">{module.minutes} min</dd>
+                <dt className="text-muted-foreground">{uiText("Duration")}</dt>
+                <dd className="font-semibold">
+                  {module.minutes} {uiText("min")}
+                </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Lessons</dt>
+                <dt className="text-muted-foreground">{uiText("Lessons")}</dt>
                 <dd className="font-semibold">{ls.length}</dd>
               </div>
             </dl>
@@ -360,13 +377,13 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
           {linkedQuiz && (
             <div className="mt-4 rounded-xl border border-violet/30 bg-violet-soft p-5">
               <GraduationCap className="size-6 text-violet" />
-              <h2 className="mt-4 font-semibold">Related assessment</h2>
+              <h2 className="mt-4 font-semibold">{uiText("Related assessment")}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Complete the module and score at least {linkedQuiz.eligibilityPercent}% to meet the
-                quiz eligibility threshold.
+                {uiText("Complete the module and score at least")} {linkedQuiz.eligibilityPercent}
+                {uiText("% to meet the quiz eligibility threshold.")}{" "}
               </p>
               <AppLink href={`/quizzes/${linkedQuiz.id}`} className={cn(primary, "mt-5 w-full")}>
-                View quiz
+                {uiText("View quiz")}{" "}
               </AppLink>
             </div>
           )}
@@ -377,6 +394,8 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
 }
 
 export function LessonPage({ lessonId }: { lessonId: string }) {
+  const uiText = useInterfaceText();
+
   const quizCatalogue = useQuizCatalogue();
   const { completedLessons, bookmarks, toggleBookmark, completeLesson, lessons, session } =
     useNcap();
@@ -399,7 +418,7 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
   const finish = () => {
     void completeLesson(lesson.id)
       .then(() =>
-        toast.success("Lesson marked complete", {
+        toast.success(uiText("Lesson marked complete"), {
           description: "Your dashboard and module progress are updated.",
         }),
       )
@@ -418,13 +437,13 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
         <div className="flex-1">
           <div className="mb-2 flex justify-between text-xs text-muted-foreground">
             <span>
-              Lesson {index + 1} of {siblings.length}
+              {uiText("Lesson")} {index + 1} {uiText("of")} {siblings.length}
             </span>
             <span>{Math.round(((index + 1) / siblings.length) * 100)}%</span>
           </div>
           <ProgressMeter
             value={((index + 1) / siblings.length) * 100}
-            label="Lesson position"
+            label={uiText("Lesson position")}
             size="sm"
           />
         </div>
@@ -449,7 +468,7 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
               <div className="flex flex-wrap items-center gap-3">
                 <span className="meta text-violet">{lesson.topic}</span>
                 <span className="text-xs text-muted-foreground">
-                  {lesson.minutes} min · English
+                  {lesson.minutes} {uiText("min · English")}{" "}
                 </span>
               </div>
               <h1 className="mt-4 max-w-3xl text-3xl font-semibold md:text-4xl">{lesson.title}</h1>
@@ -481,11 +500,11 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
                   {done ? (
                     <p className="flex items-center gap-2 font-semibold text-success">
                       <CheckCircle2 />
-                      Lesson completed
+                      {uiText("Lesson completed")}{" "}
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Finished reading? Record your progress.
+                      {uiText("Finished reading? Record your progress.")}{" "}
                     </p>
                   )}
                 </div>
@@ -493,30 +512,30 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
                   {done ? (
                     <>
                       <Check />
-                      Completed
+                      {uiText("Completed")}{" "}
                     </>
                   ) : (
                     <>
                       <BookCheck />
-                      Mark as complete
+                      {uiText("Mark as complete")}{" "}
                     </>
                   )}
                 </button>
               </div>
             </footer>
           </article>
-          <nav className="mt-6 grid gap-3 sm:grid-cols-2" aria-label="Lesson navigation">
+          <nav className="mt-6 grid gap-3 sm:grid-cols-2" aria-label={uiText("Lesson navigation")}>
             {prev ? (
               <AppLink href={`/learn/lessons/${prev.id}`} className={cn(outline, "justify-start")}>
                 <ChevronLeft />
-                Previous: {prev.title}
+                {uiText("Previous:")} {prev.title}
               </AppLink>
             ) : (
               <span />
             )}
             {next ? (
               <AppLink href={`/learn/lessons/${next.id}`} className={cn(primary, "justify-end")}>
-                Next: {next.title}
+                {uiText("Next:")} {next.title}
                 <ChevronRight />
               </AppLink>
             ) : (
@@ -524,22 +543,21 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
                 href={linkedQuiz ? `/quizzes/${linkedQuiz.id}` : "/quizzes"}
                 className={cn(primary, "justify-end")}
               >
-                Take the module quiz
-                <ArrowRight />
+                {uiText("Take the module quiz")} <ArrowRight />
               </AppLink>
             )}
           </nav>
         </div>
         <aside
           className="rounded-xl border bg-white xl:sticky xl:top-24 xl:self-start"
-          aria-label="Course content"
+          aria-label={uiText("Course content")}
         >
           <div className="border-b p-5">
-            <p className="meta text-violet">Course content</p>
+            <p className="meta text-violet">{uiText("Course content")}</p>
             <h2 className="mt-2 text-lg font-semibold">{module.title}</h2>
             <p className="mt-2 text-xs text-muted-foreground">
-              {siblings.filter((item) => completedLessons.includes(item.id)).length} of{" "}
-              {siblings.length} lessons complete
+              {siblings.filter((item) => completedLessons.includes(item.id)).length} {uiText("of")}{" "}
+              {siblings.length} {uiText("lessons complete")}{" "}
             </p>
           </div>
           <ol className="max-h-[min(65vh,620px)] overflow-y-auto p-2">
@@ -573,7 +591,7 @@ export function LessonPage({ lessonId }: { lessonId: string }) {
                         ) : (
                           <BookOpen className="size-3.5" />
                         )}
-                        {item.video ? "Video" : "Reading"} · {item.minutes} min
+                        {item.video ? "Video" : "Reading"} · {item.minutes} {uiText("min")}{" "}
                       </span>
                     </span>
                   </AppLink>
@@ -596,6 +614,8 @@ export function LessonBlockView({
   selected: number | undefined;
   onSelect: (v: number) => void;
 }) {
+  const uiText = useInterfaceText();
+
   if (block.kind === "heading")
     return <h2 className="mb-4 mt-10 text-2xl font-semibold first:mt-0">{block.text}</h2>;
   if (block.kind === "paragraph")
@@ -645,7 +665,7 @@ export function LessonBlockView({
   if (block.kind === "example")
     return (
       <aside className="my-7 rounded-xl border bg-muted p-5">
-        <span className="meta text-violet">Example</span>
+        <span className="meta text-violet">{uiText("Example")}</span>
         <h3 className="mt-2 font-semibold">{block.title}</h3>
         <p className="mt-2">{block.text}</p>
       </aside>
@@ -653,7 +673,7 @@ export function LessonBlockView({
   const answered = selected !== undefined;
   return (
     <section className="my-8 rounded-xl border border-violet/30 p-5">
-      <p className="meta text-violet">Mini knowledge check</p>
+      <p className="meta text-violet">{uiText("Mini knowledge check")}</p>
       <h3 className="mt-3 text-lg font-semibold">{block.question}</h3>
       <div className="mt-4 grid gap-2">
         {block.options.map((o, i) => (
@@ -691,6 +711,8 @@ export function LessonBlockView({
 }
 
 export function LearningSearchPage() {
+  const uiText = useInterfaceText();
+
   const { lessons } = useNcap();
   const modules = useModules();
   const routeSearch = useSearch({ from: "/learn/search" });
@@ -736,20 +758,22 @@ export function LearningSearchPage() {
   return (
     <div className="container-ncap max-w-6xl py-2">
       <PageHeader
-        eyebrow="Learning search · English content"
-        title="Find the lesson you need"
-        description="Search lesson titles, modules, topics, and practical keywords. Press / anywhere outside a form to focus search."
+        eyebrow={uiText("Learning search · English content")}
+        title={uiText("Find the lesson you need")}
+        description={uiText(
+          "Search lesson titles, modules, topics, and practical keywords. Press / anywhere outside a form to focus search.",
+        )}
       />
       <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 md:flex-row">
         <label className="relative flex-1">
           <Search className="absolute left-3 top-3.5 size-5 text-muted-foreground" />
-          <span className="sr-only">Search learning</span>
+          <span className="sr-only">{uiText("Search learning")}</span>
           <input
             ref={input}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="h-12 w-full rounded-lg border bg-background pl-11 pr-12"
-            placeholder="Try “OTP”, “public Wi-Fi”, or “password”…"
+            placeholder={uiText("Try “OTP”, “public Wi-Fi”, or “password”…")}
           />
           <kbd className="absolute right-3 top-3 rounded border bg-white px-2 py-1 font-mono text-xs text-muted-foreground">
             /
@@ -759,7 +783,7 @@ export function LearningSearchPage() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           className="h-12 rounded-lg border bg-white px-3"
-          aria-label="Filter learning results by topic"
+          aria-label={uiText("Filter learning results by topic")}
         >
           {topicOptions.map((t) => (
             <option key={t}>{t}</option>
@@ -792,7 +816,7 @@ export function LearningSearchPage() {
                 <h2 className="mt-1 font-semibold">{l.title}</h2>
                 <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{l.summary}</p>
               </div>
-              <span className="text-sm font-semibold text-primary">Open lesson →</span>
+              <span className="text-sm font-semibold text-primary">{uiText("Open lesson →")}</span>
             </AppLink>
           ))}
         </div>
@@ -800,8 +824,8 @@ export function LearningSearchPage() {
         <div className="mt-5">
           <EmptyState
             icon={<Search />}
-            title="No lessons found"
-            description="Try a broader keyword, another topic, or clear the filter."
+            title={uiText("No lessons found")}
+            description={uiText("Try a broader keyword, another topic, or clear the filter.")}
             action={
               <button
                 className={outline}
@@ -811,7 +835,7 @@ export function LearningSearchPage() {
                   input.current?.focus();
                 }}
               >
-                Clear search
+                {uiText("Clear search")}{" "}
               </button>
             }
           />
@@ -825,7 +849,10 @@ export function LearningSearchPage() {
               className="rounded-xl border bg-white p-5 text-left hover:border-violet"
             >
               <Search className="size-5 text-violet" />
-              <span className="mt-4 block font-semibold">Search “{q}”</span>
+              <span className="mt-4 block font-semibold">
+                {uiText("Search “")}
+                {q}”
+              </span>
             </button>
           ))}
         </div>
@@ -835,6 +862,8 @@ export function LearningSearchPage() {
 }
 
 export function BookmarksPage() {
+  const uiText = useInterfaceText();
+
   const { bookmarks, toggleBookmark, lessons } = useNcap();
   const modules = useModules();
   const [topic, setTopic] = useState("All");
@@ -863,9 +892,11 @@ export function BookmarksPage() {
   return (
     <div className="container-ncap max-w-6xl py-2">
       <PageHeader
-        eyebrow="My learning"
-        title="Saved lessons"
-        description="Keep useful guidance close and remove bookmarks whenever you no longer need them."
+        eyebrow={uiText("My learning")}
+        title={uiText("Saved lessons")}
+        description={uiText(
+          "Keep useful guidance close and remove bookmarks whenever you no longer need them.",
+        )}
       />
       <div className="mt-7 flex items-center gap-3">
         <Filter className="size-4 text-muted-foreground" />
@@ -873,13 +904,15 @@ export function BookmarksPage() {
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           className="h-11 rounded-lg border bg-white px-3"
-          aria-label="Filter bookmarks"
+          aria-label={uiText("Filter bookmarks")}
         >
           {topicOptions.map((t) => (
             <option key={t}>{t}</option>
           ))}
         </select>
-        <span className="text-sm text-muted-foreground">{saved.length} saved</span>
+        <span className="text-sm text-muted-foreground">
+          {saved.length} {uiText("saved")}
+        </span>
       </div>
       {saved.length ? (
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -890,7 +923,7 @@ export function BookmarksPage() {
                 <button
                   onClick={() => {
                     void toggleBookmark(l.id)
-                      .then(() => toast.success("Bookmark removed"))
+                      .then(() => toast.success(uiText("Bookmark removed")))
                       .catch(() => undefined);
                   }}
                   className="grid size-11 place-items-center rounded-lg border"
@@ -903,13 +936,13 @@ export function BookmarksPage() {
               <p className="mt-2 text-sm text-muted-foreground">{l.summary}</p>
               <div className="mt-5 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  {l.minutes} min · {l.difficulty}
+                  {l.minutes} {uiText("min ·")} {l.difficulty}
                 </span>
                 <AppLink
                   href={`/learn/lessons/${l.id}`}
                   className="inline-flex min-h-10 items-center font-semibold text-primary"
                 >
-                  Open lesson <ArrowRight className="ml-2 size-4" />
+                  {uiText("Open lesson")} <ArrowRight className="ml-2 size-4" />
                 </AppLink>
               </div>
             </article>
@@ -927,7 +960,7 @@ export function BookmarksPage() {
             }
             action={
               <AppLink href="/learn" className={primary}>
-                Browse learning
+                {uiText("Browse learning")}{" "}
               </AppLink>
             }
           />
@@ -938,6 +971,8 @@ export function BookmarksPage() {
 }
 
 export function DashboardPage() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const [activityOffset, setActivityOffset] = useState(0);
   const dashboard = useLearnerDashboard(activityOffset);
@@ -989,14 +1024,14 @@ export function DashboardPage() {
   if (dashboard.isPending || store.learningPending) {
     return (
       <div className="container-ncap py-8" role="status">
-        Loading your dashboard…
+        {uiText("Loading your dashboard…")}{" "}
       </div>
     );
   }
   if (dashboard.isError || store.learningError || quizHistory.isError) {
     return (
       <div className="container-ncap py-8" role="alert">
-        Your dashboard is unavailable. Please refresh and try again.
+        {uiText("Your dashboard is unavailable. Please refresh and try again.")}{" "}
       </div>
     );
   }
@@ -1004,18 +1039,22 @@ export function DashboardPage() {
     return (
       <div className="container-ncap max-w-[1320px] py-2">
         <PageHeader
-          eyebrow="Learner dashboard"
+          eyebrow={uiText("Learner dashboard")}
           title={`Welcome back${store.session.name ? `, ${store.session.name.split(" ")[0]}` : ""}`}
-          description="Your learning summary is ready, but there are currently no published lessons."
+          description={uiText(
+            "Your learning summary is ready, but there are currently no published lessons.",
+          )}
         />
         <div className="mt-8">
           <EmptyState
             icon={<BookOpen />}
-            title="No lessons are currently published"
-            description="An administrator can review and publish learning content from the content workspace."
+            title={uiText("No lessons are currently published")}
+            description={uiText(
+              "An administrator can review and publish learning content from the content workspace.",
+            )}
             action={
               <AppLink href="/awareness" className={outline}>
-                Browse awareness resources
+                {uiText("Browse awareness resources")}{" "}
               </AppLink>
             }
           />
@@ -1028,39 +1067,41 @@ export function DashboardPage() {
   return (
     <div className="container-ncap max-w-[1320px] py-2">
       <PageHeader
-        eyebrow="Learner dashboard"
+        eyebrow={uiText("Learner dashboard")}
         title={`Welcome back${store.session.name ? `, ${store.session.name.split(" ")[0]}` : ""}`}
-        description="Continue where you left off and see how your learning is building up."
+        description={uiText(
+          "Continue where you left off and see how your learning is building up.",
+        )}
         actions={
           <AppLink href={`/learn/lessons/${next.id}`} className={primary}>
-            Continue learning <ArrowRight />
+            {uiText("Continue learning")} <ArrowRight />
           </AppLink>
         }
       />
       <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Overall learning progress"
+          label={uiText("Overall learning progress")}
           value={`${stats.overall}%`}
           hint={`${stats.completedCount} of ${stats.totalLessons} lessons`}
           icon={<Target />}
           tone="violet"
         />
         <StatCard
-          label="Quiz average"
+          label={uiText("Quiz average")}
           value={`${quizAverage}%`}
           hint={`${completedQuizAttempts.length} completed attempts`}
           icon={<Trophy />}
           tone="ember"
         />
         <StatCard
-          label="Completed lessons"
+          label={uiText("Completed lessons")}
           value={stats.completedCount}
           hint={`${stats.totalLessons - stats.completedCount} remaining`}
           icon={<BookCheck />}
           tone="success"
         />
         <StatCard
-          label="Learning hours"
+          label={uiText("Learning hours")}
           value={stats.hours}
           hint="Time spent in lessons"
           icon={<Clock3 />}
@@ -1070,7 +1111,7 @@ export function DashboardPage() {
         <div className="rounded-xl border bg-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="meta text-violet">Continue learning</p>
+              <p className="meta text-violet">{uiText("Continue learning")}</p>
               <h2 className="mt-2 text-2xl font-semibold">{next.title}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {currentModule?.title ?? "Learning module"}
@@ -1082,11 +1123,11 @@ export function DashboardPage() {
           </div>
           <p className="mt-5 text-muted-foreground">{next.summary}</p>
           <AppLink href={`/learn/lessons/${next.id}`} className={cn(primary, "mt-6")}>
-            Resume lesson <ArrowRight />
+            {uiText("Resume lesson")} <ArrowRight />
           </AppLink>
         </div>
         <div className="rounded-xl border bg-primary p-6 text-white">
-          <p className="meta text-white/60">Recommended next step</p>
+          <p className="meta text-white/60">{uiText("Recommended next step")}</p>
           <Sparkles className="mt-6 size-7 text-ember" />
           <h2 className="mt-3 text-xl font-semibold">
             {stats.overall < 40
@@ -1094,13 +1135,13 @@ export function DashboardPage() {
               : "Strengthen your lowest quiz topic"}
           </h2>
           <p className="mt-2 text-sm text-white/70">
-            This suggestion is based on your saved learning progress.
+            {uiText("This suggestion is based on your saved learning progress.")}{" "}
           </p>
         </div>
       </section>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title="Progress by module" />
+          <SectionHeading title={uiText("Progress by module")} />
           <div className="grid gap-5">
             {stats.moduleProgress.map((p) => (
               <div key={p.module.id}>
@@ -1122,10 +1163,10 @@ export function DashboardPage() {
         </div>
         <div className="rounded-xl border bg-white p-6">
           <SectionHeading
-            title="Recent quiz performance"
+            title={uiText("Recent quiz performance")}
             action={
               <AppLink href="/quizzes" className="text-sm font-semibold text-primary">
-                All quizzes →
+                {uiText("All quizzes →")}{" "}
               </AppLink>
             }
           />
@@ -1161,8 +1202,8 @@ export function DashboardPage() {
             </div>
           ) : (
             <EmptyState
-              title="No quiz attempts yet"
-              description="Complete an assessment to see your scores here."
+              title={uiText("No quiz attempts yet")}
+              description={uiText("Complete an assessment to see your scores here.")}
             />
           )}
         </div>
@@ -1170,8 +1211,8 @@ export function DashboardPage() {
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-xl border bg-white p-6">
           <SectionHeading
-            title="Badges"
-            description="Earned through visible, deterministic learning milestones."
+            title={uiText("Badges")}
+            description={uiText("Earned through visible, deterministic learning milestones.")}
           />
           <div className="grid gap-3 sm:grid-cols-2">
             {stats.badges.map((b) => (
@@ -1190,7 +1231,7 @@ export function DashboardPage() {
                 <div>
                   <p className="font-semibold">
                     {b.name}
-                    {!b.earned && <span className="sr-only">, locked</span>}
+                    {!b.earned && <span className="sr-only">{uiText(", locked")}</span>}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{b.description}</p>
                 </div>
@@ -1199,7 +1240,7 @@ export function DashboardPage() {
           </div>
         </div>
         <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title="Announcements" />
+          <SectionHeading title={uiText("Announcements")} />
           <div className="grid gap-3">
             {visibleAnnouncements.map((a) => (
               <article key={a.id} className="border-l-2 border-violet pl-4">
@@ -1208,13 +1249,13 @@ export function DashboardPage() {
               </article>
             ))}
             {visibleAnnouncements.length === 0 && (
-              <p className="text-sm text-muted-foreground">No active announcements.</p>
+              <p className="text-sm text-muted-foreground">{uiText("No active announcements.")}</p>
             )}
           </div>
         </div>
       </section>
       <section className="mt-6 rounded-xl border bg-white p-6">
-        <SectionHeading title="Recent activity" />
+        <SectionHeading title={uiText("Recent activity")} />
         <ol className="grid gap-2 md:grid-cols-2">
           {(dashboard.data?.activities ?? []).map((a) => (
             <li key={a.id} className="flex gap-3 rounded-lg p-3 hover:bg-muted">
@@ -1228,7 +1269,9 @@ export function DashboardPage() {
         </ol>
         {!dashboard.data?.activities.length && (
           <p className="text-sm text-muted-foreground">
-            Your completed lessons, quizzes, bookmarks, and badges will appear here.
+            {uiText(
+              "Your completed lessons, quizzes, bookmarks, and badges will appear here.",
+            )}{" "}
           </p>
         )}
         <div className="mt-4 flex gap-2">
@@ -1237,12 +1280,12 @@ export function DashboardPage() {
               className={outline}
               onClick={() => setActivityOffset(Math.max(0, activityOffset - 20))}
             >
-              Previous activity
+              {uiText("Previous activity")}{" "}
             </button>
           )}
           {(dashboard.data?.activities.length ?? 0) === 20 && (
             <button className={outline} onClick={() => setActivityOffset(activityOffset + 20)}>
-              More activity
+              {uiText("More activity")}{" "}
             </button>
           )}
         </div>
@@ -1254,6 +1297,8 @@ export function DashboardPage() {
 export { LearnerCertificatesPage as CertificatesPage } from "@/features/learning/LearnerCertificatesPage";
 
 export function ProfilePage({ edit = false }: { edit?: boolean }) {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const auth = useAuth();
   const { language: activeLanguage, setLanguage: setActiveLanguage } = useI18n();
@@ -1269,7 +1314,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error("Full name is required");
+      toast.error(uiText("Full name is required"));
       return;
     }
     const parsedPhone = phoneSchema.safeParse(phone);
@@ -1302,7 +1347,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
     });
     setActiveLanguage(language);
     await auth.refresh();
-    toast.success("Profile updated");
+    toast.success(uiText("Profile updated"));
     void navigate({ to: "/profile" as never });
   };
   if (edit)
@@ -1310,13 +1355,15 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
       <div className="container-ncap max-w-3xl py-2">
         <PageCrumbs items={[{ label: "Profile", href: "/profile" }, { label: "Edit" }]} />
         <PageHeader
-          eyebrow="Profile settings"
-          title="Edit your profile"
-          description="Your email is managed by your secure account and cannot be changed here."
+          eyebrow={uiText("Profile settings")}
+          title={uiText("Edit your profile")}
+          description={uiText(
+            "Your email is managed by your secure account and cannot be changed here.",
+          )}
         />
         <form onSubmit={save} className="mt-8 grid gap-6 rounded-xl border bg-white p-6">
           <label className="text-sm font-semibold">
-            Full name <span className="text-destructive">*</span>
+            {uiText("Full name")} <span className="text-destructive">*</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -1325,7 +1372,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             />
           </label>
           <label className="text-sm font-semibold">
-            Email address
+            {uiText("Email address")}{" "}
             <input
               value={store.session.email}
               readOnly
@@ -1333,7 +1380,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             />
           </label>
           <label className="text-sm font-semibold">
-            Phone number
+            {uiText("Phone number")}{" "}
             <input
               type="tel"
               value={phone}
@@ -1344,19 +1391,19 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             />
           </label>
           <label className="text-sm font-semibold">
-            Preferred language
+            {uiText("Preferred language")}{" "}
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as LanguageCode)}
               className="mt-2 h-11 w-full rounded-lg border px-3"
             >
-              <option value="en">English</option>
+              <option value="en">{uiText("English")}</option>
               <option value="si">සිංහල</option>
               <option value="ta">தமிழ்</option>
             </select>
           </label>
           <fieldset>
-            <legend className="text-sm font-semibold">Learning interests</legend>
+            <legend className="text-sm font-semibold">{uiText("Learning interests")}</legend>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {store.topics
                 .filter((topic) => topic.status === "Active")
@@ -1383,9 +1430,11 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
           </fieldset>
           <label className="flex min-h-12 items-center justify-between gap-3 rounded-lg border p-4">
             <span>
-              <strong className="block text-sm">Learning notifications</strong>
+              <strong className="block text-sm">{uiText("Learning notifications")}</strong>
               <span className="text-xs text-muted-foreground">
-                Your preference is saved; no learning emails or push notifications are sent.
+                {uiText(
+                  "Your preference is saved; no learning emails or push notifications are sent.",
+                )}{" "}
               </span>
             </span>
             <input
@@ -1397,7 +1446,7 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
           </label>
           <div className="flex justify-end gap-3">
             <AppLink href="/profile" className={outline}>
-              Cancel
+              {uiText("Cancel")}{" "}
             </AppLink>
             <button className={primary} disabled={saving}>
               {saving ? "Saving…" : "Save changes"}
@@ -1409,13 +1458,13 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
   return (
     <div className="container-ncap max-w-5xl py-2">
       <PageHeader
-        eyebrow="Learner profile"
-        title="Your profile"
-        description="A concise view of your learning identity and progress."
+        eyebrow={uiText("Learner profile")}
+        title={uiText("Your profile")}
+        description={uiText("A concise view of your learning identity and progress.")}
         actions={
           <AppLink href="/profile/edit" className={primary}>
             <Edit3 />
-            Edit profile
+            {uiText("Edit profile")}{" "}
           </AppLink>
         }
       />
@@ -1429,17 +1478,17 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
             {store.session.email || "learner@ncap.demo"}
           </p>
           <p className="mt-4 text-xs text-muted-foreground">
-            Joined {store.session.joinedAt || "2026-03-02"}
+            {uiText("Joined")} {store.session.joinedAt || "2026-03-02"}
           </p>
         </div>
         <div className="rounded-xl border bg-white p-6">
-          <h2 className="text-xl font-semibold">Learning summary</h2>
+          <h2 className="text-xl font-semibold">{uiText("Learning summary")}</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <StatCard label="Progress" value={`${stats.overall}%`} />
-            <StatCard label="Completed lessons" value={stats.completedCount} />
-            <StatCard label="Certificates" value={certificates.data?.issuedCount ?? 0} />
+            <StatCard label={uiText("Progress")} value={`${stats.overall}%`} />
+            <StatCard label={uiText("Completed lessons")} value={stats.completedCount} />
+            <StatCard label={uiText("Certificates")} value={certificates.data?.issuedCount ?? 0} />
           </div>
-          <h3 className="mt-7 font-semibold">Interests</h3>
+          <h3 className="mt-7 font-semibold">{uiText("Interests")}</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {store.session.interests.map((i) => (
               <span
@@ -1452,13 +1501,13 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
           </div>
           <dl className="mt-7 grid gap-4 border-t pt-6 sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted-foreground">Preferred language</dt>
+              <dt className="text-xs text-muted-foreground">{uiText("Preferred language")}</dt>
               <dd className="mt-1 font-semibold">
                 {activeLanguage === "si" ? "සිංහල" : activeLanguage === "ta" ? "தமிழ்" : "English"}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Learning notifications</dt>
+              <dt className="text-xs text-muted-foreground">{uiText("Learning notifications")}</dt>
               <dd className="mt-1 font-semibold">
                 {store.session.notifications ? "Enabled" : "Disabled"}
               </dd>
@@ -1471,14 +1520,16 @@ export function ProfilePage({ edit = false }: { edit?: boolean }) {
 }
 
 function Missing() {
+  const uiText = useInterfaceText();
+
   return (
     <div className="mx-auto max-w-xl">
       <EmptyState
-        title="Learning resource not found"
-        description="The item may have moved or the address is incomplete."
+        title={uiText("Learning resource not found")}
+        description={uiText("The item may have moved or the address is incomplete.")}
         action={
           <AppLink href="/learn" className={primary}>
-            Return to learning
+            {uiText("Return to learning")}{" "}
           </AppLink>
         }
       />

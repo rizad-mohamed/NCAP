@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useContentReport, exportFilteredReport } from "@/services/report-hooks";
 import { useState, type FormEvent } from "react";
 import { Download, Printer, Plus, Edit3, Trash2, Check } from "lucide-react";
@@ -21,6 +22,8 @@ const primary = dashboardButton.primary;
 const outline = dashboardButton.secondary;
 
 export function AdminReportsPage() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const catalogue = useQuizCatalogue(true);
   const [filters, setFilters] = useState({ range: "Last 6 months", moduleId: "", quizId: "" });
@@ -60,9 +63,9 @@ export function AdminReportsPage() {
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       <PageHeader
-        eyebrow="Administration · Reporting"
-        title="Learning reports"
-        description="Generate learning and assessment summaries from saved records."
+        eyebrow={uiText("Administration · Reporting")}
+        title={uiText("Learning reports")}
+        description={uiText("Generate learning and assessment summaries from saved records.")}
         actions={
           <>
             <button
@@ -75,7 +78,7 @@ export function AdminReportsPage() {
             </button>
             <button className={outline} onClick={() => window.print()}>
               <Printer />
-              Print
+              {uiText("Print")}{" "}
             </button>
           </>
         }
@@ -83,19 +86,19 @@ export function AdminReportsPage() {
       <section className="no-print mt-7 rounded-xl border bg-white p-4">
         <div className="grid gap-3 md:grid-cols-4">
           <label className="text-xs font-semibold">
-            Range
+            {uiText("Range")}{" "}
             <select
               className={dashboardField}
               value={filters.range}
               onChange={(event) => setFilters({ ...filters, range: event.target.value })}
             >
-              <option>Last 30 days</option>
-              <option>Last 6 months</option>
-              <option>Year to date</option>
+              <option>{uiText("Last 30 days")}</option>
+              <option>{uiText("Last 6 months")}</option>
+              <option>{uiText("Year to date")}</option>
             </select>
           </label>
           <label className="text-xs font-semibold">
-            Module
+            {uiText("Module")}{" "}
             <select
               className={dashboardField}
               value={filters.moduleId}
@@ -103,7 +106,7 @@ export function AdminReportsPage() {
                 setFilters({ ...filters, moduleId: event.target.value, quizId: "" })
               }
             >
-              <option value="">All</option>
+              <option value="">{uiText("All")}</option>
               {store.modules.map((item) => (
                 <option value={item.id} key={item.id}>
                   {item.title}
@@ -112,13 +115,13 @@ export function AdminReportsPage() {
             </select>
           </label>
           <label className="text-xs font-semibold">
-            Quiz
+            {uiText("Quiz")}{" "}
             <select
               className={dashboardField}
               value={filters.quizId}
               onChange={(event) => setFilters({ ...filters, quizId: event.target.value })}
             >
-              <option value="">All</option>
+              <option value="">{uiText("All")}</option>
               {(catalogue.data ?? [])
                 .filter((item) => !filters.moduleId || item.moduleId === filters.moduleId)
                 .map((item) => (
@@ -135,39 +138,39 @@ export function AdminReportsPage() {
               setGenerated(filters);
             }}
           >
-            Generate report
+            {uiText("Generate report")}{" "}
           </button>
         </div>
       </section>
       {report.isPending && (
         <p className="mt-4" role="status">
-          Loading report…
+          {uiText("Loading report…")}{" "}
         </p>
       )}
       {report.isError && (
         <p className="mt-4" role="alert">
-          Report unavailable. Please try again.
+          {uiText("Report unavailable. Please try again.")}{" "}
         </p>
       )}
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard label="Quiz attempts" value={report.data?.attemptCount ?? 0} />
+        <StatCard label={uiText("Quiz attempts")} value={report.data?.attemptCount ?? 0} />
         <StatCard
-          label="Average score"
+          label={uiText("Average score")}
           value={`${report.data?.averageScore ?? 0}%`}
           tone="violet"
         />
         <StatCard
-          label="Completion rate"
+          label={uiText("Completion rate")}
           value={`${report.data?.completionRate ?? 0}%`}
           tone="success"
         />
-        <StatCard label="Completed lessons" value={report.data?.completedLessons ?? 0} />
+        <StatCard label={uiText("Completed lessons")} value={report.data?.completedLessons ?? 0} />
         <StatCard
-          label="Learning hours"
+          label={uiText("Learning hours")}
           value={Math.round(((report.data?.learningSeconds ?? 0) / 3600) * 10) / 10}
         />
         <StatCard
-          label="Published quizzes"
+          label={uiText("Published quizzes")}
           value={report.data?.publishedQuizzes ?? 0}
           tone="ember"
         />
@@ -178,14 +181,16 @@ export function AdminReportsPage() {
       />
       <section className="mt-6 overflow-x-auto rounded-xl border bg-white">
         <table className="w-full min-w-[760px] text-left text-sm">
-          <caption className="p-5 text-left text-lg font-semibold">Filtered quiz attempts</caption>
+          <caption className="p-5 text-left text-lg font-semibold">
+            {uiText("Filtered quiz attempts")}
+          </caption>
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3">Completed</th>
-              <th className="px-4 py-3">Quiz</th>
-              <th className="px-4 py-3">Module</th>
-              <th className="px-4 py-3">Score</th>
-              <th className="px-4 py-3">Score outcome</th>
+              <th className="px-4 py-3">{uiText("Completed")}</th>
+              <th className="px-4 py-3">{uiText("Quiz")}</th>
+              <th className="px-4 py-3">{uiText("Module")}</th>
+              <th className="px-4 py-3">{uiText("Score")}</th>
+              <th className="px-4 py-3">{uiText("Score outcome")}</th>
             </tr>
           </thead>
           <tbody>
@@ -205,8 +210,8 @@ export function AdminReportsPage() {
         {!attempts.length && (
           <div className="p-6">
             <EmptyState
-              title="No quiz attempts match"
-              description="Adjust the report filters and generate the report again."
+              title={uiText("No quiz attempts match")}
+              description={uiText("Adjust the report filters and generate the report again.")}
             />
           </div>
         )}
@@ -231,15 +236,24 @@ const blank = (): Announcement => ({
   endsAt: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
 });
 export function AdminAnnouncementsPage() {
+  const uiText = useInterfaceText();
+
   const announcements = useDashboardAnnouncements();
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const visible = (announcements.data ?? []).filter(
+    (item) =>
+      `${item.title} ${item.body}`.toLowerCase().includes(search.toLowerCase()) &&
+      (activeFilter === "all" || item.active === (activeFilter === "active")),
+  );
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
     try {
       await announcements.save.mutateAsync({ ...editing, id: editing.id || undefined });
       setEditing(null);
-      toast.success("Announcement saved");
+      toast.success(uiText("Announcement saved"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to save announcement");
     }
@@ -248,7 +262,7 @@ export function AdminAnnouncementsPage() {
     if (!window.confirm("Delete this announcement?")) return;
     try {
       await announcements.remove.mutateAsync(id);
-      toast.success("Announcement deleted");
+      toast.success(uiText("Announcement deleted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to delete announcement");
     }
@@ -256,28 +270,45 @@ export function AdminAnnouncementsPage() {
   return (
     <div className="container-ncap max-w-6xl py-2">
       <PageHeader
-        eyebrow="Administration · Communications"
-        title="Announcements"
-        description="Create and schedule notices shown on learner dashboards."
+        eyebrow={uiText("Administration · Communications")}
+        title={uiText("Announcements")}
+        description={uiText("Create and schedule notices shown on learner dashboards.")}
         actions={
           <button className={primary} onClick={() => setEditing(blank())}>
             <Plus />
-            New announcement
+            {uiText("New announcement")}{" "}
           </button>
         }
       />
+      <div className="mt-7 flex flex-wrap gap-3">
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={uiText("Search announcements…")}
+        />
+        <select
+          className={dashboardField}
+          aria-label={uiText("Announcement status")}
+          value={activeFilter}
+          onChange={(event) => setActiveFilter(event.target.value)}
+        >
+          <option value="all">{uiText("All statuses")}</option>
+          <option value="active">{uiText("Active")}</option>
+          <option value="inactive">{uiText("Inactive")}</option>
+        </select>
+      </div>
       {announcements.isPending && (
         <p role="status" className="mt-7">
-          Loading announcements…
+          {uiText("Loading announcements…")}{" "}
         </p>
       )}
       {announcements.isError && (
         <p role="alert" className="mt-7">
-          Announcements are unavailable. Please refresh.
+          {uiText("Announcements are unavailable. Please refresh.")}{" "}
         </p>
       )}
       <div className="mt-7 grid gap-4">
-        {(announcements.data ?? []).map((item) => (
+        {visible.map((item) => (
           <article key={item.id} className="rounded-xl border bg-white p-5">
             <div className="flex justify-between gap-4">
               <div>
@@ -301,8 +332,11 @@ export function AdminAnnouncementsPage() {
                 </button>
                 <button
                   className={outline}
+                  disabled={announcements.save.isPending}
                   onClick={() =>
-                    void announcements.save.mutateAsync({ ...item, active: !item.active })
+                    void announcements.save
+                      .mutateAsync({ ...item, active: !item.active })
+                      .catch(() => toast.error(uiText("Unable to save announcement")))
                   }
                   aria-label={`${item.active ? "Deactivate" : "Activate"} ${item.title}`}
                 >
@@ -321,8 +355,8 @@ export function AdminAnnouncementsPage() {
         ))}
         {!announcements.isPending && !announcements.data?.length && (
           <EmptyState
-            title="No announcements"
-            description="Create a scheduled notice for learners."
+            title={uiText("No announcements")}
+            description={uiText("Create a scheduled notice for learners.")}
           />
         )}
       </div>
@@ -336,11 +370,13 @@ export function AdminAnnouncementsPage() {
             onSubmit={submit}
             role="dialog"
             aria-modal="true"
-            aria-label="Announcement editor"
+            aria-label={uiText("Announcement editor")}
           >
-            <h2 className="text-xl font-semibold">{editing.id ? "Edit" : "Create"} announcement</h2>
+            <h2 className="text-xl font-semibold">
+              {editing.id ? "Edit" : "Create"} {uiText("announcement")}
+            </h2>
             <label>
-              Title
+              {uiText("Title")}{" "}
               <input
                 required
                 maxLength={160}
@@ -350,7 +386,7 @@ export function AdminAnnouncementsPage() {
               />
             </label>
             <label>
-              Message
+              {uiText("Message")}{" "}
               <textarea
                 required
                 maxLength={2000}
@@ -360,7 +396,7 @@ export function AdminAnnouncementsPage() {
               />
             </label>
             <label>
-              Audience
+              {uiText("Audience")}{" "}
               <select
                 className={dashboardField}
                 value={editing.audience}
@@ -371,14 +407,14 @@ export function AdminAnnouncementsPage() {
                   })
                 }
               >
-                <option>All Learners</option>
-                <option>New Learners</option>
-                <option>Administrators</option>
+                <option>{uiText("All Learners")}</option>
+                <option>{uiText("New Learners")}</option>
+                <option>{uiText("Administrators")}</option>
               </select>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label>
-                Start date
+                {uiText("Start date")}{" "}
                 <input
                   required
                   type="date"
@@ -388,7 +424,7 @@ export function AdminAnnouncementsPage() {
                 />
               </label>
               <label>
-                End date
+                {uiText("End date")}{" "}
                 <input
                   required
                   type="date"
@@ -405,14 +441,28 @@ export function AdminAnnouncementsPage() {
                 checked={editing.active}
                 onChange={(event) => setEditing({ ...editing, active: event.target.checked })}
               />
-              Active
+              {uiText("Active")}{" "}
             </label>
+            <details className="rounded-lg border p-3">
+              <summary className="cursor-pointer font-semibold">
+                {uiText("Preview announcement")}
+              </summary>
+              <article className="mt-3">
+                <h3 className="text-xl font-semibold">{editing.title}</h3>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                  {editing.body}
+                </p>
+                <p className="mt-3 text-xs">
+                  {uiText(editing.audience)} · {editing.startsAt} → {editing.endsAt}
+                </p>
+              </article>
+            </details>
             <div className="flex justify-end gap-2">
               <button type="button" className={outline} onClick={() => setEditing(null)}>
-                Cancel
+                {uiText("Cancel")}{" "}
               </button>
               <button className={primary} disabled={announcements.save.isPending}>
-                Save announcement
+                {uiText("Save announcement")}{" "}
               </button>
             </div>
           </form>

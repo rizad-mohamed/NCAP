@@ -18,7 +18,15 @@ export function AuthProvider({ children, state }: { children: ReactNode; state: 
   const accountId = state.user?.id;
   const accountLanguage = state.user?.language;
   useEffect(() => {
-    if (accountId && accountLanguage) setLanguage(accountLanguage);
+    const guest = window.localStorage.getItem("ncap.language");
+    setLanguage(
+      accountId && accountLanguage
+        ? accountLanguage
+        : guest === "si" || guest === "ta"
+          ? guest
+          : "en",
+      false,
+    );
   }, [accountId, accountLanguage, setLanguage]);
   const refresh = useCallback(async () => {
     await router.invalidate();

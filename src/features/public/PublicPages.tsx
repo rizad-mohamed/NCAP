@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -48,6 +49,8 @@ const btn =
 const btnOutline =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-6 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
 export function AwarenessHubPage() {
+  const uiText = useInterfaceText();
+
   const summary = useAwarenessSummary();
   const featured = summary.data?.featured as Article | null;
   const count = (kind: keyof NonNullable<typeof summary.data>["kinds"]) =>
@@ -107,13 +110,15 @@ export function AwarenessHubPage() {
   return (
     <div className="container-ncap py-12">
       <PageHeader
-        eyebrow="Awareness hub"
-        title="Know the signs. Take the safer next step."
-        description="Explore practical, plain-language resources for the situations people encounter online every day."
+        eyebrow={uiText("Awareness hub")}
+        title={uiText("Know the signs. Take the safer next step.")}
+        description={uiText(
+          "Explore practical, plain-language resources for the situations people encounter online every day.",
+        )}
         actions={
           <AppLink href="/learn/search" className={btnOutline}>
             <Search />
-            Search all learning
+            {uiText("Search all learning")}{" "}
           </AppLink>
         }
       />
@@ -140,10 +145,10 @@ export function AwarenessHubPage() {
               <h2 className="text-xl font-semibold">{title}</h2>
               <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">{text}</p>
               <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {count} published
+                {count} {uiText("published")}{" "}
               </p>
               <span className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
-                Explore{" "}
+                {uiText("Explore")}{" "}
                 <ArrowRight
                   className="ml-2 size-4 transition-transform group-hover:translate-x-1"
                   aria-hidden="true"
@@ -154,7 +159,7 @@ export function AwarenessHubPage() {
         ))}
       </section>
       <section className="mt-16">
-        <SectionHeading title="Featured resource" />
+        <SectionHeading title={uiText("Featured resource")} />
         <div className="grid overflow-hidden rounded-xl border bg-white lg:grid-cols-[.7fr_1.3fr]">
           <div className="grid-motif grid min-h-64 place-items-center bg-primary-soft p-8">
             <span className="grid size-28 place-items-center rounded-full bg-white text-primary shadow-raised">
@@ -162,7 +167,7 @@ export function AwarenessHubPage() {
             </span>
           </div>
           <div className="p-8">
-            <p className="meta text-violet">Featured · 7 min read</p>
+            <p className="meta text-violet">{uiText("Featured · 7 min read")}</p>
             <h2 className="mt-3 text-3xl font-semibold">
               {featured?.title ?? "Practical cybersecurity guidance"}
             </h2>
@@ -173,7 +178,7 @@ export function AwarenessHubPage() {
               href={featured ? `/awareness/articles/${featured.slug}` : "/awareness/articles"}
               className={cn(btn, "mt-7")}
             >
-              Read the article <ArrowRight />
+              {uiText("Read the article")} <ArrowRight />
             </AppLink>
           </div>
         </div>
@@ -195,24 +200,26 @@ function FilterBar({
   setTopic: (s: string) => void;
   topics: string[];
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 md:flex-row">
       <label className="relative flex-1">
-        <span className="sr-only">Search resources</span>
+        <span className="sr-only">{uiText("Search resources")}</span>
         <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
-          placeholder="Search by title or keyword…"
+          placeholder={uiText("Search by title or keyword…")}
         />
       </label>
       <select
         value={topic}
         onChange={(e) => setTopic(e.target.value)}
         className="h-11 rounded-lg border bg-white px-3"
-        aria-label="Filter by topic"
+        aria-label={uiText("Filter by topic")}
       >
         {topics.map((x) => (
           <option key={x}>{x}</option>
@@ -223,6 +230,8 @@ function FilterBar({
 }
 
 export function ArticlesPage() {
+  const uiText = useInterfaceText();
+
   const [search, setSearch] = useState("");
   const [topic, setTopic] = useState("All");
   const [sort, setSort] = useState("Newest");
@@ -242,9 +251,11 @@ export function ArticlesPage() {
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: "Articles" }]} />
       <PageHeader
-        eyebrow="Awareness · Articles"
-        title="Read, understand, act"
-        description="Detailed guidance that turns cybersecurity advice into useful decisions."
+        eyebrow={uiText("Awareness · Articles")}
+        title={uiText("Read, understand, act")}
+        description={uiText(
+          "Detailed guidance that turns cybersecurity advice into useful decisions.",
+        )}
       />
       <FilterBar
         search={search}
@@ -255,17 +266,18 @@ export function ArticlesPage() {
       />
       <div className="mt-4 flex justify-between text-sm text-muted-foreground">
         <span>
-          {query.data?.total ?? 0} article{query.data?.total === 1 ? "" : "s"}
+          {query.data?.total ?? 0} {uiText("article")}
+          {query.data?.total === 1 ? "" : "s"}
         </span>
         <label>
-          Sort{" "}
+          {uiText("Sort")}{" "}
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="ml-2 rounded-md border bg-white p-2"
           >
-            <option>Newest</option>
-            <option>Title</option>
+            <option>{uiText("Newest")}</option>
+            <option>{uiText("Title")}</option>
           </select>
         </label>
       </div>
@@ -281,8 +293,8 @@ export function ArticlesPage() {
         <div className="mt-6">
           <EmptyState
             icon={<Search />}
-            title="No articles found"
-            description="Try a different keyword or clear the topic filter."
+            title={uiText("No articles found")}
+            description={uiText("Try a different keyword or clear the topic filter.")}
             action={
               <button
                 className={btnOutline}
@@ -291,7 +303,7 @@ export function ArticlesPage() {
                   setTopic("All");
                 }}
               >
-                Clear filters
+                {uiText("Clear filters")}{" "}
               </button>
             }
           />
@@ -303,6 +315,8 @@ export function ArticlesPage() {
 }
 
 function ArticleCard({ article, accent = false }: { article: Article; accent?: boolean }) {
+  const uiText = useInterfaceText();
+
   return (
     <article
       className={cn(
@@ -315,14 +329,14 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
           <FileText className="size-5" aria-hidden="true" />
         </span>
         <span className="rounded-full border bg-white/90 px-3 py-1 text-xs font-bold text-primary">
-          Practical guide
+          {uiText("Practical guide")}{" "}
         </span>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center justify-between gap-3">
           <span className="meta text-violet">{article.category}</span>
           <span className="shrink-0 text-xs text-muted-foreground">
-            {article.readingMinutes} min read
+            {article.readingMinutes} {uiText("min read")}{" "}
           </span>
         </div>
         <h2 className="mt-4 text-xl font-semibold">
@@ -339,7 +353,7 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
             href={`/awareness/articles/${article.slug}`}
             className="inline-flex min-h-10 items-center font-semibold text-primary"
           >
-            Read article <ArrowRight className="ml-1 size-4" aria-hidden="true" />
+            {uiText("Read article")} <ArrowRight className="ml-1 size-4" aria-hidden="true" />
           </AppLink>
         </div>
       </div>
@@ -348,6 +362,8 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
 }
 
 export function ArticleDetailPage({ slug }: { slug: string }) {
+  const uiText = useInterfaceText();
+
   const repository = useRepository();
   const query = useRepositoryRecord(repository, "articles", slug);
   const article = query.data;
@@ -380,17 +396,21 @@ export function ArticleDetailPage({ slug }: { slug: string }) {
           <h1 className="mt-4 text-4xl font-semibold md:text-5xl">{article.title}</h1>
           <p className="mt-5 text-xl text-muted-foreground">{article.summary}</p>
           <div className="mt-6 flex flex-wrap gap-5 text-sm text-muted-foreground">
-            <span>By {article.author}</span>
+            <span>
+              {uiText("By")} {article.author}
+            </span>
             <span>{article.publishedAt}</span>
-            <span>{article.readingMinutes} minute read</span>
-            <span>Content language: English</span>
+            <span>
+              {article.readingMinutes} {uiText("minute read")}
+            </span>
+            <span>{uiText("Content language: English")}</span>
           </div>
         </header>
         <div className="prose-ncap mx-auto max-w-3xl py-10">
           {article.body.map((paragraph, i) =>
             i === 1 ? (
               <aside key={i} className="my-8 border-l-4 border-violet bg-violet-soft p-5">
-                <strong className="block">Pause and check</strong>
+                <strong className="block">{uiText("Pause and check")}</strong>
                 <p className="mt-2">{paragraph}</p>
               </aside>
             ) : (
@@ -401,22 +421,22 @@ export function ArticleDetailPage({ slug }: { slug: string }) {
           )}
         </div>
         <aside className="rounded-xl border bg-primary p-6 text-white">
-          <p className="meta text-white/60">Related learning module</p>
-          <h2 className="mt-2 text-xl font-semibold">Build the skill, then test it</h2>
+          <p className="meta text-white/60">{uiText("Related learning module")}</p>
+          <h2 className="mt-2 text-xl font-semibold">{uiText("Build the skill, then test it")}</h2>
           <p className="mt-2 text-sm text-white/70">
-            Continue with a structured lesson and practical knowledge check.
+            {uiText("Continue with a structured lesson and practical knowledge check.")}{" "}
           </p>
           <AppLink
             href="/learn"
             className="mt-5 inline-flex min-h-11 items-center rounded-lg bg-white px-4 font-semibold text-primary"
           >
-            Explore learning modules
+            {uiText("Explore learning modules")}{" "}
           </AppLink>
         </aside>
       </article>
       {related.length > 0 && (
         <section className="mt-14">
-          <SectionHeading title="Related resources" />
+          <SectionHeading title={uiText("Related resources")} />
           <div className="grid gap-4 md:grid-cols-3">
             {related.map((a) => (
               <ArticleCard key={a.id} article={a} />
@@ -433,6 +453,8 @@ export function ResourceListingPage({
 }: {
   kind: "tips" | "news" | "best-practices" | "posters" | "infographics" | "videos";
 }) {
+  const uiText = useInterfaceText();
+
   const [topic, setTopic] = useState("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -494,10 +516,12 @@ export function ResourceListingPage({
   return (
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: title }]} />
-      <PageHeader eyebrow="Awareness resources" title={title} description={description} />
+      <PageHeader eyebrow={uiText("Awareness resources")} title={title} description={description} />
       <div className="mt-8 rounded-2xl border bg-white p-3 shadow-panel sm:p-4">
         <label className="relative block">
-          <span className="sr-only">Search {title.toLowerCase()}</span>
+          <span className="sr-only">
+            {uiText("Search")} {title.toLowerCase()}
+          </span>
           <Search
             className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
@@ -511,7 +535,11 @@ export function ResourceListingPage({
           />
         </label>
         {kind !== "news" && (
-          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Topic filter">
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            role="group"
+            aria-label={uiText("Topic filter")}
+          >
             {availableTopics.map((x) => (
               <button
                 key={x}
@@ -532,7 +560,8 @@ export function ResourceListingPage({
           aria-live="polite"
         >
           <span>
-            {query.data?.total ?? 0} {query.data?.total === 1 ? "resource" : "resources"} found
+            {query.data?.total ?? 0} {query.data?.total === 1 ? "resource" : "resources"}{" "}
+            {uiText("found")}{" "}
           </span>
           {(search || topic !== "All") && (
             <button
@@ -543,7 +572,7 @@ export function ResourceListingPage({
               }}
               className="min-h-10 rounded-lg px-3 font-semibold text-primary hover:bg-primary-soft"
             >
-              Clear filters
+              {uiText("Clear filters")}{" "}
             </button>
           )}
         </div>
@@ -571,13 +600,15 @@ export function ResourceListingPage({
               return (
                 <article key={item.id} className="interactive-card rounded-xl border bg-white p-5">
                   <div className="flex items-center justify-between">
-                    <DemoTag label="NCAP Demo Update" />
+                    <DemoTag label={uiText("NCAP Demo Update")} />
                     <span className="text-xs text-muted-foreground">{item.date}</span>
                   </div>
                   <h2 className="mt-6 text-xl font-semibold">{item.title}</h2>
                   <p className="mt-2 text-muted-foreground">{item.summary}</p>
                   <details className="mt-5 rounded-lg bg-muted p-4 text-sm">
-                    <summary className="cursor-pointer font-semibold">Read more</summary>
+                    <summary className="cursor-pointer font-semibold">
+                      {uiText("Read more")}
+                    </summary>
                     {(item.body?.length
                       ? item.body
                       : ["This demonstration update is not a report of a real-world incident."]
@@ -655,7 +686,7 @@ export function ResourceListingPage({
                     className={cn(btnOutline, "mt-5 w-full")}
                   >
                     <Eye />
-                    Open infographic
+                    {uiText("Open infographic")}{" "}
                   </button>
                 </article>
               );
@@ -714,8 +745,10 @@ export function ResourceListingPage({
         <div className="mt-8">
           <EmptyState
             icon={<Search aria-hidden="true" />}
-            title="No resources found"
-            description="Try another keyword or clear the selected topic to see more resources."
+            title={uiText("No resources found")}
+            description={uiText(
+              "Try another keyword or clear the selected topic to see more resources.",
+            )}
             action={
               <button
                 type="button"
@@ -725,7 +758,7 @@ export function ResourceListingPage({
                   setTopic("All");
                 }}
               >
-                Clear filters
+                {uiText("Clear filters")}{" "}
               </button>
             }
           />
@@ -756,7 +789,9 @@ export function ResourceListingPage({
                     const lastRetry = Number(player.dataset["retryAt"] ?? 0);
                     if (!selectedVideo.video || Date.now() - lastRetry < 30000) {
                       toast.error(
-                        "The video could not be played. Please try again or read the transcript.",
+                        uiText(
+                          "The video could not be played. Please try again or read the transcript.",
+                        ),
                       );
                       return;
                     }
@@ -775,22 +810,25 @@ export function ResourceListingPage({
                       player.src = renewed;
                       player.load();
                     } catch {
-                      toast.error("The video is no longer available. Please reload.");
+                      toast.error(uiText("The video is no longer available. Please reload."));
                     }
                   }}
                 >
                   <source src={videoSrc} />
-                  Your browser does not support HTML5 video. Use the transcript below.
+                  {uiText(
+                    "Your browser does not support HTML5 video. Use the transcript below.",
+                  )}{" "}
                 </video>
               ) : (
                 <p className="rounded-xl border bg-primary-soft p-5 text-sm">
-                  NCAP does not present a fake player. The reviewed chapters and transcript remain
-                  available while licensed media delivery is pending.
+                  {uiText(
+                    "NCAP does not present a fake player. The reviewed chapters and transcript remain available while licensed media delivery is pending.",
+                  )}{" "}
                 </p>
               )}
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <h3 className="font-semibold">Chapters</h3>
+                  <h3 className="font-semibold">{uiText("Chapters")}</h3>
                   <ol className="mt-3 grid gap-2">
                     {selectedVideo.chapters.map((c) => (
                       <li
@@ -804,7 +842,7 @@ export function ResourceListingPage({
                   </ol>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Transcript</h3>
+                  <h3 className="font-semibold">{uiText("Transcript")}</h3>
                   <div className="mt-3 grid gap-3 text-sm text-muted-foreground">
                     {selectedVideo.transcript.map((t) => (
                       <p key={t}>{t}</p>
@@ -876,6 +914,8 @@ function MediaDownloadLink({
   label: string;
   className: string;
 }) {
+  const uiText = useInterfaceText();
+
   const src = useMediaUrl(asset, fallback);
   if (!src && !asset) return null;
   return (
@@ -896,9 +936,9 @@ function MediaDownloadLink({
           link.download = asset.fileName;
           link.click();
           window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-          toast.success("Resource download started");
+          toast.success(uiText("Resource download started"));
         } catch {
-          toast.error("The resource could not be downloaded. Please try again.");
+          toast.error(uiText("The resource could not be downloaded. Please try again."));
         }
       }}
     >
@@ -909,10 +949,12 @@ function MediaDownloadLink({
 }
 
 export function InformationalPage({ kind }: { kind: "accessibility" | "privacy" }) {
+  const uiText = useInterfaceText();
+
   return (
     <ContentContainer narrow>
       <PageHeader
-        eyebrow="NCAP platform"
+        eyebrow={uiText("NCAP platform")}
         title={
           kind === "accessibility" ? "Accessibility statement" : "Privacy in this demonstration"
         }
@@ -926,30 +968,30 @@ export function InformationalPage({ kind }: { kind: "accessibility" | "privacy" 
         {kind === "accessibility" ? (
           <>
             <InfoSection
-              title="How this interface is built"
+              title={uiText("How this interface is built")}
               text="The application uses semantic headings, labelled form controls, keyboard-accessible dialogs and menus, visible focus indicators, text equivalents for charts and progress, and reduced-motion support."
             />
             <InfoSection
-              title="Languages and content"
+              title={uiText("Languages and content")}
               text="Core navigation is prepared for English, Sinhala, and Tamil. Learning content in this demo remains in English and is labelled accordingly."
             />
             <InfoSection
-              title="Feedback"
+              title={uiText("Feedback")}
               text="This is a frontend demonstration. A production release should provide an accessible contact channel and documented response process for accessibility issues."
             />
           </>
         ) : (
           <>
             <InfoSection
-              title="What is stored"
+              title={uiText("What is stored")}
               text="Non-sensitive demo state—lesson completion, bookmarks, quiz summaries, language preference, and mock content changes—may be stored in this browser."
             />
             <InfoSection
-              title="What is never stored"
+              title={uiText("What is never stored")}
               text="Entered passwords, reset credentials, access tokens, API keys, and production identity data are not persisted. No real authentication or email delivery occurs."
             />
             <InfoSection
-              title="Resetting the demo"
+              title={uiText("Resetting the demo")}
               text="Signed-in learner and administrator workspaces include a Reset demo data action. Clearing browser storage also removes local state."
             />
           </>
@@ -967,20 +1009,22 @@ function InfoSection({ title, text }: { title: string; text: string }) {
   );
 }
 export function NotFoundContent() {
+  const uiText = useInterfaceText();
+
   return (
     <div className="container-ncap grid min-h-[60vh] place-items-center py-20 text-center">
       <div>
         <p className="font-mono text-7xl font-bold text-violet">404</p>
-        <h1 className="mt-5 text-3xl font-semibold">That page is not here</h1>
+        <h1 className="mt-5 text-3xl font-semibold">{uiText("That page is not here")}</h1>
         <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-          The address may have changed, or the resource may no longer be available.
+          {uiText("The address may have changed, or the resource may no longer be available.")}{" "}
         </p>
         <div className="mt-7 flex justify-center gap-3">
           <AppLink href="/" className={btn}>
-            Go home
+            {uiText("Go home")}{" "}
           </AppLink>
           <AppLink href="/learn/search" className={btnOutline}>
-            Search learning
+            {uiText("Search learning")}{" "}
           </AppLink>
         </div>
       </div>
@@ -1004,12 +1048,14 @@ export function AwarenessQueryState({
 }: {
   query: { isPending: boolean; error: Error | null; refetch: () => unknown };
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <div className="container-ncap py-8" role={query.error ? "alert" : "status"}>
       <p>{query.error ? query.error.message : "Loading Awareness resources…"}</p>
       {query.error && (
         <button className={btnOutline} onClick={() => void query.refetch()}>
-          Try again
+          {uiText("Try again")}{" "}
         </button>
       )}
     </div>
@@ -1024,21 +1070,23 @@ function AwarenessPagination({
   total: number;
   setPage: (page: number) => void;
 }) {
+  const uiText = useInterfaceText();
+
   if (total <= 24) return null;
   return (
-    <nav aria-label="Resource pages" className="mt-6 flex items-center gap-4">
+    <nav aria-label={uiText("Resource pages")} className="mt-6 flex items-center gap-4">
       <button className={btnOutline} disabled={page === 0} onClick={() => setPage(page - 1)}>
-        Previous
+        {uiText("Previous")}{" "}
       </button>
       <span>
-        Page {page + 1} of {Math.ceil(total / 24)}
+        {uiText("Page")} {page + 1} {uiText("of")} {Math.ceil(total / 24)}
       </span>
       <button
         className={btnOutline}
         disabled={(page + 1) * 24 >= total}
         onClick={() => setPage(page + 1)}
       >
-        Next
+        {uiText("Next")}{" "}
       </button>
     </nav>
   );

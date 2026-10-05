@@ -4,6 +4,8 @@ import { requireAwarenessAdmin } from "./authorization";
 import { databaseError } from "./errors";
 import { resourceRecord } from "./mapping";
 import type { ResourceRow } from "./types";
+import { contentTranslations } from "@/server/content-translations";
+import { translatedRecords } from "@/domain/content-translations";
 async function records(client: AwarenessClient, rows: ResourceRow[]) {
   const ids = rows
     .flatMap((r) => [r.image_id, r.video_id])
@@ -36,13 +38,29 @@ export async function listResources(client: AwarenessClient, input: unknown) {
     .order("id")
     .range(filter.offset, filter.offset + filter.limit - 1);
   databaseError(error);
-  return { items: await records(client, data ?? []), total: count ?? 0 };
+  const items = await records(client, data ?? []);
+  return {
+    items:
+      filter.admin || (data ?? []).every((row) => row.language === filter.language)
+        ? items
+        : translatedRecords(
+            items,
+            await contentTranslations(
+              client,
+              "awareness",
+              items.map((r) => r.id),
+              filter.language,
+            ),
+          ),
+    total: count ?? 0,
+  };
 }
 export async function getResource(
   client: AwarenessClient,
   kind: AwarenessKind,
   key: string,
   admin = false,
+  language: "en" | "si" | "ta" = "en",
 ) {
   if (admin) await requireAwarenessAdmin(client);
   let query = client.from("awareness_resources").select("*").eq("kind", kind);
@@ -50,7 +68,16 @@ export async function getResource(
   if (!admin) query = query.eq("status", "Published");
   const { data, error } = await query.maybeSingle();
   databaseError(error);
-  return data ? (await records(client, [data]))[0]! : null;
+  if (!data) return null;
+  const items = await records(client, [data]);
+  return (
+    admin || language === data.language
+      ? items
+      : translatedRecords(
+          items,
+          await contentTranslations(client, "awareness", [data.id], language),
+        )
+  )[0]!;
 }
 export async function summary(client: AwarenessClient) {
   const { data, error } = await client.rpc("awareness_summary");

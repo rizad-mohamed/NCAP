@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import {
   Bar,
   BarChart,
@@ -31,10 +32,21 @@ function ChartPanel({
   );
 }
 
-export function AdminDashboardCharts({ quizTrend, topicEngagement }: { quizTrend: QuizRow[]; topicEngagement: { topic: string; learners: number }[] }) {
+export function AdminDashboardCharts({
+  quizTrend,
+  topicEngagement,
+}: {
+  quizTrend: QuizRow[];
+  topicEngagement: { topic: string; learners: number }[];
+}) {
+  const uiText = useInterfaceText();
+
   return (
     <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_.75fr]">
-      <ChartPanel title="Quiz performance trend" description="Monthly average across completed attempts">
+      <ChartPanel
+        title={uiText("Quiz performance trend")}
+        description={uiText("Monthly average across completed attempts")}
+      >
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={quizTrend} margin={{ left: -20, right: 12, top: 12 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -51,12 +63,16 @@ export function AdminDashboardCharts({ quizTrend, topicEngagement }: { quizTrend
           </LineChart>
         </ResponsiveContainer>
         <p className="sr-only">
-          Average score rises from {quizTrend[0]?.average ?? 0} percent in{" "}
-          {quizTrend[0]?.period ?? "the first period"} to {quizTrend.at(-1)?.average ?? 0} percent
-          in {quizTrend.at(-1)?.period ?? "the final period"}.
+          {uiText("Average score rises from")} {quizTrend[0]?.average ?? 0} {uiText("percent in")}{" "}
+          {quizTrend[0]?.period ?? "the first period"} {uiText("to")}{" "}
+          {quizTrend.at(-1)?.average ?? 0} {uiText("percent in")}{" "}
+          {quizTrend.at(-1)?.period ?? "the final period"}.
         </p>
       </ChartPanel>
-      <ChartPanel title="Topic engagement" description="Learners opening content by topic">
+      <ChartPanel
+        title={uiText("Topic engagement")}
+        description={uiText("Learners opening content by topic")}
+      >
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={topicEngagement} layout="vertical" margin={{ left: 20, right: 10 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -81,9 +97,11 @@ export function AdminReportCharts({
   quizRows: QuizRow[];
   completionRows: CompletionRow[];
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <section className="mt-6 grid gap-6 xl:grid-cols-2">
-      <ChartPanel title="Quiz score trend" description="Average score by month">
+      <ChartPanel title={uiText("Quiz score trend")} description={uiText("Average score by month")}>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={quizRows}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -97,7 +115,10 @@ export function AdminReportCharts({
           {quizRows.map((row) => `${row.period}: ${row.average} percent`).join("; ")}.
         </p>
       </ChartPanel>
-      <ChartPanel title="Learning completions" description="Completed lessons by month">
+      <ChartPanel
+        title={uiText("Learning completions")}
+        description={uiText("Completed lessons by month")}
+      >
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={completionRows}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />

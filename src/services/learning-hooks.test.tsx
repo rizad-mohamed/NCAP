@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { AuthUser } from "@/auth/types";
 import { emptyLearningState } from "@/domain/learning";
 import { useLearningStore } from "./learning-hooks";
+import { I18nProvider } from "@/lib/i18n";
 const api = vi.hoisted(() => ({ list: vi.fn(), state: vi.fn(), mutate: vi.fn(), toast: vi.fn() }));
 vi.mock("@/learning/learning.functions", () => ({
   getLearningState: api.state,
@@ -27,7 +28,9 @@ function wrapper() {
   return {
     client,
     Wrapper: ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <I18nProvider>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </I18nProvider>
     ),
   };
 }

@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Check, Edit3, Eye, FileText, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ import { AppLink } from "@/components/layout/AppShell";
 import { EmptyState, PageHeader } from "@/components/common/primitives";
 import { MediaField, useMediaUrl } from "@/components/common/MediaField";
 import { AwarenessVideoField } from "@/components/common/AwarenessVideoField";
+import { ContentTranslationEditor } from "@/components/admin/ContentTranslationEditor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +91,8 @@ const recordSummary = (record: AwarenessRecord) => {
 const recordOrder = (record: AwarenessRecord, index: number) => record.order ?? index + 1;
 
 export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind }) {
+  const uiText = useInterfaceText();
+
   const repository = useRepository();
   const articleQuery = useRepositoryList(repository, "articles");
   const tipQuery = useRepositoryList(repository, "cyberTips");
@@ -198,13 +202,15 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       <PageHeader
-        eyebrow="Administration · Awareness"
-        title="Manage Awareness"
-        description="Create, review, publish, and maintain every resource shown in the public Awareness hub. Changes are saved securely and shared across browsers."
+        eyebrow={uiText("Administration · Awareness")}
+        title={uiText("Manage Awareness")}
+        description={uiText(
+          "Create, review, publish, and maintain every resource shown in the public Awareness hub. Changes are saved securely and shared across browsers.",
+        )}
       />
       <nav
         className="app-scrollbar mt-7 flex gap-2 overflow-x-auto border-b"
-        aria-label="Awareness content types"
+        aria-label={uiText("Awareness content types")}
       >
         {kinds.map((item) => (
           <AppLink
@@ -227,15 +233,16 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
               {active.label}
             </h2>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Manage the {active.label.toLowerCase()} available through the public Awareness hub.
+              {uiText("Manage the")} {active.label.toLowerCase()}{" "}
+              {uiText("available through the public Awareness hub.")}{" "}
             </p>
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
             <AppLink href={active.publicHref} target="_blank" rel="noreferrer" className={outline}>
-              <Eye /> View public collection
+              <Eye /> {uiText("View public collection")}{" "}
             </AppLink>
             <button className={primary} onClick={() => setEditing("new")}>
-              <Plus /> Create {active.label.replace(/s$/, "").toLowerCase()}
+              <Plus /> {uiText("Create")} {active.label.replace(/s$/, "").toLowerCase()}
             </button>
           </div>
         </div>
@@ -249,34 +256,36 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
             value={status}
             onChange={(event) => setStatus(event.target.value)}
             className={dashboardSelect}
-            aria-label="Publication filter"
+            aria-label={uiText("Publication filter")}
           >
-            <option>All</option>
-            <option>Published</option>
-            <option>Draft</option>
+            <option>{uiText("All")}</option>
+            <option>{uiText("Published")}</option>
+            <option>{uiText("Draft")}</option>
           </select>
           <select
             value={topic}
             onChange={(event) => setTopic(event.target.value)}
             className={dashboardSelect}
-            aria-label="Category filter"
+            aria-label={uiText("Category filter")}
           >
             {availableTopics.map((value) => (
               <option key={value}>{value}</option>
             ))}
           </select>
-          <ResultCount>{filtered.length} records</ResultCount>
+          <ResultCount>
+            {filtered.length} {uiText("records")}
+          </ResultCount>
         </FilterToolbar>
         {busy ? (
           <div
             className="mt-5 flex min-h-48 items-center justify-center rounded-xl border bg-white"
             aria-busy="true"
           >
-            <LoaderCircle className="mr-2 size-5 animate-spin" /> Loading content…
+            <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading content…")}{" "}
           </div>
         ) : queryError ? (
           <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
-            <h2 className="font-semibold">Awareness content could not be loaded</h2>
+            <h2 className="font-semibold">{uiText("Awareness content could not be loaded")}</h2>
             <p className="mt-2 text-sm">{queryError.message}</p>
           </div>
         ) : filtered.length ? (
@@ -284,11 +293,11 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
             <table className="w-full min-w-[880px] text-left text-sm">
               <thead className="bg-muted text-xs uppercase text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">Title</th>
-                  <th className="px-4 py-3">Topic / category</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Order</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">{uiText("Title")}</th>
+                  <th className="px-4 py-3">{uiText("Topic / category")}</th>
+                  <th className="px-4 py-3">{uiText("Status")}</th>
+                  <th className="px-4 py-3">{uiText("Order")}</th>
+                  <th className="px-4 py-3 text-right">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,6 +334,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
                         >
                           <Edit3 className="size-4" />
                         </button>
+                        <ContentTranslationEditor kind="awareness" source={record} />
                         <button
                           className={iconButton}
                           onClick={() => void toggle(record)}
@@ -354,10 +364,12 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
             <EmptyState
               icon={<FileText />}
               title={`No ${active.label.toLowerCase()} found`}
-              description="Adjust the filters or create the first record for this collection."
+              description={uiText(
+                "Adjust the filters or create the first record for this collection.",
+              )}
               action={
                 <button className={primary} onClick={() => setEditing("new")}>
-                  <Plus className="size-4" /> Create content
+                  <Plus className="size-4" /> {uiText("Create content")}{" "}
                 </button>
               }
             />
@@ -381,14 +393,18 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
         <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete “{deleting?.title}”?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {uiText("Delete “")}
+                {deleting?.title}”?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This removes the record from administration and the public site. Its uploaded media
-                will also be removed.
+                {uiText(
+                  "This removes the record from administration and the public site. Its uploaded media will also be removed.",
+                )}{" "}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{uiText("Cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-white hover:bg-destructive/90"
                 onClick={() => {
@@ -397,7 +413,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
                   setDeleting(null);
                   void remove(record)
                     .then(() => {
-                      toast.success("Awareness content deleted");
+                      toast.success(uiText("Awareness content deleted"));
                     })
                     .catch((error: unknown) =>
                       toast.error(
@@ -406,7 +422,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
                     );
                 }}
               >
-                Delete content
+                {uiText("Delete content")}{" "}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -431,6 +447,8 @@ function AwarenessEditor({
   onClose: () => void;
   onSave: (record: AwarenessRecord) => Promise<void>;
 }) {
+  const uiText = useInterfaceText();
+
   const original = value === "new" ? null : value;
   const [title, setTitle] = useState(original?.title ?? "");
   const [slug, setSlug] = useState(original && "slug" in original ? (original.slug ?? "") : "");
@@ -530,7 +548,7 @@ function AwarenessEditor({
       .map((line) => line.trim())
       .filter(Boolean);
     if (!cleanTitle || !cleanSlug || !summary.trim()) {
-      toast.error("Title, slug, and summary/content are required.");
+      toast.error(uiText("Title, slug, and summary/content are required."));
       return;
     }
     if (
@@ -538,7 +556,7 @@ function AwarenessEditor({
         (record) => record.id !== original?.id && "slug" in record && record.slug === cleanSlug,
       )
     ) {
-      toast.error("Use a unique slug for this content type.");
+      toast.error(uiText("Use a unique slug for this content type."));
       return;
     }
     if (
@@ -547,7 +565,7 @@ function AwarenessEditor({
       !media &&
       !(original && "file" in original && original.file)
     ) {
-      toast.error("Add an image before publishing this resource.");
+      toast.error(uiText("Add an image before publishing this resource."));
       return;
     }
     if (
@@ -555,11 +573,11 @@ function AwarenessEditor({
       status === "Published" &&
       lines.length === 0
     ) {
-      toast.error("Add the full content before publishing.");
+      toast.error(uiText("Add the full content before publishing."));
       return;
     }
     if (kind === "videos" && sourceUrl && !/^https?:\/\//i.test(sourceUrl)) {
-      toast.error("Video source must be a complete http(s) URL.");
+      toast.error(uiText("Video source must be a complete http(s) URL."));
       return;
     }
     const id = original?.id ?? crypto.randomUUID();
@@ -681,7 +699,9 @@ function AwarenessEditor({
     <Dialog open={Boolean(value)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{original ? "Edit" : "Create"} awareness content</DialogTitle>
+          <DialogTitle>
+            {original ? "Edit" : "Create"} {uiText("awareness content")}
+          </DialogTitle>
           <DialogDescription>
             {status === "Published"
               ? "Saving updates the public collection immediately."
@@ -690,7 +710,7 @@ function AwarenessEditor({
         </DialogHeader>
         <form onSubmit={(event) => void submit(event)} className="grid gap-4">
           <label className="text-sm font-semibold">
-            Title *
+            {uiText("Title *")}{" "}
             <input
               value={title}
               onChange={(event) => {
@@ -703,7 +723,7 @@ function AwarenessEditor({
             />
           </label>
           <label className="text-sm font-semibold">
-            Slug *
+            {uiText("Slug *")}{" "}
             <input
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
@@ -751,18 +771,18 @@ function AwarenessEditor({
               )}
             </label>
             <label className="text-sm font-semibold">
-              Status
+              {uiText("Status")}{" "}
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as ContentStatus)}
                 className={field}
               >
-                <option>Draft</option>
-                <option>Published</option>
+                <option>{uiText("Draft")}</option>
+                <option>{uiText("Published")}</option>
               </select>
             </label>
             <label className="text-sm font-semibold">
-              Publish date
+              {uiText("Publish date")}{" "}
               <input
                 type="date"
                 value={publishedAt}
@@ -771,7 +791,7 @@ function AwarenessEditor({
               />
             </label>
             <label className="text-sm font-semibold">
-              Display order
+              {uiText("Display order")}{" "}
               <input
                 type="number"
                 min={1}
@@ -784,7 +804,7 @@ function AwarenessEditor({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold">
-              Author / source
+              {uiText("Author / source")}{" "}
               <input
                 value={author}
                 onChange={(event) => setAuthor(event.target.value)}
@@ -793,7 +813,7 @@ function AwarenessEditor({
               />
             </label>
             <label className="text-sm font-semibold">
-              Tags (comma separated)
+              {uiText("Tags (comma separated)")}{" "}
               <input
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
@@ -804,7 +824,7 @@ function AwarenessEditor({
           </div>
           {kind === "articles" && (
             <label className="text-sm font-semibold">
-              Reading minutes
+              {uiText("Reading minutes")}{" "}
               <input
                 type="number"
                 min={1}
@@ -827,7 +847,7 @@ function AwarenessEditor({
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-semibold">
-                  Duration (m:ss)
+                  {uiText("Duration (m:ss)")}{" "}
                   <input
                     value={duration}
                     onChange={(event) => setDuration(event.target.value)}
@@ -835,7 +855,7 @@ function AwarenessEditor({
                   />
                 </label>
                 <label className="text-sm font-semibold">
-                  Video source URL
+                  {uiText("Video source URL")}{" "}
                   <input
                     type="url"
                     value={sourceUrl}
@@ -846,7 +866,7 @@ function AwarenessEditor({
                 </label>
               </div>
               <label className="text-sm font-semibold">
-                Chapters (timestamp | label)
+                {uiText("Chapters (timestamp | label)")}{" "}
                 <textarea
                   value={chapters}
                   onChange={(event) => setChapters(event.target.value)}
@@ -899,7 +919,7 @@ function AwarenessEditor({
           )}
           <DialogFooter>
             <button type="button" className={outline} onClick={onClose}>
-              Cancel
+              {uiText("Cancel")}{" "}
             </button>
             <button className={primary} disabled={saving}>
               {saving && <LoaderCircle className="size-4 animate-spin" />}
@@ -927,6 +947,8 @@ function PreviewDialog({
 }
 
 function PreviewContent({ record }: { record: AwarenessRecord }) {
+  const uiText = useInterfaceText();
+
   const media = "image" in record ? record.image : "poster" in record ? record.poster : undefined;
   const fallback =
     "file" in record
@@ -958,7 +980,7 @@ function PreviewContent({ record }: { record: AwarenessRecord }) {
       <DialogHeader>
         <DialogTitle>{record.title}</DialogTitle>
         <DialogDescription>
-          Administrative preview · {recordStatus(record)} · {recordTopic(record)}
+          {uiText("Administrative preview ·")} {recordStatus(record)} · {recordTopic(record)}
         </DialogDescription>
       </DialogHeader>
       {src && (

@@ -12,13 +12,27 @@ import { RepositoryError } from "@/services";
 import type { Json } from "@/types/database";
 import { requireLearner, requireLearningAdmin, type LearningClient } from "./authorization";
 import { learningDatabaseError } from "./errors";
+import { contentTranslations } from "@/server/content-translations";
+import { translatedRecords } from "@/domain/content-translations";
 
 export async function listLearningRecords(client: LearningClient, input: unknown) {
   const filters = learningListSchema.parse(input);
   if (filters.admin) await requireLearningAdmin(client);
   const { data, error } = await client.rpc("learning_list", { filters });
   learningDatabaseError(error);
-  return data as unknown as { items: LearningRecord[]; total: number };
+  const page = data as unknown as { items: LearningRecord[]; total: number };
+  if (!filters.admin && filters.language !== "en" && filters.kind !== "topics") {
+    page.items = translatedRecords(
+      page.items,
+      await contentTranslations(
+        client,
+        filters.kind,
+        page.items.map((r) => r.id),
+        filters.language,
+      ),
+    );
+  }
+  return page;
 }
 export async function saveLearningRecord(client: LearningClient, input: unknown) {
   await requireLearningAdmin(client);

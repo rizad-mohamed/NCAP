@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import {
   ArrowDown,
@@ -53,6 +54,8 @@ export function LessonContentBuilder({
   blocks: LessonBlock[];
   onChange: (blocks: LessonBlock[]) => void;
 }) {
+  const uiText = useInterfaceText();
+
   const undoHistory = useRef<LessonBlock[][]>([]);
   const redoHistory = useRef<LessonBlock[][]>([]);
   const [revision, setRevision] = useState(0);
@@ -83,16 +86,18 @@ export function LessonContentBuilder({
 
   return (
     <fieldset className="min-w-0 overflow-hidden rounded-xl border bg-muted/30">
-      <legend className="sr-only">Lesson content builder</legend>
+      <legend className="sr-only">{uiText("Lesson content builder")}</legend>
       <div className="border-b bg-white p-3">
-        <p className="text-sm font-semibold">Lesson content</p>
+        <p className="text-sm font-semibold">{uiText("Lesson content")}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Build the page with familiar content controls. Blocks appear in this order for learners.
+          {uiText(
+            "Build the page with familiar content controls. Blocks appear in this order for learners.",
+          )}{" "}
         </p>
         <div
           className="app-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1"
           role="toolbar"
-          aria-label="Add lesson content"
+          aria-label={uiText("Add lesson content")}
           onKeyDown={(event) => {
             if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
             const buttons = Array.from(
@@ -127,7 +132,7 @@ export function LessonContentBuilder({
           <button
             type="button"
             className={dashboardButton.icon}
-            aria-label="Undo content change"
+            aria-label={uiText("Undo content change")}
             disabled={!undoHistory.current.length}
             onClick={() => restore("undo")}
           >
@@ -136,14 +141,14 @@ export function LessonContentBuilder({
           <button
             type="button"
             className={dashboardButton.icon}
-            aria-label="Redo content change"
+            aria-label={uiText("Redo content change")}
             disabled={!redoHistory.current.length}
             onClick={() => restore("redo")}
           >
             <Redo2 />
           </button>
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            {blocks.length} of 100 content blocks
+            {blocks.length} {uiText("of 100 content blocks")}{" "}
           </span>
         </div>
       </div>
@@ -202,16 +207,16 @@ export function LessonContentBuilder({
         ))}
         {blocks.length === 0 && (
           <div className="rounded-xl border border-dashed bg-white p-8 text-center">
-            <p className="font-semibold">This lesson has no content yet.</p>
+            <p className="font-semibold">{uiText("This lesson has no content yet.")}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose a content type from the toolbar to begin.
+              {uiText("Choose a content type from the toolbar to begin.")}{" "}
             </p>
             <button
               type="button"
               className={cn(dashboardButton.primary, "mt-4")}
               onClick={() => onChange([createBlock("paragraph")])}
             >
-              <Plus /> Add paragraph
+              <Plus /> {uiText("Add paragraph")}{" "}
             </button>
           </div>
         )}
@@ -229,11 +234,13 @@ function BlockFields({
   index: number;
   onChange: (block: LessonBlock) => void;
 }) {
+  const uiText = useInterfaceText();
+
   const id = `lesson-block-${index}`;
   if (block.kind === "heading")
     return (
       <label className="text-sm font-semibold">
-        Heading text
+        {uiText("Heading text")}{" "}
         <input
           value={block.text}
           maxLength={160}
@@ -274,9 +281,9 @@ function BlockFields({
             </button>
           ))}
           <label className="flex items-center gap-2 text-sm">
-            Alignment
+            {uiText("Alignment")}{" "}
             <select
-              aria-label="Paragraph alignment"
+              aria-label={uiText("Paragraph alignment")}
               className="min-h-11 rounded-lg border bg-white px-3"
               value={block.format?.align ?? "left"}
               onChange={(event) =>
@@ -289,17 +296,17 @@ function BlockFields({
                 })
               }
             >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
+              <option value="left">{uiText("Left")}</option>
+              <option value="center">{uiText("Center")}</option>
+              <option value="right">{uiText("Right")}</option>
             </select>
           </label>
           <span className="w-full text-xs text-muted-foreground">
-            Formatting applies to this entire paragraph.
+            {uiText("Formatting applies to this entire paragraph.")}{" "}
           </span>
         </div>
         <label className="text-sm font-semibold">
-          Paragraph text
+          {uiText("Paragraph text")}{" "}
           <textarea
             value={block.text}
             maxLength={4000}
@@ -318,7 +325,7 @@ function BlockFields({
   if (block.kind === "list")
     return (
       <label className="text-sm font-semibold">
-        List items (one per line)
+        {uiText("List items (one per line)")}{" "}
         <textarea
           value={block.items.join("\n")}
           onChange={(event) => onChange({ ...block, items: event.target.value.split(/\r?\n/) })}
@@ -330,7 +337,7 @@ function BlockFields({
     return (
       <>
         <label className="text-sm font-semibold">
-          Callout style
+          {uiText("Callout style")}{" "}
           <select
             value={block.tone}
             onChange={(event) =>
@@ -338,9 +345,9 @@ function BlockFields({
             }
             className={dashboardField}
           >
-            <option value="tip">Helpful tip</option>
-            <option value="note">Important note</option>
-            <option value="warning">Warning</option>
+            <option value="tip">{uiText("Helpful tip")}</option>
+            <option value="note">{uiText("Important note")}</option>
+            <option value="warning">{uiText("Warning")}</option>
           </select>
         </label>
         <TitleAndText block={block} onChange={onChange} />
@@ -350,7 +357,7 @@ function BlockFields({
   return (
     <>
       <label className="text-sm font-semibold">
-        Question
+        {uiText("Question")}{" "}
         <input
           value={block.question}
           maxLength={300}
@@ -359,7 +366,7 @@ function BlockFields({
         />
       </label>
       <label className="text-sm font-semibold">
-        Answer choices (one per line)
+        {uiText("Answer choices (one per line)")}{" "}
         <textarea
           id={`${id}-options`}
           value={block.options.join("\n")}
@@ -375,7 +382,7 @@ function BlockFields({
         />
       </label>
       <label className="text-sm font-semibold">
-        Correct answer
+        {uiText("Correct answer")}{" "}
         <select
           value={block.correctIndex}
           onChange={(event) => onChange({ ...block, correctIndex: Number(event.target.value) })}
@@ -389,7 +396,7 @@ function BlockFields({
         </select>
       </label>
       <label className="text-sm font-semibold">
-        Answer explanation
+        {uiText("Answer explanation")}{" "}
         <textarea
           value={block.explanation}
           maxLength={1200}
@@ -408,10 +415,12 @@ function TitleAndText({
   block: Extract<LessonBlock, { kind: "callout" | "example" }>;
   onChange: (block: LessonBlock) => void;
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <>
       <label className="text-sm font-semibold">
-        Title
+        {uiText("Title")}{" "}
         <input
           value={block.title}
           maxLength={120}
@@ -420,7 +429,7 @@ function TitleAndText({
         />
       </label>
       <label className="text-sm font-semibold">
-        Content
+        {uiText("Content")}{" "}
         <textarea
           value={block.text}
           maxLength={1500}

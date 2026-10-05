@@ -7,18 +7,20 @@ import { emptyLearningState, type learnerMutationSchema } from "@/domain/learnin
 import type { z } from "zod";
 import { getLearningState, mutateLearningState } from "@/learning/learning.functions";
 import { allLearning, unwrapLearning } from "./learning-repository";
+import { useI18n } from "@/lib/i18n";
 
 export function useLearningStore(user: AuthUser | null, admin: boolean) {
   const queryClient = useQueryClient();
-  const scope = admin ? `admin:${user?.id}` : `learning:${user?.id ?? "public"}`;
+  const { language } = useI18n();
+  const scope = admin ? `admin:${user?.id}` : `learning:${user?.id ?? "public"}:${language}`;
   const modules = useQuery({
     queryKey: ["repository", "modules", scope],
-    queryFn: () => allLearning("modules", admin) as Promise<LearningModule[]>,
+    queryFn: () => allLearning("modules", admin, language) as Promise<LearningModule[]>,
     refetchInterval: 30000,
   });
   const lessons = useQuery({
     queryKey: ["repository", "lessons", scope],
-    queryFn: () => allLearning("lessons", admin) as Promise<Lesson[]>,
+    queryFn: () => allLearning("lessons", admin, language) as Promise<Lesson[]>,
     refetchInterval: 30000,
   });
   const topics = useQuery({

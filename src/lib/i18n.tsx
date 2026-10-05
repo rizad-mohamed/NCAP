@@ -16,6 +16,17 @@ export const LANGUAGES: { code: LanguageCode; label: string; english: string }[]
 ];
 
 const en = {
+  "notifications.title": "Notifications",
+  "notifications.unavailable": "This announcement is no longer available.",
+  "notifications.readAll": "Mark all as read",
+  "notifications.read": "Mark as read",
+  "notifications.unread": "Mark as unread",
+  "notifications.view": "View details",
+  "notifications.empty": "No notifications yet.",
+  "notifications.loading": "Loading notifications…",
+  "notifications.error": "Notifications are unavailable. Please try again.",
+  "notifications.latest": "Latest",
+  "notifications.older": "Older",
   "nav.awareness": "Awareness",
   "nav.learn": "Learn",
   "nav.quizzes": "Quizzes",
@@ -59,6 +70,17 @@ type Key = keyof typeof en;
 type Dict = Partial<Record<Key, string>>;
 
 const si: Dict = {
+  "notifications.title": "දැනුම්දීම්",
+  "notifications.unavailable": "මෙම නිවේදනය තවදුරටත් ලබාගත නොහැක.",
+  "notifications.readAll": "සියල්ල කියවූ ලෙස සලකුණු කරන්න",
+  "notifications.read": "කියවූ ලෙස සලකුණු කරන්න",
+  "notifications.unread": "නොකියවූ ලෙස සලකුණු කරන්න",
+  "notifications.view": "විස්තර බලන්න",
+  "notifications.empty": "තවම දැනුම්දීම් නැත.",
+  "notifications.loading": "දැනුම්දීම් පූරණය වෙමින්…",
+  "notifications.error": "දැනුම්දීම් ලබාගත නොහැක. නැවත උත්සාහ කරන්න.",
+  "notifications.latest": "නවතම",
+  "notifications.older": "පැරණි",
   "nav.awareness": "දැනුවත්භාවය",
   "nav.learn": "ඉගෙනුම",
   "nav.quizzes": "ප්‍රශ්නාවලි",
@@ -99,6 +121,17 @@ const si: Dict = {
 };
 
 const ta: Dict = {
+  "notifications.title": "அறிவிப்புகள்",
+  "notifications.unavailable": "இந்த அறிவிப்பு இனி கிடைக்காது.",
+  "notifications.readAll": "அனைத்தையும் படித்ததாகக் குறிக்கவும்",
+  "notifications.read": "படித்ததாகக் குறிக்கவும்",
+  "notifications.unread": "படிக்காததாகக் குறிக்கவும்",
+  "notifications.view": "விவரங்களைக் காண்க",
+  "notifications.empty": "இன்னும் அறிவிப்புகள் இல்லை.",
+  "notifications.loading": "அறிவிப்புகள் ஏற்றப்படுகின்றன…",
+  "notifications.error": "அறிவிப்புகள் கிடைக்கவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "notifications.latest": "சமீபத்தியவை",
+  "notifications.older": "பழையவை",
   "nav.awareness": "விழிப்புணர்வு",
   "nav.learn": "கற்றல்",
   "nav.quizzes": "வினாடி வினா",
@@ -142,8 +175,8 @@ const dictionaries: Record<LanguageCode, Dict> = { en, si, ta };
 
 interface I18nValue {
   language: LanguageCode;
-  setLanguage: (code: LanguageCode) => void;
-  t: (key: Key) => string;
+  setLanguage: (code: LanguageCode, persist?: boolean) => void;
+  t: (key: string) => string;
 }
 
 const I18nContext = createContext<I18nValue | null>(null);
@@ -153,25 +186,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<LanguageCode>("en");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY) as LanguageCode | null;
-    if (stored && stored in dictionaries) {
-      setLanguageState(stored);
-      document.documentElement.lang = stored;
-    }
-  }, []);
-
-  useEffect(() => {
     document.documentElement.lang = language;
     document.documentElement.dir = "ltr";
   }, [language]);
 
-  const setLanguage = useCallback((code: LanguageCode) => {
+  const setLanguage = useCallback((code: LanguageCode, persist = true) => {
     setLanguageState(code);
-    window.localStorage.setItem(STORAGE_KEY, code);
+    if (persist) window.localStorage.setItem(STORAGE_KEY, code);
     document.documentElement.lang = code;
   }, []);
 
-  const t = useCallback((key: Key) => dictionaries[language][key] ?? en[key], [language]);
+  const t = useCallback((key: string) => interfaceText(language, key), [language]);
 
   const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
@@ -181,4 +206,15 @@ export function useI18n() {
   const ctx = useContext(I18nContext);
   if (!ctx) throw new Error("useI18n must be used inside I18nProvider");
   return ctx;
+}
+
+const englishKeys = new Map(Object.entries(en).map(([key, value]) => [value, key as Key]));
+/** Existing approved dictionaries remain authoritative; unknown UI text falls back to English. */
+export function interfaceText(language: LanguageCode, text: string): string {
+  const key = (Object.hasOwn(en, text) ? text : englishKeys.get(text)) as Key | undefined;
+  return key ? (dictionaries[language][key] ?? en[key]) : text;
+}
+export function useInterfaceText() {
+  const context = useContext(I18nContext);
+  return context?.t ?? ((text: string) => text);
 }

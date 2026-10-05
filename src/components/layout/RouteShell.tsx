@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { LockKeyhole, ShieldAlert } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
@@ -13,6 +14,8 @@ export function RouteShell({
   children: ReactNode;
   requiredRole?: Exclude<Role, "guest">;
 }) {
+  const uiText = useInterfaceText();
+
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { session } = useSessionPreferences();
   const { user } = useAuth();
@@ -75,7 +78,7 @@ export function RouteShell({
                 void queryClient.invalidateQueries({ queryKey: ["learning-state"] });
               }}
             >
-              Try again
+              {uiText("Try again")}{" "}
             </button>
           )}
         </div>

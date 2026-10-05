@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -160,6 +161,8 @@ export function HomePage() {
 }
 
 function HomeHero() {
+  const uiText = useInterfaceText();
+
   return (
     <section className="relative overflow-hidden border-b border-border bg-[radial-gradient(circle_at_88%_42%,var(--color-violet-soft)_0,transparent_33%)]">
       <div
@@ -170,21 +173,24 @@ function HomeHero() {
         <div className="relative z-10 max-w-[650px]">
           <p className="meta inline-flex items-center gap-2 rounded-full bg-violet-soft px-3 py-2 text-violet">
             <span className="size-2 rounded-full bg-violet" aria-hidden="true" />
-            Build cyber confidence
+            {uiText("Build cyber confidence")}{" "}
           </p>
           <h1 className="mt-6 max-w-[650px] text-[2.25rem] font-bold leading-[1.02] tracking-[-0.035em] text-foreground min-[440px]:text-[2.65rem] sm:text-[3.7rem] lg:text-[3.35rem] xl:text-[4rem]">
-            Safer digital habits for <span className="text-violet">every Sri Lankan.</span>
+            {uiText("Safer digital habits for")}{" "}
+            <span className="text-violet">{uiText("every Sri Lankan.")}</span>
           </h1>
           <p className="mt-5 max-w-[570px] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            Practical guidance, short lessons and trusted resources to help you stay safe, confident
-            and responsible online—at home, at work and everywhere in between.
+            {uiText(
+              "Practical guidance, short lessons and trusted resources to help you stay safe, confident and responsible online—at home, at work and everywhere in between.",
+            )}{" "}
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <AppLink href="/learn" className={primaryButton}>
-              Start learning <ArrowRight className="size-4" aria-hidden="true" />
+              {uiText("Start learning")} <ArrowRight className="size-4" aria-hidden="true" />
             </AppLink>
             <AppLink href="/learn/search" className={secondaryButton}>
-              <BookOpenCheck className="size-4 text-violet" aria-hidden="true" /> Explore topics
+              <BookOpenCheck className="size-4 text-violet" aria-hidden="true" />{" "}
+              {uiText("Explore topics")}{" "}
             </AppLink>
           </div>
         </div>
@@ -208,6 +214,8 @@ function HomeHero() {
 }
 
 function HeroVisual() {
+  const uiText = useInterfaceText();
+
   return (
     <div className="relative mx-auto min-h-[370px] w-full max-w-[650px] sm:min-h-[470px] lg:min-h-[420px] xl:min-h-[455px]">
       <div
@@ -217,7 +225,7 @@ function HeroVisual() {
       <div className="absolute right-[8%] top-0 h-[72%] w-[72%] overflow-hidden rounded-[28px] bg-muted shadow-overlay sm:right-[7%] sm:w-[70%]">
         <img
           src="/images/home/hero-family.jpg"
-          alt="Sri Lankan family building safer digital habits together on a laptop"
+          alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
           width="1920"
           height="1440"
           fetchPriority="high"
@@ -231,9 +239,9 @@ function HeroVisual() {
             <ShieldCheck className="size-6" aria-hidden="true" />
           </span>
           <div>
-            <p className="font-bold">Stay alert. Stay secure.</p>
+            <p className="font-bold">{uiText("Stay alert. Stay secure.")}</p>
             <p className="mt-1 hidden text-xs leading-5 text-white/70 sm:block">
-              Small steps today build a safer tomorrow for you and your community.
+              {uiText("Small steps today build a safer tomorrow for you and your community.")}{" "}
             </p>
             <AppLink
               href="/awareness/videos"
@@ -242,7 +250,7 @@ function HeroVisual() {
               <span className="grid size-5 place-items-center rounded-full border border-white/40">
                 <Play className="ml-0.5 size-2.5 fill-current" aria-hidden="true" />
               </span>
-              Watch intro video
+              {uiText("Watch intro video")}{" "}
             </AppLink>
           </div>
         </div>
@@ -251,7 +259,7 @@ function HeroVisual() {
       <div className="absolute bottom-5 right-0 z-20 h-[38%] w-[30%] overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-raised sm:h-[41%] sm:w-[31%]">
         <img
           src="/images/home/hero-phone-user.jpg"
-          alt="Young Sri Lankan woman using her phone with confidence"
+          alt={uiText("Young Sri Lankan woman using her phone with confidence")}
           width="1537"
           height="1920"
           fetchPriority="high"
@@ -298,6 +306,8 @@ function SectionHeading({
 }
 
 function FeaturedLearning() {
+  const uiText = useInterfaceText();
+
   const trackRef = useRef<HTMLDivElement>(null);
   const store = useNcap();
   const modules = useModules();
@@ -334,8 +344,8 @@ function FeaturedLearning() {
       <div className="container-ncap relative">
         <div id="featured-learning-heading">
           <SectionHeading
-            title="Featured learning"
-            description="Handpicked lessons to help you build practical cyber skills."
+            title={uiText("Featured learning")}
+            description={uiText("Handpicked lessons to help you build practical cyber skills.")}
             href="/learn"
             action="View all courses"
           />
@@ -352,7 +362,7 @@ function FeaturedLearning() {
           type="button"
           onClick={() => trackRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
           className="absolute right-0 top-[52%] z-20 grid size-11 cursor-pointer place-items-center rounded-xl border border-border bg-card text-violet shadow-raised transition hover:border-violet hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft xl:hidden"
-          aria-label="Show more featured courses"
+          aria-label={uiText("Show more featured courses")}
         >
           <ChevronRight className="size-5" aria-hidden="true" />
         </button>
@@ -360,7 +370,7 @@ function FeaturedLearning() {
           href="/learn"
           className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-bold text-violet hover:bg-accent hover:text-accent-foreground sm:hidden"
         >
-          View all courses <ArrowRight className="size-4" aria-hidden="true" />
+          {uiText("View all courses")} <ArrowRight className="size-4" aria-hidden="true" />
         </AppLink>
       </div>
     </section>
@@ -380,6 +390,8 @@ function LearningCard({
   href,
   featured = false,
 }: Course) {
+  const uiText = useInterfaceText();
+
   const resolvedImage = useMediaUrl(imageAsset, image);
   return (
     <article className="group w-[76vw] max-w-[270px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-card shadow-panel transition hover:-translate-y-0.5 hover:border-violet hover:shadow-raised sm:w-[245px] xl:w-auto">
@@ -402,7 +414,7 @@ function LearningCard({
             {level}
           </span>
           <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/85 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
-            <Clock3 className="size-3" aria-hidden="true" /> {minutes} min
+            <Clock3 className="size-3" aria-hidden="true" /> {minutes} {uiText("min")}{" "}
           </span>
           {featured && (
             <span className="absolute left-1/2 top-1/2 grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-card text-violet shadow-raised">
@@ -416,7 +428,9 @@ function LearningCard({
           </h3>
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{description}</p>
           <div className="mt-auto flex items-center justify-between gap-3 pt-5 text-[10px] font-bold text-muted-foreground">
-            <span>{lessons} Lessons</span>
+            <span>
+              {lessons} {uiText("Lessons")}
+            </span>
             <span>{progress}%</span>
           </div>
           <div
@@ -436,13 +450,15 @@ function LearningCard({
 }
 
 function TopicsGrid() {
+  const uiText = useInterfaceText();
+
   return (
     <section className="border-b border-border py-8 sm:py-9" aria-labelledby="topics-heading">
       <div className="container-ncap">
         <div id="topics-heading">
           <SectionHeading
-            title="Browse by topic"
-            description="Find guidance on the risks and situations that matter most."
+            title={uiText("Browse by topic")}
+            description={uiText("Find guidance on the risks and situations that matter most.")}
             href="/learn/search"
             action="View all topics"
           />
@@ -467,7 +483,7 @@ function TopicsGrid() {
           href="/learn/search"
           className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-bold text-violet hover:bg-accent hover:text-accent-foreground sm:hidden"
         >
-          View all topics <ArrowRight className="size-4" aria-hidden="true" />
+          {uiText("View all topics")} <ArrowRight className="size-4" aria-hidden="true" />
         </AppLink>
       </div>
     </section>
@@ -475,12 +491,14 @@ function TopicsGrid() {
 }
 
 function FamilyBanner() {
+  const uiText = useInterfaceText();
+
   return (
     <section className="container-ncap py-8 sm:py-10" aria-labelledby="family-safety-heading">
       <div className="relative isolate min-h-[400px] overflow-hidden rounded-2xl border border-border bg-primary-soft shadow-panel sm:min-h-[360px]">
         <img
           src="/images/home/family-banner.jpg"
-          alt="Sri Lankan parents and child using digital devices together"
+          alt={uiText("Sri Lankan parents and child using digital devices together")}
           width="1920"
           height="1081"
           loading="lazy"
@@ -496,20 +514,21 @@ function FamilyBanner() {
         />
         <div className="relative z-10 flex min-h-[400px] max-w-xl flex-col justify-end p-6 sm:min-h-[360px] sm:justify-center sm:p-10 lg:p-12">
           <p className="meta w-fit rounded-full bg-card/90 px-3 py-1.5 text-violet">
-            Stay safe together
+            {uiText("Stay safe together")}{" "}
           </p>
           <h2
             id="family-safety-heading"
             className="mt-4 max-w-[430px] text-3xl font-bold leading-[1.05] text-foreground sm:text-[2.65rem]"
           >
-            Build safer digital habits as a family.
+            {uiText("Build safer digital habits as a family.")}{" "}
           </h2>
           <p className="mt-3 max-w-[430px] text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-            Practical lessons, trusted guidance and simple actions for parents, students and
-            everyday users in Sri Lanka.
+            {uiText(
+              "Practical lessons, trusted guidance and simple actions for parents, students and everyday users in Sri Lanka.",
+            )}{" "}
           </p>
           <AppLink href="/learn" className={`${primaryButton} mt-5 w-fit`}>
-            Start learning <ArrowRight className="size-4" aria-hidden="true" />
+            {uiText("Start learning")} <ArrowRight className="size-4" aria-hidden="true" />
           </AppLink>
         </div>
       </div>
@@ -518,6 +537,8 @@ function FamilyBanner() {
 }
 
 function LatestResources() {
+  const uiText = useInterfaceText();
+
   const resources = [
     {
       label: "Guide",
@@ -562,8 +583,8 @@ function LatestResources() {
       <div className="container-ncap">
         <div id="latest-resources-heading">
           <SectionHeading
-            title="Latest updates & resources"
-            description="Stay informed with new guides, posters and platform updates."
+            title={uiText("Latest updates & resources")}
+            description={uiText("Stay informed with new guides, posters and platform updates.")}
             href="/awareness/news"
             action="View all updates"
           />
@@ -627,7 +648,7 @@ function LatestResources() {
           href="/awareness/news"
           className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-bold text-violet hover:bg-accent hover:text-accent-foreground sm:hidden"
         >
-          View all updates <ArrowRight className="size-4" aria-hidden="true" />
+          {uiText("View all updates")} <ArrowRight className="size-4" aria-hidden="true" />
         </AppLink>
       </div>
     </section>
@@ -635,22 +656,30 @@ function LatestResources() {
 }
 
 function ImpactStrip() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const modules = useModules();
   const publishedLessons = store.lessons.filter((lesson) => lesson.status === "Published").length;
   const publishedArticles = useAwarenessSummary().data?.kinds.articles?.count ?? "—";
   return (
-    <section className="container-ncap pb-3 pt-1" aria-label="NCAP demonstration impact indicators">
+    <section
+      className="container-ncap pb-3 pt-1"
+      aria-label={uiText("NCAP demonstration impact indicators")}
+    >
       <div className="grid overflow-hidden rounded-2xl bg-primary px-6 py-5 text-white shadow-raised md:grid-cols-[1.75fr_repeat(3,.65fr)] md:items-center md:px-8">
         <div className="flex items-center gap-4 border-b border-white/15 pb-5 md:border-b-0 md:border-r md:pb-0 md:pr-8">
           <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-white/20 bg-white/10 text-sky-200">
             <ShieldCheck className="size-6" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="text-base font-bold">A transparent Foundation Release demonstration</h2>
+            <h2 className="text-base font-bold">
+              {uiText("A transparent Foundation Release demonstration")}
+            </h2>
             <p className="mt-1 max-w-lg text-xs leading-5 text-white/65">
-              These counts are derived from the learning and awareness records available in this
-              browser.
+              {uiText(
+                "These counts are derived from the learning and awareness records available in this browser.",
+              )}{" "}
             </p>
           </div>
         </div>

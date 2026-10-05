@@ -26,10 +26,14 @@ export async function unwrapLearning<T>(request: Promise<LearningResult<T>>): Pr
 export async function queryLearning(input: LearningListInput) {
   return unwrapLearning(listLearning({ data: input }));
 }
-export async function allLearning(kind: LearningKind, admin: boolean) {
+export async function allLearning(
+  kind: LearningKind,
+  admin: boolean,
+  language: "en" | "si" | "ta" = "en",
+) {
   const items: LearningRecord[] = [];
   while (true) {
-    const page = await queryLearning({ kind, admin, offset: items.length, limit: 100 });
+    const page = await queryLearning({ kind, admin, language, offset: items.length, limit: 100 });
     items.push(...page.items);
     if (!page.items.length || items.length >= page.total) return items;
   }
@@ -38,6 +42,7 @@ export function withLearningRepository(
   local: NcapRepository,
   admin: boolean,
   userId?: string,
+  language: "en" | "si" | "ta" = "en",
 ): NcapRepository {
   const overrides: Partial<NcapRepository> = {};
   for (const kind of learningKinds) {
@@ -47,12 +52,12 @@ export function withLearningRepository(
       return r;
     };
     const collection: RepositoryCollection<LearningRecord> = {
-      scope: admin ? `admin:${userId}` : `learning:${userId ?? "public"}`,
+      scope: admin ? `admin:${userId}` : `learning:${userId ?? "public"}:${language}`,
       async list() {
-        return (await allLearning(kind, admin)).map(remember);
+        return (await allLearning(kind, admin, language)).map(remember);
       },
       async get(id) {
-        const page = await queryLearning({ kind, admin, id });
+        const page = await queryLearning({ kind, admin, id, language });
         return page.items[0] ? remember(page.items[0]) : null;
       },
       async save(record) {

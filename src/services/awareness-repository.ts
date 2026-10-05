@@ -31,6 +31,7 @@ export function withAwarenessRepository(
   local: NcapRepository,
   admin: boolean,
   userId?: string,
+  language: "en" | "si" | "ta" = "en",
 ): NcapRepository {
   const overrides: Partial<NcapRepository> = {};
   for (const kind of awarenessKinds) {
@@ -41,12 +42,14 @@ export function withAwarenessRepository(
       return r;
     };
     const query = async (input: Omit<AwarenessListInput, "kind" | "admin">) => {
-      const result = await unwrapAwareness(listAwareness({ data: { ...input, kind, admin } }));
+      const result = await unwrapAwareness(
+        listAwareness({ data: { ...input, kind, admin, language } }),
+      );
       result.items.forEach(remember);
       return result;
     };
     const collection: AwarenessCollection<AwarenessRecord> = {
-      scope: admin ? `admin:${userId}` : "public",
+      scope: admin ? `admin:${userId}` : `public:${language}`,
       query,
       async list() {
         let offset = 0;
@@ -59,7 +62,7 @@ export function withAwarenessRepository(
         }
       },
       async get(key) {
-        const r = await unwrapAwareness(getAwareness({ data: { kind, key, admin } }));
+        const r = await unwrapAwareness(getAwareness({ data: { kind, key, admin, language } }));
         return r ? remember(r) : null;
       },
       async save(record) {

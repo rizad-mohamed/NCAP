@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Timer, XCircle, Target } from "lucide-react";
@@ -34,18 +35,22 @@ function Message({ children }: { children: React.ReactNode }) {
   );
 }
 export function QuizzesPage() {
+  const uiText = useInterfaceText();
+
   const catalogue = useQuizCatalogue();
   const history = useQuizHistory();
   const repository = useRepository();
   const modules = useRepositoryList(repository, "modules").data ?? [];
-  if (catalogue.isPending) return <Message>Loading quizzes…</Message>;
+  if (catalogue.isPending) return <Message>{uiText("Loading quizzes…")}</Message>;
   if (catalogue.error) return <Message>{catalogue.error.message}</Message>;
   return (
     <div className="container-ncap max-w-7xl py-2">
       <PageHeader
-        eyebrow="Knowledge checks"
-        title="Test what you can apply"
-        description="Choose a published assessment. Your attempts and results are saved to your account."
+        eyebrow={uiText("Knowledge checks")}
+        title={uiText("Test what you can apply")}
+        description={uiText(
+          "Choose a published assessment. Your attempts and results are saved to your account.",
+        )}
       />
       <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {catalogue.data.map((quiz) => {
@@ -65,8 +70,12 @@ export function QuizzesPage() {
               <h2 className="mt-6 text-2xl font-semibold">{quiz.title}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{quiz.description}</p>
               <div className="mt-5 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span>{quiz.questionCount} questions</span>
-                <span>· {Math.ceil(quiz.durationSeconds / 60)} min</span>
+                <span>
+                  {quiz.questionCount} {uiText("questions")}
+                </span>
+                <span>
+                  · {Math.ceil(quiz.durationSeconds / 60)} {uiText("min")}
+                </span>
                 <span>· {modules.find((m) => m.id === quiz.moduleId)?.title ?? "Module"}</span>
               </div>
               <div className="mt-auto flex items-end justify-between pt-7">
@@ -84,7 +93,7 @@ export function QuizzesPage() {
                   </AppLink>
                 ) : (
                   <span className="rounded-lg bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
-                    Awaiting questions
+                    {uiText("Awaiting questions")}{" "}
                   </span>
                 )}
               </div>
@@ -96,8 +105,8 @@ export function QuizzesPage() {
         <div className="mt-8">
           <EmptyState
             icon={<Target />}
-            title="No quizzes available"
-            description="Published assessments will appear here."
+            title={uiText("No quizzes available")}
+            description={uiText("Published assessments will appear here.")}
           />
         </div>
       )}
@@ -105,11 +114,13 @@ export function QuizzesPage() {
   );
 }
 export function QuizInstructionsPage({ quizId }: { quizId: string }) {
+  const uiText = useInterfaceText();
+
   const catalogue = useQuizCatalogue();
   const history = useQuizHistory(quizId);
   const quiz = catalogue.data?.find((item) => item.id === quizId);
-  if (catalogue.isPending) return <Message>Loading quiz…</Message>;
-  if (!quiz) return <Message>Quiz unavailable.</Message>;
+  if (catalogue.isPending) return <Message>{uiText("Loading quiz…")}</Message>;
+  if (!quiz) return <Message>{uiText("Quiz unavailable.")}</Message>;
   const completed = (history.data ?? []).filter((attempt) => attempt.status !== "in_progress");
   const active = (history.data ?? []).find((attempt) => attempt.status === "in_progress");
   const limitReached = quiz.maxAttempts !== null && completed.length >= quiz.maxAttempts && !active;
@@ -127,26 +138,32 @@ export function QuizInstructionsPage({ quizId }: { quizId: string }) {
         </div>
         <div className="grid gap-8 p-6 md:grid-cols-[1fr_280px] md:p-10">
           <div>
-            <h2 className="text-xl font-semibold">Before you begin</h2>
+            <h2 className="text-xl font-semibold">{uiText("Before you begin")}</h2>
             <ul className="mt-5 grid gap-4 text-sm">
-              <li>{quiz.questionCount} questions selected from the published question bank</li>
-              <li>{Math.ceil(quiz.durationSeconds / 60)} minute timer, enforced by the server</li>
               <li>
-                {quiz.passingPercent}% passing score; {quiz.eligibilityPercent}% quiz threshold for
-                certificate eligibility
+                {quiz.questionCount} {uiText("questions selected from the published question bank")}
               </li>
-              <li>Submit each answer to see immediate feedback</li>
+              <li>
+                {Math.ceil(quiz.durationSeconds / 60)}{" "}
+                {uiText("minute timer, enforced by the server")}
+              </li>
+              <li>
+                {quiz.passingPercent}
+                {uiText("% passing score;")} {quiz.eligibilityPercent}
+                {uiText("% quiz threshold for certificate eligibility")}{" "}
+              </li>
+              <li>{uiText("Submit each answer to see immediate feedback")}</li>
             </ul>
             {quiz.instructions && (
               <p className="mt-6 rounded-lg bg-muted p-4 text-sm">{quiz.instructions}</p>
             )}
             {completed.length > 0 && (
               <div className="mt-6">
-                <SectionHeading title="Attempt history" />
+                <SectionHeading title={uiText("Attempt history")} />
                 <ul className="mt-3 grid gap-2 text-sm">
                   {completed.map((a) => (
                     <li key={a.id} className="rounded-lg border p-3">
-                      Attempt {a.attemptNumber}: {a.scorePercent}% ·{" "}
+                      {uiText("Attempt")} {a.attemptNumber}: {a.scorePercent}% ·{" "}
                       {a.passed ? "Passed" : "Keep practicing"} ·{" "}
                       {a.completedAt && new Date(a.completedAt).toLocaleString()}
                     </li>
@@ -156,18 +173,24 @@ export function QuizInstructionsPage({ quizId }: { quizId: string }) {
             )}
           </div>
           <aside className="rounded-xl bg-primary p-6 text-white">
-            <p className="meta text-white/60">Ready?</p>
+            <p className="meta text-white/60">{uiText("Ready?")}</p>
             <p className="mt-4 text-sm text-white/70">
-              Question order is randomized once and remains stable if you resume on another device.
+              {uiText(
+                "Question order is randomized once and remains stable if you resume on another device.",
+              )}{" "}
             </p>
             {quiz.availableQuestions < quiz.questionCount ? (
               <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">
-                This assessment needs more published questions.
+                {uiText("This assessment needs more published questions.")}{" "}
               </p>
             ) : limitReached ? (
-              <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">Maximum attempts reached.</p>
+              <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">
+                {uiText("Maximum attempts reached.")}
+              </p>
             ) : cooldown ? (
-              <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">Retake cooldown is active.</p>
+              <p className="mt-7 rounded-lg bg-white/10 p-4 text-sm">
+                {uiText("Retake cooldown is active.")}
+              </p>
             ) : (
               <AppLink
                 href={`/quizzes/${quiz.id}/run`}
@@ -183,6 +206,8 @@ export function QuizInstructionsPage({ quizId }: { quizId: string }) {
   );
 }
 export function QuizRunnerPage({ quizId }: { quizId: string }) {
+  const uiText = useInterfaceText();
+
   const navigate = useNavigate();
   const client = useQueryClient();
   const attemptQuery = useQuery({
@@ -232,28 +257,28 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
         setBusy(false);
       });
   }, [remaining, attempt, busy, client, navigate, quizId]);
-  if (attemptQuery.isPending) return <Message>Preparing your quiz…</Message>;
+  if (attemptQuery.isPending) return <Message>{uiText("Preparing your quiz…")}</Message>;
   if (attemptQuery.error)
     return (
       <Message>
         {attemptQuery.error.message}{" "}
         <AppLink href={`/quizzes/${quizId}`} className="underline">
-          Back to quiz
+          {uiText("Back to quiz")}{" "}
         </AppLink>
       </Message>
     );
-  if (!attempt) return <Message>Attempt unavailable.</Message>;
+  if (!attempt) return <Message>{uiText("Attempt unavailable.")}</Message>;
   if (attempt.status !== "in_progress")
     return (
       <Message>
-        Attempt complete.{" "}
+        {uiText("Attempt complete.")}{" "}
         <AppLink href={`/quizzes/${quizId}/results`} className="underline">
-          View results
+          {uiText("View results")}{" "}
         </AppLink>
       </Message>
     );
   const current = attempt.questions[index];
-  if (!current) return <Message>Question unavailable.</Message>;
+  if (!current) return <Message>{uiText("Question unavailable.")}</Message>;
   const chosen = current.selectedOptionId ?? selected;
   const submitted = !!current.selectedOptionId;
   async function submitAnswer() {
@@ -295,10 +320,13 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
     <div className="mx-auto max-w-4xl py-2">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="meta text-violet">Quiz attempt {attempt.attemptNumber}</p>
+          <p className="meta text-violet">
+            {uiText("Quiz attempt")} {attempt.attemptNumber}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Question {index + 1} of {attempt.questions.length} ·{" "}
-            {attempt.questions.filter((q) => !q.selectedOptionId).length} unanswered
+            {uiText("Question")} {index + 1} {uiText("of")} {attempt.questions.length} ·{" "}
+            {attempt.questions.filter((q) => !q.selectedOptionId).length}{" "}
+            {uiText("unanswered")}{" "}
           </p>
         </div>
         <div
@@ -314,14 +342,17 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
           {String(remaining % 60).padStart(2, "0")}
         </div>
       </div>
-      <ProgressMeter value={(index / attempt.questions.length) * 100} label="Quiz progress" />
+      <ProgressMeter
+        value={(index / attempt.questions.length) * 100}
+        label={uiText("Quiz progress")}
+      />
       <section className="mt-6 rounded-xl border bg-white p-6 md:p-10">
         <span className="meta text-muted-foreground">
           {current.topic} · {current.difficulty}
         </span>
         <h1 className="mt-4 text-2xl font-semibold md:text-3xl">{current.prompt}</h1>
         <fieldset className="mt-8 grid gap-3">
-          <legend className="sr-only">Choose one answer</legend>
+          <legend className="sr-only">{uiText("Choose one answer")}</legend>
           {current.options.map((option, i) => {
             const correct = submitted && option.id === current.correctOptionId;
             const wrong = submitted && chosen === option.id && !correct;
@@ -366,7 +397,7 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
             </h2>
             {chosen !== current.correctOptionId && (
               <p className="mt-1 text-sm">
-                Correct answer:{" "}
+                {uiText("Correct answer:")}{" "}
                 <strong>
                   {current.options.find((o) => o.id === current.correctOptionId)?.text}
                 </strong>
@@ -382,7 +413,7 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
               disabled={!selected || busy}
               className={primary}
             >
-              Submit answer
+              {uiText("Submit answer")}{" "}
             </button>
           ) : (
             <button onClick={() => void advance()} disabled={busy} className={primary}>
@@ -393,12 +424,16 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
         </div>
       </section>
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        Your answers are saved to your account and can be resumed until the server deadline.
+        {uiText(
+          "Your answers are saved to your account and can be resumed until the server deadline.",
+        )}{" "}
       </p>
     </div>
   );
 }
 export function QuizResultsPage({ quizId }: { quizId: string }) {
+  const uiText = useInterfaceText();
+
   const history = useQuizHistory(quizId);
   const catalogue = useQuizCatalogue();
   const repository = useRepository();
@@ -435,17 +470,18 @@ export function QuizResultsPage({ quizId }: { quizId: string }) {
   );
   const recommendation =
     publishedLessons.find((l) => l.topic === weakest?.topic) ?? publishedLessons[0];
-  if (history.isPending || (latest && result.isPending)) return <Message>Loading results…</Message>;
+  if (history.isPending || (latest && result.isPending))
+    return <Message>{uiText("Loading results…")}</Message>;
   if (!attempt || !quiz || !module)
     return (
       <div className="mx-auto max-w-3xl">
         <EmptyState
           icon={<Target />}
-          title="No result available"
-          description="Complete this quiz to see your score and topic breakdown."
+          title={uiText("No result available")}
+          description={uiText("Complete this quiz to see your score and topic breakdown.")}
           action={
             <AppLink href={`/quizzes/${quizId}`} className={primary}>
-              View quiz instructions
+              {uiText("View quiz instructions")}{" "}
             </AppLink>
           }
         />
@@ -466,34 +502,34 @@ export function QuizResultsPage({ quizId }: { quizId: string }) {
             <div className="text-center">
               <p className="font-mono text-5xl font-bold">{attempt.scorePercent}%</p>
               <p className="mt-1 text-sm font-semibold">
-                {attempt.correct} of {attempt.total} correct
+                {attempt.correct} {uiText("of")} {attempt.total} {uiText("correct")}{" "}
               </p>
             </div>
           </div>
           <div>
-            <p className="meta text-violet">Quiz complete</p>
+            <p className="meta text-violet">{uiText("Quiz complete")}</p>
             <h1 className="mt-4 text-4xl font-semibold">
               {attempt.passed ? "You passed" : "Keep building the skill"}
             </h1>
             <p className="mt-3 text-muted-foreground">
-              Completed in{" "}
+              {uiText("Completed in")}{" "}
               {Math.floor(
                 (Date.parse(attempt.completedAt ?? "") - Date.parse(attempt.startedAt)) / 60000,
               )}{" "}
-              minutes. Your result is saved to your account.
+              {uiText("minutes. Your result is saved to your account.")}{" "}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <AppLink href={`/quizzes/${quiz.id}`} className={primary}>
-                Try again
+                {uiText("Try again")}{" "}
               </AppLink>
               <AppLink href="/dashboard" className={outline}>
-                Return to dashboard
+                {uiText("Return to dashboard")}{" "}
               </AppLink>
             </div>
           </div>
         </div>
         <section className="mt-10 border-t pt-8">
-          <SectionHeading title="Performance by topic" />
+          <SectionHeading title={uiText("Performance by topic")} />
           <div className="grid gap-3 sm:grid-cols-2">
             {(attempt.byTopic ?? []).map((t) => (
               <div key={t.topic} className="rounded-lg bg-muted p-4">
@@ -521,25 +557,29 @@ export function QuizResultsPage({ quizId }: { quizId: string }) {
             {eligible ? "Quiz threshold and module completion met" : "Certificate steps remaining"}
           </h2>
           <p className="mt-2 text-sm">
-            Complete the related module and reach {quiz.eligibilityPercent}% on this quiz.
+            {uiText("Complete the related module and reach")} {quiz.eligibilityPercent}
+            {uiText("% on this quiz.")}{" "}
           </p>
           <ul className="mt-3 grid gap-1 text-sm">
-            <li>{complete ? "✓" : "○"} Module complete</li>
             <li>
-              {best >= quiz.eligibilityPercent ? "✓" : "○"} Best quiz score at least{" "}
+              {complete ? "✓" : "○"} {uiText("Module complete")}
+            </li>
+            <li>
+              {best >= quiz.eligibilityPercent ? "✓" : "○"} {uiText("Best quiz score at least")}{" "}
               {quiz.eligibilityPercent}%
             </li>
           </ul>
         </section>
         {recommendation && (
           <section className="mt-8 rounded-xl border p-6">
-            <p className="meta text-violet">Recommended next lesson</p>
+            <p className="meta text-violet">{uiText("Recommended next lesson")}</p>
             <h2 className="mt-3 text-xl font-semibold">{recommendation.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Review {weakest?.topic ?? module.topic} to strengthen your lowest topic result.
+              {uiText("Review")} {weakest?.topic ?? module.topic}{" "}
+              {uiText("to strengthen your lowest topic result.")}{" "}
             </p>
             <AppLink href={`/learn/lessons/${recommendation.id}`} className={cn(primary, "mt-5")}>
-              Open lesson <ArrowRight />
+              {uiText("Open lesson")} <ArrowRight />
             </AppLink>
           </section>
         )}

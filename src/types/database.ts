@@ -135,6 +135,23 @@ export interface Database {
       quiz_history: { Args: { target: string | null }; Returns: Json };
       quiz_eligibility: { Args: { target: string }; Returns: Json };
       quiz_admin_summary: { Args: Record<never, never>; Returns: Json };
+      content_translation_list: {
+        Args: {
+          target_kind: string;
+          target_ids: string[];
+          target_language: string;
+          admin_mode: boolean;
+        };
+        Returns: Json;
+      };
+      content_translation_save: { Args: { payload: Json }; Returns: Json };
+      notifications_sync: { Args: Record<never, never>; Returns: number };
+      notifications_list: {
+        Args: { page_before: string | null; before_id: string | null; page_limit: number };
+        Returns: Json;
+      };
+      notifications_set_read: { Args: { target: string; is_read: boolean }; Returns: undefined };
+      notifications_read_all: { Args: Record<never, never>; Returns: undefined };
       dashboard_begin_lesson: { Args: { target: string }; Returns: string };
       dashboard_heartbeat: { Args: { target: string }; Returns: number };
       dashboard_learner: { Args: { activity_offset?: number }; Returns: Json };

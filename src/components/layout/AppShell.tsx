@@ -1,7 +1,7 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   BookOpen,
   Bookmark,
   ChartNoAxesCombined,
@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useNcap, useSessionPreferences } from "@/state/ncap-store";
 import { useAuth } from "@/auth/AuthProvider";
 import { LanguageSelector } from "@/components/common/LanguageSelector";
+import { NotificationBell } from "@/components/common/NotificationBell";
 import {
   Sheet,
   SheetContent,
@@ -82,6 +83,8 @@ export function Brand({
   inverse?: boolean;
   compact?: boolean;
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <AppLink
       href="/"
@@ -102,7 +105,7 @@ export function Brand({
             "absolute -bottom-2 -right-3 overflow-hidden rounded-[3px] border shadow-sm",
             inverse ? "border-primary" : "border-white",
           )}
-          title="Sri Lanka"
+          title={uiText("Sri Lanka")}
           aria-hidden="true"
         >
           <img
@@ -114,17 +117,17 @@ export function Brand({
           />
         </span>
       </span>
-      <span className="sr-only">Sri Lanka home</span>
+      <span className="sr-only">{uiText("Sri Lanka home")}</span>
       {!compact && (
         <span className={cn("leading-tight", inverse ? "text-white" : "text-foreground")}>
-          <span className="block text-lg tracking-[-0.03em]">NCAP</span>
+          <span className="block text-lg tracking-[-0.03em]">{uiText("NCAP")}</span>
           <span
             className={cn(
               "block text-[10px] font-bold uppercase tracking-[0.12em]",
               inverse ? "text-white/70" : "text-muted-foreground",
             )}
           >
-            National Cyber Awareness
+            {uiText("National Cyber Awareness")}{" "}
           </span>
         </span>
       )}
@@ -149,6 +152,8 @@ const mobileAwarenessLinks = awarenessLinks.filter(
 );
 
 function PublicHeader({ pathname }: { pathname: string }) {
+  const uiText = useInterfaceText();
+
   const [open, setOpen] = useState(false);
   const { session } = useSessionPreferences();
   const { signOut } = useAuth();
@@ -162,14 +167,17 @@ function PublicHeader({ pathname }: { pathname: string }) {
     <header className="no-print sticky top-0 z-40 border-b border-border/80 bg-white/95 shadow-[0_1px_0_rgb(15_23_42/0.02)] backdrop-blur-xl">
       <div className="container-ncap flex h-[68px] items-center justify-between gap-4">
         <Brand />
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
+        <nav
+          className="hidden items-center gap-1 lg:flex"
+          aria-label={uiText("Primary navigation")}
+        >
           <div className="group relative">
             <AppLink
               href="/awareness"
               className={navClass(awarenessActive)}
               aria-current={awarenessActive ? "page" : undefined}
             >
-              Awareness <ChevronDown className="size-4" aria-hidden="true" />
+              {uiText("Awareness")} <ChevronDown className="size-4" aria-hidden="true" />
             </AppLink>
             <div className="invisible absolute left-0 top-full w-60 translate-y-2 rounded-xl border bg-white p-2 opacity-0 shadow-overlay transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
               {awarenessLinks.map(([label, href]) => (
@@ -178,7 +186,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                   href={href}
                   className="flex min-h-11 items-center rounded-lg px-3 text-sm font-bold text-secondary-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent"
                 >
-                  {label}
+                  {uiText(label)}
                 </AppLink>
               ))}
             </div>
@@ -188,28 +196,28 @@ function PublicHeader({ pathname }: { pathname: string }) {
             className={navClass(learnActive)}
             aria-current={learnActive ? "page" : undefined}
           >
-            Learn
+            {uiText("Learn")}{" "}
           </AppLink>
           <AppLink
             href="/quizzes"
             className={navClass(active("/quizzes"))}
             aria-current={active("/quizzes") ? "page" : undefined}
           >
-            Quizzes
+            {uiText("Quizzes")}{" "}
           </AppLink>
           <AppLink
             href="/awareness/posters"
             className={navClass(resourcesActive)}
             aria-current={resourcesActive ? "page" : undefined}
           >
-            Resources
+            {uiText("Resources")}{" "}
           </AppLink>
           <AppLink
             href="/awareness/news"
             className={navClass(newsActive)}
             aria-current={newsActive ? "page" : undefined}
           >
-            News &amp; Updates
+            {uiText("News &amp; Updates")}{" "}
           </AppLink>
           <AppLink
             href="/learn/search"
@@ -218,7 +226,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
               searchActive && "bg-primary-soft text-violet",
             )}
             aria-current={searchActive ? "page" : undefined}
-            aria-label="Search NCAP learning"
+            aria-label={uiText("Search NCAP learning")}
           >
             <Search className="size-5" aria-hidden="true" />
           </AppLink>
@@ -230,13 +238,13 @@ function PublicHeader({ pathname }: { pathname: string }) {
                 href="/login"
                 className="inline-flex min-h-11 items-center rounded-xl border border-primary px-4 text-sm font-bold text-primary transition hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
               >
-                Sign In
+                {uiText("Sign In")}{" "}
               </AppLink>
               <AppLink
                 href="/register"
                 className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet hover:shadow-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
               >
-                Sign Up
+                {uiText("Sign Up")}{" "}
               </AppLink>
             </>
           ) : (
@@ -244,7 +252,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
               href={session.role === "admin" ? "/admin" : "/dashboard"}
               className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
             >
-              Open {session.role === "admin" ? "administration" : "dashboard"}
+              {uiText("Open")} {session.role === "admin" ? "administration" : "dashboard"}
             </AppLink>
           )}
         </div>
@@ -252,7 +260,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
           <SheetTrigger asChild>
             <button
               className="grid size-11 place-items-center rounded-xl border bg-white shadow-sm hover:border-violet hover:bg-accent lg:hidden"
-              aria-label="Open navigation menu"
+              aria-label={uiText("Open navigation menu")}
             >
               <Menu className="size-5" />
             </button>
@@ -261,20 +269,23 @@ function PublicHeader({ pathname }: { pathname: string }) {
             side="right"
             className="flex w-[min(92vw,390px)] flex-col border-l bg-white p-6 sm:max-w-[390px]"
           >
-            <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+            <SheetTitle className="sr-only">{uiText("Navigation menu")}</SheetTitle>
             <SheetDescription className="sr-only">
-              Browse NCAP awareness and learning areas.
+              {uiText("Browse NCAP awareness and learning areas.")}{" "}
             </SheetDescription>
             <div className="pr-12">
               <Brand />
             </div>
-            <nav className="mt-8 grid gap-1 overflow-y-auto" aria-label="Mobile navigation">
+            <nav
+              className="mt-8 grid gap-1 overflow-y-auto"
+              aria-label={uiText("Mobile navigation")}
+            >
               <AppLink
                 href="/awareness"
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(awarenessActive)}
               >
-                Awareness hub
+                {uiText("Awareness hub")}{" "}
               </AppLink>
               {mobileAwarenessLinks.map(([label, href]) => (
                 <AppLink
@@ -283,7 +294,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                   onClick={() => setOpen(false)}
                   className="flex min-h-11 items-center rounded-lg px-5 text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  {label}
+                  {uiText(label)}
                 </AppLink>
               ))}
               <AppLink
@@ -291,35 +302,35 @@ function PublicHeader({ pathname }: { pathname: string }) {
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(learnActive)}
               >
-                Learn
+                {uiText("Learn")}{" "}
               </AppLink>
               <AppLink
                 href="/quizzes"
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(active("/quizzes"))}
               >
-                Quizzes
+                {uiText("Quizzes")}{" "}
               </AppLink>
               <AppLink
                 href="/awareness/posters"
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(resourcesActive)}
               >
-                Resources
+                {uiText("Resources")}{" "}
               </AppLink>
               <AppLink
                 href="/awareness/news"
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(newsActive)}
               >
-                News &amp; Updates
+                {uiText("News &amp; Updates")}{" "}
               </AppLink>
               <AppLink
                 href="/learn/search"
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(searchActive)}
               >
-                Search
+                {uiText("Search")}{" "}
               </AppLink>
             </nav>
             <div className="mt-auto grid gap-3 border-t pt-5">
@@ -330,14 +341,14 @@ function PublicHeader({ pathname }: { pathname: string }) {
                     onClick={() => setOpen(false)}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl border border-primary font-bold text-primary hover:bg-primary-soft"
                   >
-                    Sign In
+                    {uiText("Sign In")}{" "}
                   </AppLink>
                   <AppLink
                     href="/register"
                     onClick={() => setOpen(false)}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary font-bold text-white shadow-sm hover:bg-violet"
                   >
-                    Sign Up
+                    {uiText("Sign Up")}{" "}
                   </AppLink>
                 </>
               ) : (
@@ -347,7 +358,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                     onClick={() => setOpen(false)}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary font-bold text-white shadow-sm hover:bg-violet"
                   >
-                    Open {session.role === "admin" ? "administration" : "dashboard"}
+                    {uiText("Open")} {session.role === "admin" ? "administration" : "dashboard"}
                   </AppLink>
                   <button
                     type="button"
@@ -357,7 +368,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                     }}
                     className="inline-flex min-h-11 items-center justify-center rounded-xl border font-bold hover:bg-muted"
                   >
-                    Sign out
+                    {uiText("Sign out")}{" "}
                   </button>
                 </>
               )}
@@ -413,6 +424,8 @@ function WorkspaceShell({
   kind: "learner" | "admin";
   children: ReactNode;
 }) {
+  const uiText = useInterfaceText();
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const { resetDemo } = useNcap();
   const { session } = useSessionPreferences();
@@ -446,7 +459,7 @@ function WorkspaceShell({
             )}
           >
             <Icon className="size-5 shrink-0" aria-hidden="true" />
-            <span>{label}</span>
+            <span>{uiText(label)}</span>
           </AppLink>
         ))}
       </nav>
@@ -466,13 +479,13 @@ function WorkspaceShell({
           onClick={() => {
             void signOut().then((signedOut) => {
               if (signedOut) void navigate({ to: "/" });
-              else toast.error("Unable to sign out. Please try again.");
+              else toast.error(uiText("Unable to sign out. Please try again."));
             });
           }}
           className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-bold text-white/65 hover:bg-white/10 hover:text-white"
         >
           <LogOut className="size-5" />
-          Log out
+          {uiText("Log out")}{" "}
         </button>
         <button
           onClick={() => {
@@ -482,7 +495,7 @@ function WorkspaceShell({
           className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-xs font-bold text-white/50 hover:bg-white/10 hover:text-white"
         >
           <CircleHelp className="size-4" />
-          Reset demo data
+          {uiText("Reset demo data")}{" "}
         </button>
       </div>
     </div>
@@ -499,7 +512,7 @@ function WorkspaceShell({
               <SheetTrigger asChild>
                 <button
                   className="grid size-11 place-items-center rounded-xl border bg-white shadow-sm hover:border-violet hover:bg-accent lg:hidden"
-                  aria-label="Open workspace navigation"
+                  aria-label={uiText("Open workspace navigation")}
                 >
                   <Menu className="size-5" />
                 </button>
@@ -508,9 +521,11 @@ function WorkspaceShell({
                 side="left"
                 className="w-[min(88vw,320px)] border-0 bg-rail p-0 text-white sm:max-w-[320px]"
               >
-                <SheetTitle className="sr-only">{kind} navigation</SheetTitle>
+                <SheetTitle className="sr-only">
+                  {kind} {uiText("navigation")}
+                </SheetTitle>
                 <SheetDescription className="sr-only">
-                  Navigate the NCAP {kind} workspace.
+                  {uiText("Navigate the NCAP")} {kind} {uiText("workspace.")}{" "}
                 </SheetDescription>
                 {side}
               </SheetContent>
@@ -519,22 +534,14 @@ function WorkspaceShell({
               <span className="meta hidden text-muted-foreground sm:block">
                 {kind === "admin" ? "Administration" : "My learning"}
               </span>
-              <strong className="block text-base leading-tight sm:text-lg">{currentLabel}</strong>
+              <strong className="block text-base leading-tight sm:text-lg">
+                {uiText(currentLabel)}
+              </strong>
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSelector compact />
-            <button
-              className="relative grid size-11 place-items-center rounded-xl hover:bg-muted"
-              aria-label="Notifications"
-              onClick={() => toast.info("You have no new notifications in this demo.")}
-            >
-              <Bell className="size-5" />
-              <span
-                className="absolute right-2.5 top-2.5 size-2 rounded-full bg-success ring-2 ring-white"
-                aria-hidden="true"
-              />
-            </button>
+            <NotificationBell />
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className="page-enter min-w-0 p-4 md:p-6 lg:p-8">
@@ -546,6 +553,8 @@ function WorkspaceShell({
 }
 
 export function PublicFooter({ pathname = "" }: { pathname?: string }) {
+  const uiText = useInterfaceText();
+
   const footerLink =
     "-mx-2 flex min-h-10 items-center rounded-lg px-2 text-sm text-rail-muted transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-soft";
   return (
@@ -561,10 +570,11 @@ export function PublicFooter({ pathname = "" }: { pathname?: string }) {
         <div>
           <Brand inverse />
           <p className="mt-4 max-w-[270px] text-sm leading-6 text-rail-muted">
-            A public initiative to empower every Sri Lankan to live, learn and work safely in a
-            digital world.
+            {uiText(
+              "A public initiative to empower every Sri Lankan to live, learn and work safely in a digital world.",
+            )}{" "}
           </p>
-          <div className="mt-4 flex gap-2" aria-label="NCAP social media">
+          <div className="mt-4 flex gap-2" aria-label={uiText("NCAP social media")}>
             {(
               [
                 [Facebook, "Facebook"],
@@ -584,55 +594,55 @@ export function PublicFooter({ pathname = "" }: { pathname?: string }) {
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">Awareness</h2>
+          <h2 className="text-sm font-bold text-white">{uiText("Awareness")}</h2>
           <div className="mt-3 grid">
             <AppLink href="/awareness/articles" className={footerLink}>
-              Articles
+              {uiText("Articles")}{" "}
             </AppLink>
             <AppLink href="/awareness/tips" className={footerLink}>
-              Cyber tips
+              {uiText("Cyber tips")}{" "}
             </AppLink>
             <AppLink href="/awareness/posters" className={footerLink}>
-              Posters
+              {uiText("Posters")}{" "}
             </AppLink>
             <AppLink href="/awareness/infographics" className={footerLink}>
-              Infographics
+              {uiText("Infographics")}{" "}
             </AppLink>
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">Learn</h2>
+          <h2 className="text-sm font-bold text-white">{uiText("Learn")}</h2>
           <div className="mt-3 grid">
             <AppLink href="/learn" className={footerLink}>
-              Modules
+              {uiText("Modules")}{" "}
             </AppLink>
             <AppLink href="/quizzes" className={footerLink}>
-              Quizzes
+              {uiText("Quizzes")}{" "}
             </AppLink>
             <AppLink href="/awareness/videos" className={footerLink}>
-              Videos
+              {uiText("Videos")}{" "}
             </AppLink>
             <AppLink href="/learn/search" className={footerLink}>
-              Guides
+              {uiText("Guides")}{" "}
             </AppLink>
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">Resources</h2>
+          <h2 className="text-sm font-bold text-white">{uiText("Resources")}</h2>
           <div className="mt-3 grid">
             <AppLink href="/awareness/news" className={footerLink}>
-              Demo updates
+              {uiText("Demo updates")}{" "}
             </AppLink>
             <AppLink href="/awareness/best-practices" className={footerLink}>
-              Best practices
+              {uiText("Best practices")}{" "}
             </AppLink>
             <AppLink href="/awareness/posters" className={footerLink}>
-              Toolkits
+              {uiText("Toolkits")}{" "}
             </AppLink>
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white">Follow us</h2>
+          <h2 className="text-sm font-bold text-white">{uiText("Follow us")}</h2>
           <div className="mt-4 flex gap-2">
             {[Facebook, Instagram, Youtube].map((Icon, index) => (
               <a
@@ -646,25 +656,29 @@ export function PublicFooter({ pathname = "" }: { pathname?: string }) {
             ))}
           </div>
           <p className="mt-4 flex items-center gap-2 text-sm text-rail-muted">
-            <MapPin className="size-4 text-violet-soft" aria-hidden="true" /> Sri Lanka
+            <MapPin className="size-4 text-violet-soft" aria-hidden="true" />{" "}
+            {uiText("Sri Lanka")}{" "}
           </p>
         </div>
       </div>
       <div className="border-t border-white/15">
         <div className="container-ncap flex flex-col gap-3 py-5 text-xs text-rail-muted md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} NCAP (National Cyber Awareness). All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()}{" "}
+            {uiText("NCAP (National Cyber Awareness). All rights reserved.")}
+          </p>
           <div className="flex gap-5">
             <AppLink
               href="/privacy"
               className="rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-soft"
             >
-              Privacy Policy
+              {uiText("Privacy Policy")}{" "}
             </AppLink>
             <AppLink
               href="/privacy"
               className="rounded transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-soft"
             >
-              Terms of Use
+              {uiText("Terms of Use")}{" "}
             </AppLink>
           </div>
         </div>
@@ -707,15 +721,17 @@ export function AppShell({ pathname, children }: { pathname: string; children: R
 }
 
 export function PageCrumbs({ items }: { items: { label: string; href?: string }[] }) {
+  const uiText = useInterfaceText();
+
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={uiText("Breadcrumb")}
       className="mb-5 flex flex-wrap items-center gap-1 text-sm text-muted-foreground"
     >
       <AppLink
         href="/"
         className="grid size-10 place-items-center rounded-lg hover:bg-accent hover:text-primary"
-        aria-label="Home"
+        aria-label={uiText("Home")}
       >
         <Home className="size-4" />
       </AppLink>

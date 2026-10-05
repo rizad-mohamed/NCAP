@@ -10,20 +10,22 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useRouterState } from "@tanstack/react-router";
 import { withAwarenessRepository } from "./awareness-repository";
 import { withLearningRepository } from "./learning-repository";
+import { useI18n } from "@/lib/i18n";
 
 const RepositoryContext = createContext<NcapRepository | null>(null);
 
 export function NcapRepositoryProvider({ children }: { children: ReactNode }) {
   const store = useNcap();
   const { user } = useAuth();
+  const { language } = useI18n();
   const admin = useRouterState({ select: (state) => state.location.pathname.startsWith("/admin") });
   const awareness = useMemo(
-    () => withAwarenessRepository({} as NcapRepository, admin, user?.id),
-    [admin, user?.id],
+    () => withAwarenessRepository({} as NcapRepository, admin, user?.id, language),
+    [admin, user?.id, language],
   );
   const learning = useMemo(
-    () => withLearningRepository({} as NcapRepository, admin, user?.id),
-    [admin, user?.id],
+    () => withLearningRepository({} as NcapRepository, admin, user?.id, language),
+    [admin, user?.id, language],
   );
   const repository = useMemo(() => {
     const snapshot: LocalDemoSnapshot = {

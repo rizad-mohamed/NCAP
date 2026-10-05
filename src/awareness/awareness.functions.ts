@@ -29,9 +29,10 @@ export const getAwareness = createServerFn({ method: "GET" })
           kind: z.enum(awarenessKinds),
           key: z.string().min(1).max(180),
           admin: z.boolean().default(false),
+          language: z.enum(["en", "si", "ta"]).default("en"),
         })
         .parse(data);
-      return getResource(client(), args.kind, args.key, args.admin);
+      return getResource(client(), args.kind, args.key, args.admin, args.language);
     }),
   );
 export const saveAwareness = createServerFn({ method: "POST" })

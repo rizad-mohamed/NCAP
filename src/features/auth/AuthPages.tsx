@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -51,6 +52,8 @@ function AuthLayout({
   children: React.ReactNode;
   hideFooter?: boolean;
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <>
       <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[minmax(420px,.9fr)_1.1fr]">
@@ -68,31 +71,32 @@ function AuthLayout({
             <span className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-white/10 shadow-lg">
               <ShieldCheck className="size-8" />
             </span>
-            <p className="meta mt-8 text-sky-300">Your digital safety journey</p>
+            <p className="meta mt-8 text-sky-300">{uiText("Your digital safety journey")}</p>
             <h2 className="mt-3 text-4xl font-bold leading-tight xl:text-5xl">
-              Build safer habits, one clear step at a time.
+              {uiText("Build safer habits, one clear step at a time.")}{" "}
             </h2>
             <p className="mt-5 text-lg leading-8 text-white/70">
-              NCAP turns everyday cybersecurity into practical learning, useful feedback, and
-              visible progress.
+              {uiText(
+                "NCAP turns everyday cybersecurity into practical learning, useful feedback, and visible progress.",
+              )}{" "}
             </p>
             <ul className="mt-8 grid gap-3 text-sm font-bold text-white/80">
               <li className="flex items-center gap-3">
                 <CheckCircle2 className="size-5 text-emerald-300" aria-hidden="true" />
-                Short, plain-language lessons
+                {uiText("Short, plain-language lessons")}{" "}
               </li>
               <li className="flex items-center gap-3">
                 <CheckCircle2 className="size-5 text-emerald-300" aria-hidden="true" />
-                Progress you can see and resume
+                {uiText("Progress you can see and resume")}{" "}
               </li>
               <li className="flex items-center gap-3">
                 <CheckCircle2 className="size-5 text-emerald-300" aria-hidden="true" />
-                Designed for accessible learning
+                {uiText("Designed for accessible learning")}{" "}
               </li>
             </ul>
           </div>
           <p className="relative text-xs text-white/50">
-            Secure account access powered by Supabase
+            {uiText("Secure account access powered by Supabase")}{" "}
           </p>
         </aside>
         <main
@@ -109,7 +113,7 @@ function AuthLayout({
               className="mb-7 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"
             >
               <ArrowLeft className="size-4" />
-              Back to NCAP
+              {uiText("Back to NCAP")}{" "}
             </AppLink>
             <div className="panel p-6 sm:p-9">
               <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
@@ -190,6 +194,8 @@ function Field({
 }
 
 export function LoginPage() {
+  const uiText = useInterfaceText();
+
   const { refresh } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { redirect?: string };
@@ -219,19 +225,19 @@ export function LoginPage() {
       return;
     }
     await refresh();
-    toast.success("Signed in securely");
+    toast.success(uiText("Signed in securely"));
     const fallback = result.data.role === "super_admin" ? "/admin" : "/dashboard";
     void navigate({ to: safeInternalPath(search.redirect, fallback) as never });
   };
   return (
     <AuthLayout
       hideFooter
-      title="Welcome back"
-      description="Log in securely to continue your learning."
+      title={uiText("Welcome back")}
+      description={uiText("Log in securely to continue your learning.")}
     >
       <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
         <Field
-          label="Email address"
+          label={uiText("Email address")}
           name="email"
           type="email"
           value={email}
@@ -241,7 +247,7 @@ export function LoginPage() {
           required
         />
         <Field
-          label="Password"
+          label={uiText("Password")}
           name="password"
           type="password"
           value={password}
@@ -258,10 +264,10 @@ export function LoginPage() {
               type="checkbox"
               className="size-4 accent-violet"
             />
-            Remember me on this device
+            {uiText("Remember me on this device")}{" "}
           </label>
           <AppLink href="/forgot-password" className="font-semibold text-primary">
-            Forgot password?
+            {uiText("Forgot password?")}{" "}
           </AppLink>
         </div>
         {formError && (
@@ -274,9 +280,9 @@ export function LoginPage() {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New to NCAP?{" "}
+        {uiText("New to NCAP?")}{" "}
         <AppLink href="/register" className="font-semibold text-primary">
-          Create an account
+          {uiText("Create an account")}{" "}
         </AppLink>
       </p>
     </AuthLayout>
@@ -284,6 +290,8 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
+  const uiText = useInterfaceText();
+
   const { refresh } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState<{
@@ -349,12 +357,14 @@ export function RegisterPage() {
   return (
     <AuthLayout
       hideFooter
-      title="Create your learning profile"
-      description="Create a secure learner account. We will ask you to verify your email address."
+      title={uiText("Create your learning profile")}
+      description={uiText(
+        "Create a secure learner account. We will ask you to verify your email address.",
+      )}
     >
       <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
         <Field
-          label="Full name"
+          label={uiText("Full name")}
           name="name"
           value={form.name}
           onChange={(v) => set("name", v)}
@@ -363,7 +373,7 @@ export function RegisterPage() {
           required
         />
         <Field
-          label="Email address"
+          label={uiText("Email address")}
           name="email"
           type="email"
           value={form.email}
@@ -374,7 +384,7 @@ export function RegisterPage() {
         />
         <div>
           <Field
-            label="Password"
+            label={uiText("Password")}
             name="password"
             type="password"
             value={form.password}
@@ -395,10 +405,12 @@ export function RegisterPage() {
               <span key={i} className={cn("h-1 flex-1 rounded", ok ? "bg-success" : "bg-border")} />
             ))}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">At least 8 characters with a number.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {uiText("At least 8 characters with a number.")}
+          </p>
         </div>
         <Field
-          label="Confirm password"
+          label={uiText("Confirm password")}
           name="confirm"
           type="password"
           value={form.confirm}
@@ -408,13 +420,13 @@ export function RegisterPage() {
           required
         />
         <label className="text-sm font-semibold">
-          Preferred language
+          {uiText("Preferred language")}{" "}
           <select
             value={form.language}
             onChange={(e) => set("language", e.target.value as "en" | "si" | "ta")}
             className={inputClass}
           >
-            <option value="en">English</option>
+            <option value="en">{uiText("English")}</option>
             <option value="si">සිංහල</option>
             <option value="ta">தமிழ்</option>
           </select>
@@ -427,9 +439,9 @@ export function RegisterPage() {
             className="mt-1 size-4 accent-violet"
           />
           <span>
-            I accept the{" "}
+            {uiText("I accept the")}{" "}
             <AppLink href="/privacy" className="font-semibold text-primary">
-              terms of use and privacy notice
+              {uiText("terms of use and privacy notice")}{" "}
             </AppLink>
             . <span className="text-destructive">*</span>
             {errors.terms && (
@@ -449,9 +461,9 @@ export function RegisterPage() {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        Already registered?{" "}
+        {uiText("Already registered?")}{" "}
         <AppLink href="/login" className="font-semibold text-primary">
-          Log in
+          {uiText("Log in")}{" "}
         </AppLink>
       </p>
     </AuthLayout>
@@ -459,6 +471,8 @@ export function RegisterPage() {
 }
 
 export function VerifyEmailPage() {
+  const uiText = useInterfaceText();
+
   const search = useSearch({ strict: false }) as { email?: string; error?: "link_invalid" };
   const email = search.email && validEmail(search.email) ? search.email : "your email address";
   const [resent, setResent] = useState(false);
@@ -475,7 +489,7 @@ export function VerifyEmailPage() {
       return;
     }
     setResent(true);
-    toast.success("Verification email requested");
+    toast.success(uiText("Verification email requested"));
   };
   return (
     <AuthLayout
@@ -504,7 +518,9 @@ export function VerifyEmailPage() {
           </p>
         )}
         <p className="mt-5 text-xs text-muted-foreground">
-          The link expires automatically. Check your spam folder if it does not arrive.
+          {uiText(
+            "The link expires automatically. Check your spam folder if it does not arrive.",
+          )}{" "}
         </p>
       </div>
     </AuthLayout>
@@ -512,6 +528,8 @@ export function VerifyEmailPage() {
 }
 
 export function ForgotPasswordPage() {
+  const uiText = useInterfaceText();
+
   const [submitted, setSubmitted] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -534,13 +552,15 @@ export function ForgotPasswordPage() {
   };
   return (
     <AuthLayout
-      title="Reset your password"
-      description="We will send a time-limited password recovery link if an account exists."
+      title={uiText("Reset your password")}
+      description={uiText(
+        "We will send a time-limited password recovery link if an account exists.",
+      )}
     >
       {!submitted ? (
         <form className="mt-7 grid gap-5" onSubmit={(event) => void submitEmail(event)} noValidate>
           <Field
-            label="Email address"
+            label={uiText("Email address")}
             name="reset-email"
             type="email"
             value={email}
@@ -556,9 +576,11 @@ export function ForgotPasswordPage() {
       ) : (
         <div className="mt-7 rounded-xl bg-primary-soft p-5">
           <MailCheck className="size-6 text-primary" />
-          <h2 className="mt-4 font-semibold">Check your email for reset instructions.</h2>
+          <h2 className="mt-4 font-semibold">
+            {uiText("Check your email for reset instructions.")}
+          </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            For privacy, this message is the same whether or not an account exists.
+            {uiText("For privacy, this message is the same whether or not an account exists.")}{" "}
           </p>
         </div>
       )}
@@ -567,6 +589,8 @@ export function ForgotPasswordPage() {
 }
 
 export function ResetPasswordPage() {
+  const uiText = useInterfaceText();
+
   const navigate = useNavigate();
   const { refresh } = useAuth();
   const [password, setPassword] = useState("");
@@ -602,12 +626,12 @@ export function ResetPasswordPage() {
   return (
     <AuthLayout
       title={done ? "Password updated" : "Choose a new password"}
-      description="Set a strong password for your NCAP account."
+      description={uiText("Set a strong password for your NCAP account.")}
     >
       {!done ? (
         <form className="mt-7 grid gap-5" onSubmit={(event) => void submit(event)} noValidate>
           <Field
-            label="New password"
+            label={uiText("New password")}
             name="new-password"
             type="password"
             value={password}
@@ -617,7 +641,7 @@ export function ResetPasswordPage() {
             required
           />
           <Field
-            label="Confirm new password"
+            label={uiText("Confirm new password")}
             name="confirm-password"
             type="password"
             value={confirm}
@@ -637,12 +661,14 @@ export function ResetPasswordPage() {
           <span className="mx-auto grid size-20 place-items-center rounded-full bg-success-soft text-success">
             <KeyRound className="size-9" />
           </span>
-          <p className="mt-5 text-muted-foreground">Your password has been changed securely.</p>
+          <p className="mt-5 text-muted-foreground">
+            {uiText("Your password has been changed securely.")}
+          </p>
           <button
             className={cn(primary, "mt-7 w-full")}
             onClick={() => void navigate({ to: "/dashboard" as never })}
           >
-            Continue
+            {uiText("Continue")}{" "}
           </button>
         </div>
       )}

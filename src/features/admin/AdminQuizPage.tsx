@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus, Trash2, Check, Edit3 } from "lucide-react";
 import { toast } from "sonner";
@@ -81,6 +82,8 @@ function NumberField({
   );
 }
 export function AdminQuizPage() {
+  const uiText = useInterfaceText();
+
   const catalogue = useQuizCatalogue(true);
   const questions = useAdminQuizQuestions();
   const invalidate = useInvalidateQuiz();
@@ -121,7 +124,7 @@ export function AdminQuizPage() {
       await invalidate();
       setChosen(saved.id);
       setEditingQuiz(null);
-      toast.success("Quiz saved");
+      toast.success(uiText("Quiz saved"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Quiz could not be saved.");
     } finally {
@@ -141,7 +144,7 @@ export function AdminQuizPage() {
       await unwrapQuiz(saveQuizQuestion({ data: checked.data }));
       await invalidate();
       setEditingQuestion(null);
-      toast.success("Question saved");
+      toast.success(uiText("Question saved"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Question could not be saved.");
     } finally {
@@ -197,7 +200,7 @@ export function AdminQuizPage() {
       );
       if (chosen === quiz.id) setChosen(null);
       await invalidate();
-      toast.success("Quiz deleted");
+      toast.success(uiText("Quiz deleted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Quiz could not be deleted.");
     } finally {
@@ -213,7 +216,7 @@ export function AdminQuizPage() {
         deleteQuizQuestion({ data: { target: question.id, expectedVersion: question.version! } }),
       );
       await invalidate();
-      toast.success("Question deleted");
+      toast.success(uiText("Question deleted"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Question could not be deleted.");
     } finally {
@@ -223,16 +226,18 @@ export function AdminQuizPage() {
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       <PageHeader
-        eyebrow="Administration · Quizzes"
-        title="Quiz management"
-        description="Manage assessments, published questions, answers, timing, scoring and retake rules."
+        eyebrow={uiText("Administration · Quizzes")}
+        title={uiText("Quiz management")}
+        description={uiText(
+          "Manage assessments, published questions, answers, timing, scoring and retake rules.",
+        )}
         actions={
           <button
             className={primary}
             onClick={() => setEditingQuiz(blankQuiz(modules[0]?.id ?? ""))}
             disabled={!modules.length}
           >
-            <Plus /> Add quiz
+            <Plus /> {uiText("Add quiz")}{" "}
           </button>
         }
       />
@@ -246,7 +251,7 @@ export function AdminQuizPage() {
       )}
       <div className="mt-7 grid gap-6 lg:grid-cols-[340px_1fr]">
         <section className="rounded-xl border bg-white p-5">
-          <h2 className="text-lg font-semibold">Quizzes</h2>
+          <h2 className="text-lg font-semibold">{uiText("Quizzes")}</h2>
           <div className="mt-4 grid gap-2">
             {quizzes.map((quiz) => (
               <button
@@ -256,12 +261,14 @@ export function AdminQuizPage() {
               >
                 <strong className="block">{quiz.title}</strong>
                 <span className="mt-1 block text-muted-foreground">
-                  {quiz.status} · {quiz.availableQuestions} published questions
+                  {quiz.status} · {quiz.availableQuestions} {uiText("published questions")}{" "}
                 </span>
               </button>
             ))}
           </div>
-          {!quizzes.length && <p className="mt-4 text-sm text-muted-foreground">No quizzes yet.</p>}
+          {!quizzes.length && (
+            <p className="mt-4 text-sm text-muted-foreground">{uiText("No quizzes yet.")}</p>
+          )}
         </section>
         <section className="rounded-xl border bg-white p-5">
           {selected ? (
@@ -271,14 +278,15 @@ export function AdminQuizPage() {
                   <h2 className="text-2xl font-semibold">{selected.title}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{selected.description}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {selected.questionCount} questions · {Math.ceil(selected.durationSeconds / 60)}{" "}
-                    min · Pass {selected.passingPercent}% · {selected.maxAttempts ?? "Unlimited"}{" "}
-                    attempts
+                    {selected.questionCount} {uiText("questions ·")}{" "}
+                    {Math.ceil(selected.durationSeconds / 60)} {uiText("min · Pass")}{" "}
+                    {selected.passingPercent}% · {selected.maxAttempts ?? "Unlimited"}{" "}
+                    {uiText("attempts")}{" "}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button className={secondary} onClick={() => setEditingQuiz(selected)}>
-                    <Edit3 className="size-4" /> Edit
+                    <Edit3 className="size-4" /> {uiText("Edit")}{" "}
                   </button>
                   <button
                     className={secondary}
@@ -292,14 +300,14 @@ export function AdminQuizPage() {
                     className={secondary}
                     disabled={busy}
                     onClick={() => void removeQuiz(selected)}
-                    aria-label="Delete quiz"
+                    aria-label={uiText("Delete quiz")}
                   >
                     <Trash2 className="size-4" />
                   </button>
                 </div>
               </div>
               <div className="mt-8 flex items-center justify-between border-t pt-6">
-                <h3 className="text-lg font-semibold">Questions</h3>
+                <h3 className="text-lg font-semibold">{uiText("Questions")}</h3>
                 <button
                   className={primary}
                   onClick={() =>
@@ -309,7 +317,7 @@ export function AdminQuizPage() {
                     })
                   }
                 >
-                  <Plus className="size-4" /> Add question
+                  <Plus className="size-4" /> {uiText("Add question")}{" "}
                 </button>
               </div>
               <div className="mt-4 grid gap-3">
@@ -323,12 +331,12 @@ export function AdminQuizPage() {
                         </p>
                         <h4 className="mt-1 font-semibold">{question.prompt}</h4>
                         <p className="mt-2 text-xs text-muted-foreground">
-                          {question.options.length} answer choices
+                          {question.options.length} {uiText("answer choices")}{" "}
                         </p>
                       </div>
                       <div className="flex gap-2">
                         <button className={secondary} onClick={() => setEditingQuestion(question)}>
-                          Edit
+                          {uiText("Edit")}{" "}
                         </button>
                         <button
                           className={secondary}
@@ -341,7 +349,7 @@ export function AdminQuizPage() {
                           className={secondary}
                           disabled={busy}
                           onClick={() => void removeQuestion(question)}
-                          aria-label="Delete question"
+                          aria-label={uiText("Delete question")}
                         >
                           <Trash2 className="size-4" />
                         </button>
@@ -351,11 +359,13 @@ export function AdminQuizPage() {
                 ))}
               </div>
               {!shownQuestions.length && (
-                <p className="mt-4 text-sm text-muted-foreground">No questions for this quiz.</p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {uiText("No questions for this quiz.")}
+                </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Select or create a quiz.</p>
+            <p className="text-sm text-muted-foreground">{uiText("Select or create a quiz.")}</p>
           )}
         </section>
       </div>
@@ -363,7 +373,7 @@ export function AdminQuizPage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Quiz editor"
+          aria-label={uiText("Quiz editor")}
           className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
         >
           <form
@@ -371,11 +381,11 @@ export function AdminQuizPage() {
             className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
           >
             <h2 className="text-xl font-semibold">
-              {editingQuiz.version ? "Edit" : "Create"} quiz
+              {editingQuiz.version ? "Edit" : "Create"} {uiText("quiz")}{" "}
             </h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-semibold sm:col-span-2">
-                Title
+                {uiText("Title")}{" "}
                 <input
                   required
                   maxLength={160}
@@ -396,7 +406,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Slug
+                {uiText("Slug")}{" "}
                 <input
                   required
                   value={editingQuiz.slug}
@@ -405,7 +415,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Module
+                {uiText("Module")}{" "}
                 <select
                   value={editingQuiz.moduleId}
                   onChange={(e) => setEditingQuiz({ ...editingQuiz, moduleId: e.target.value })}
@@ -419,7 +429,7 @@ export function AdminQuizPage() {
                 </select>
               </label>
               <label className="text-sm font-semibold sm:col-span-2">
-                Description
+                {uiText("Description")}{" "}
                 <textarea
                   required
                   value={editingQuiz.description}
@@ -428,7 +438,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold sm:col-span-2">
-                Instructions
+                {uiText("Instructions")}{" "}
                 <textarea
                   value={editingQuiz.instructions}
                   onChange={(e) => setEditingQuiz({ ...editingQuiz, instructions: e.target.value })}
@@ -436,7 +446,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Topic
+                {uiText("Topic")}{" "}
                 <input
                   required
                   value={editingQuiz.topic}
@@ -445,7 +455,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Difficulty
+                {uiText("Difficulty")}{" "}
                 <select
                   value={editingQuiz.difficulty}
                   onChange={(e) =>
@@ -456,41 +466,41 @@ export function AdminQuizPage() {
                   }
                   className={field}
                 >
-                  <option>Beginner</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
+                  <option>{uiText("Beginner")}</option>
+                  <option>{uiText("Intermediate")}</option>
+                  <option>{uiText("Advanced")}</option>
                 </select>
               </label>
               <NumberField
-                label="Duration (seconds)"
+                label={uiText("Duration (seconds)")}
                 value={editingQuiz.durationSeconds}
                 min={60}
                 max={7200}
                 onChange={(v) => setEditingQuiz({ ...editingQuiz, durationSeconds: v })}
               />
               <NumberField
-                label="Questions per attempt"
+                label={uiText("Questions per attempt")}
                 value={editingQuiz.questionCount}
                 min={1}
                 max={100}
                 onChange={(v) => setEditingQuiz({ ...editingQuiz, questionCount: v })}
               />
               <NumberField
-                label="Passing score (%)"
+                label={uiText("Passing score (%)")}
                 value={editingQuiz.passingPercent}
                 min={0}
                 max={100}
                 onChange={(v) => setEditingQuiz({ ...editingQuiz, passingPercent: v })}
               />
               <NumberField
-                label="Quiz eligibility score (%)"
+                label={uiText("Quiz eligibility score (%)")}
                 value={editingQuiz.eligibilityPercent}
                 min={0}
                 max={100}
                 onChange={(v) => setEditingQuiz({ ...editingQuiz, eligibilityPercent: v })}
               />
               <label className="text-sm font-semibold">
-                Maximum attempts (blank for unlimited)
+                {uiText("Maximum attempts (blank for unlimited)")}{" "}
                 <input
                   type="number"
                   min={1}
@@ -506,14 +516,14 @@ export function AdminQuizPage() {
                 />
               </label>
               <NumberField
-                label="Retake cooldown (seconds)"
+                label={uiText("Retake cooldown (seconds)")}
                 value={editingQuiz.cooldownSeconds}
                 min={0}
                 max={604800}
                 onChange={(v) => setEditingQuiz({ ...editingQuiz, cooldownSeconds: v })}
               />
               <label className="text-sm font-semibold">
-                Status
+                {uiText("Status")}{" "}
                 <select
                   value={editingQuiz.status}
                   onChange={(e) =>
@@ -524,17 +534,17 @@ export function AdminQuizPage() {
                   }
                   className={field}
                 >
-                  <option>Draft</option>
-                  <option>Published</option>
+                  <option>{uiText("Draft")}</option>
+                  <option>{uiText("Published")}</option>
                 </select>
               </label>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" className={secondary} onClick={() => setEditingQuiz(null)}>
-                Cancel
+                {uiText("Cancel")}{" "}
               </button>
               <button className={primary} disabled={busy}>
-                Save quiz
+                {uiText("Save quiz")}{" "}
               </button>
             </div>
           </form>
@@ -544,7 +554,7 @@ export function AdminQuizPage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Question editor"
+          aria-label={uiText("Question editor")}
           className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
         >
           <form
@@ -552,11 +562,11 @@ export function AdminQuizPage() {
             className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
           >
             <h2 className="text-xl font-semibold">
-              {editingQuestion.version ? "Edit" : "Create"} question
+              {editingQuestion.version ? "Edit" : "Create"} {uiText("question")}{" "}
             </h2>
             <div className="mt-5 grid gap-4">
               <label className="text-sm font-semibold">
-                Question
+                {uiText("Question")}{" "}
                 <textarea
                   required
                   value={editingQuestion.prompt}
@@ -568,7 +578,7 @@ export function AdminQuizPage() {
               </label>
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className="text-sm font-semibold">
-                  Topic
+                  {uiText("Topic")}{" "}
                   <input
                     required
                     value={editingQuestion.topic}
@@ -579,7 +589,7 @@ export function AdminQuizPage() {
                   />
                 </label>
                 <label className="text-sm font-semibold">
-                  Difficulty
+                  {uiText("Difficulty")}{" "}
                   <select
                     value={editingQuestion.difficulty}
                     onChange={(e) =>
@@ -590,13 +600,13 @@ export function AdminQuizPage() {
                     }
                     className={field}
                   >
-                    <option>Beginner</option>
-                    <option>Intermediate</option>
-                    <option>Advanced</option>
+                    <option>{uiText("Beginner")}</option>
+                    <option>{uiText("Intermediate")}</option>
+                    <option>{uiText("Advanced")}</option>
                   </select>
                 </label>
                 <NumberField
-                  label="Order"
+                  label={uiText("Order")}
                   value={editingQuestion.order}
                   min={1}
                   max={10000}
@@ -605,7 +615,7 @@ export function AdminQuizPage() {
               </div>
               <fieldset>
                 <legend className="text-sm font-semibold">
-                  Answer choices · Select the correct answer
+                  {uiText("Answer choices · Select the correct answer")}{" "}
                 </legend>
                 <div className="mt-2 grid gap-2">
                   {editingQuestion.options.map((option, i) => (
@@ -616,7 +626,9 @@ export function AdminQuizPage() {
                         checked={editingQuestion.correctIndex === i}
                         onChange={() => setEditingQuestion({ ...editingQuestion, correctIndex: i })}
                       />
-                      <span className="sr-only">Correct answer {i + 1}</span>
+                      <span className="sr-only">
+                        {uiText("Correct answer")} {i + 1}
+                      </span>
                       <input
                         required
                         value={option}
@@ -644,7 +656,7 @@ export function AdminQuizPage() {
                     })
                   }
                 >
-                  Add answer
+                  {uiText("Add answer")}{" "}
                 </button>
                 {editingQuestion.options.length > 2 && (
                   <button
@@ -661,12 +673,12 @@ export function AdminQuizPage() {
                       })
                     }
                   >
-                    Remove last answer
+                    {uiText("Remove last answer")}{" "}
                   </button>
                 )}
               </fieldset>
               <label className="text-sm font-semibold">
-                Explanation
+                {uiText("Explanation")}{" "}
                 <textarea
                   required
                   value={editingQuestion.explanation}
@@ -677,7 +689,7 @@ export function AdminQuizPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Status
+                {uiText("Status")}{" "}
                 <select
                   value={editingQuestion.status}
                   onChange={(e) =>
@@ -688,17 +700,17 @@ export function AdminQuizPage() {
                   }
                   className={field}
                 >
-                  <option>Draft</option>
-                  <option>Published</option>
+                  <option>{uiText("Draft")}</option>
+                  <option>{uiText("Published")}</option>
                 </select>
               </label>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" className={secondary} onClick={() => setEditingQuestion(null)}>
-                Cancel
+                {uiText("Cancel")}{" "}
               </button>
               <button className={primary} disabled={busy}>
-                Save question
+                {uiText("Save question")}{" "}
               </button>
             </div>
           </form>

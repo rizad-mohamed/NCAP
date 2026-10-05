@@ -189,6 +189,7 @@ export function parseAwareness(kind: AwarenessKind, input: unknown) {
   return record;
 }
 export const awarenessListSchema = z.object({
+  language: z.enum(["en", "si", "ta"]).default("en"),
   kind: z.enum(awarenessKinds),
   admin: z.boolean().default(false),
   search: z.string().trim().max(200).default(""),

@@ -1,6 +1,8 @@
+import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
 import { CertificatePreview } from "@/components/common/CertificatePreview";
+import { ContentTranslationEditor } from "@/components/admin/ContentTranslationEditor";
 import { LessonBlockView } from "@/features/learning/LearningPages";
 import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
 import type { StoredCertificateTemplate } from "@/domain/certificates";
@@ -133,6 +135,8 @@ const seedTopicNames: Topic[] = [
 ];
 
 export function AdminDashboardPage() {
+  const uiText = useInterfaceText();
+
   const awareness = useAwarenessSummary();
   const quizSummary = useAdminQuizSummary();
   const dashboard = useAdminDashboard();
@@ -173,14 +177,16 @@ export function AdminDashboardPage() {
   ];
   return (
     <div className="container-ncap max-w-[1400px] py-2">
-      {dashboard.isPending && <p role="status">Loading administration metrics…</p>}
+      {dashboard.isPending && <p role="status">{uiText("Loading administration metrics…")}</p>}
       {dashboard.isError && (
-        <p role="alert">Administration metrics are unavailable. Please refresh.</p>
+        <p role="alert">{uiText("Administration metrics are unavailable. Please refresh.")}</p>
       )}
       <PageHeader
-        eyebrow="Administration"
-        title="Overview"
-        description="Monitor learning activity, content readiness, and assessment engagement."
+        eyebrow={uiText("Administration")}
+        title={uiText("Overview")}
+        description={uiText(
+          "Monitor learning activity, content readiness, and assessment engagement.",
+        )}
       />
       <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {metrics.map((m) => (
@@ -195,7 +201,7 @@ export function AdminDashboardPage() {
       </Suspense>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title="Recent activity" />
+          <SectionHeading title={uiText("Recent activity")} />
           <div className="grid gap-1">
             {(dashboard.data?.recentActivity ?? []).map((a) => (
               <div key={a.id} className="flex gap-3 rounded-lg p-3 hover:bg-muted">
@@ -209,7 +215,7 @@ export function AdminDashboardPage() {
           </div>
         </div>
         <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title="Content overview" />
+          <SectionHeading title={uiText("Content overview")} />
           <div className="grid gap-3">
             {[
               ["Published lessons", dashboard.data?.publishedLessons ?? 0],
@@ -229,10 +235,10 @@ export function AdminDashboardPage() {
           </div>
           <div className="mt-6 grid grid-cols-2 gap-2">
             <AppLink href="/admin/lessons" className={outline}>
-              Manage content
+              {uiText("Manage content")}{" "}
             </AppLink>
             <AppLink href="/admin/questions" className={primary}>
-              Question bank
+              {uiText("Question bank")}{" "}
             </AppLink>
           </div>
         </div>
@@ -241,11 +247,13 @@ export function AdminDashboardPage() {
   );
 }
 function ChartLoading() {
+  const uiText = useInterfaceText();
+
   return (
     <section
       className="mt-6 grid gap-6 xl:grid-cols-2"
       aria-busy="true"
-      aria-label="Loading charts"
+      aria-label={uiText("Loading charts")}
     >
       {[0, 1].map((item) => (
         <div key={item} className="h-[340px] animate-pulse rounded-xl border bg-muted" />
@@ -255,6 +263,8 @@ function ChartLoading() {
 }
 
 export function AdminTopicsPage() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<TopicRecord | "new" | null>(null);
@@ -278,16 +288,16 @@ export function AdminTopicsPage() {
     const value = normalizeTopicName(name);
     const original = editing === "new" ? undefined : (editing ?? undefined);
     if (!value) {
-      toast.error("Topic name is required.");
+      toast.error(uiText("Topic name is required."));
       return;
     }
     if (isDuplicateTopic(store.topics, value, original?.id)) {
-      toast.error("A topic with this name already exists.");
+      toast.error(uiText("A topic with this name already exists."));
       return;
     }
     const slug = topicSlug(value);
     if (store.topics.some((topic) => topic.id !== original?.id && topic.slug === slug)) {
-      toast.error("Choose a topic name with a unique URL slug.");
+      toast.error(uiText("Choose a topic name with a unique URL slug."));
       return;
     }
     if (
@@ -295,7 +305,9 @@ export function AdminTopicsPage() {
       original.name !== value &&
       store.modules.some((module) => module.topic === original.name)
     ) {
-      toast.error("A topic assigned to a Foundation module cannot be renamed in this release.");
+      toast.error(
+        uiText("A topic assigned to a Foundation module cannot be renamed in this release."),
+      );
       return;
     }
     const now = new Date().toISOString().slice(0, 10);
@@ -337,39 +349,47 @@ export function AdminTopicsPage() {
             : item,
         ),
       );
-      toast.info("Referenced topics are deactivated instead of deleted.");
+      toast.info(uiText("Referenced topics are deactivated instead of deleted."));
       return;
     }
     if (!window.confirm(`Delete the unreferenced topic “${topic.name}”?`)) return;
     store.setTopics(store.topics.filter((item) => item.id !== topic.id));
-    toast.success("Topic deleted");
+    toast.success(uiText("Topic deleted"));
   };
   return (
     <div className="container-ncap max-w-6xl py-2">
       <PageHeader
-        eyebrow="Administration · Taxonomy"
-        title="Topics"
-        description="Maintain the topic taxonomy used by learning, quizzes, search, and reports. Awareness topics are maintained on each resource."
+        eyebrow={uiText("Administration · Taxonomy")}
+        title={uiText("Topics")}
+        description={uiText(
+          "Maintain the topic taxonomy used by learning, quizzes, search, and reports. Awareness topics are maintained on each resource.",
+        )}
         actions={
           <button className={primary} onClick={() => open("new")}>
             <Plus />
-            Create topic
+            {uiText("Create topic")}{" "}
           </button>
         }
       />
       <FilterToolbar>
-        <DashboardSearchInput value={search} onChange={setSearch} placeholder="Search topics…" />
-        <span className="text-sm text-muted-foreground">{filtered.length} topics</span>
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={uiText("Search topics…")}
+        />
+        <span className="text-sm text-muted-foreground">
+          {filtered.length} {uiText("topics")}
+        </span>
       </FilterToolbar>
       <div className="mt-4 overflow-x-auto rounded-xl border bg-white">
         <table className="w-full min-w-[700px] text-left text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3">Topic</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Usage</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{uiText("Topic")}</th>
+              <th className="px-4 py-3">{uiText("Slug")}</th>
+              <th className="px-4 py-3">{uiText("Usage")}</th>
+              <th className="px-4 py-3">{uiText("Status")}</th>
+              <th className="px-4 py-3 text-right">{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -406,8 +426,8 @@ export function AdminTopicsPage() {
         {filtered.length === 0 && (
           <div className="p-6">
             <EmptyState
-              title="No topics found"
-              description="Adjust the search or create a topic."
+              title={uiText("No topics found")}
+              description={uiText("Adjust the search or create a topic.")}
             />
           </div>
         )}
@@ -415,14 +435,16 @@ export function AdminTopicsPage() {
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing === "new" ? "Create" : "Edit"} topic</DialogTitle>
+            <DialogTitle>
+              {editing === "new" ? "Create" : "Edit"} {uiText("topic")}
+            </DialogTitle>
             <DialogDescription>
-              Names must remain unique across the shared taxonomy.
+              {uiText("Names must remain unique across the shared taxonomy.")}{" "}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={save} className="grid gap-4">
             <label className="text-sm font-semibold">
-              Topic name *
+              {uiText("Topic name *")}{" "}
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -438,9 +460,9 @@ export function AdminTopicsPage() {
             </datalist>
             <DialogFooter>
               <button type="button" className={outline} onClick={() => setEditing(null)}>
-                Cancel
+                {uiText("Cancel")}{" "}
               </button>
-              <button className={primary}>Save topic</button>
+              <button className={primary}>{uiText("Save topic")}</button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -451,6 +473,8 @@ export function AdminTopicsPage() {
 
 type ContentKind = "lessons" | "articles" | "posters" | "infographics" | "questions";
 export function AdminContentPage({ kind }: { kind: ContentKind }) {
+  const uiText = useInterfaceText();
+
   const s = useNcap();
   const repository = useRepository();
   const saveLesson = useSaveRepositoryRecord(repository, "lessons");
@@ -473,7 +497,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         { ...other, order: lesson.order },
       ]);
       await queryClient.invalidateQueries({ queryKey: ["repository", "lessons"] });
-      toast.success("Lesson order updated");
+      toast.success(uiText("Lesson order updated"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Lesson order could not be updated.");
     } finally {
@@ -525,7 +549,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
       const lesson = s.lessons.find((l) => l.id === id);
       void deleteLesson
         .mutateAsync({ id, version: lesson?.version })
-        .then(() => toast.success("Lesson deleted"))
+        .then(() => toast.success(uiText("Lesson deleted")))
         .catch((error) => toast.error(error.message));
       return;
     }
@@ -548,7 +572,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
     if (kind === "posters") s.setPosters(s.posters.filter((x) => x.id !== id));
     if (kind === "infographics") s.setInfographics(s.infographics.filter((x) => x.id !== id));
     if (kind === "questions") s.setQuestions(s.questions.filter((x) => x.id !== id));
-    toast.success("Demo record deleted");
+    toast.success(uiText("Demo record deleted"));
   };
   const toggle = (item: Lesson | Article | Poster | Infographic | QuizQuestion) => {
     const nextStatus = item.status === "Published" ? "Draft" : "Published";
@@ -556,7 +580,9 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
       const lesson = item as Lesson;
       const parsedVideo = lesson.video ? lessonVideoSchema.safeParse(lesson.video) : null;
       if (parsedVideo && (!parsedVideo.success || !parsedVideo.data.transcript.trim())) {
-        toast.error("Add a valid video and transcript before publishing this video lesson.");
+        toast.error(
+          uiText("Add a valid video and transcript before publishing this video lesson."),
+        );
         return;
       }
     }
@@ -593,7 +619,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         order,
         status: "Draft",
       })
-      .then(() => toast.success("Lesson duplicated as draft"))
+      .then(() => toast.success(uiText("Lesson duplicated as draft")))
       .catch((error) => toast.error(error.message));
   };
   return (
@@ -605,7 +631,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         actions={
           <button className={primary} onClick={() => setEditing("new")}>
             <Plus />
-            Add {kind === "questions" ? "question" : kind.slice(0, -1)}
+            {uiText("Add")} {kind === "questions" ? "question" : kind.slice(0, -1)}
           </button>
         }
       />
@@ -616,11 +642,13 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
           onChange={(e) => setStatus(e.target.value)}
           className="h-11 rounded-lg border bg-white px-3"
         >
-          <option>All</option>
-          <option>Published</option>
-          <option>Draft</option>
+          <option>{uiText("All")}</option>
+          <option>{uiText("Published")}</option>
+          <option>{uiText("Draft")}</option>
         </select>
-        <span className="ml-auto text-sm text-muted-foreground">{items.length} records</span>
+        <span className="ml-auto text-sm text-muted-foreground">
+          {items.length} {uiText("records")}
+        </span>
       </FilterToolbar>
       <div className="mt-4 overflow-x-auto rounded-xl border bg-white">
         <table className="w-full min-w-[900px] text-left text-sm">
@@ -632,10 +660,10 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
               <th className="px-4 py-3">
                 {kind === "lessons" ? "Module" : kind === "articles" ? "Category" : "Topic"}
               </th>
-              <th className="px-4 py-3">Details</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Updated</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{uiText("Details")}</th>
+              <th className="px-4 py-3">{uiText("Status")}</th>
+              <th className="px-4 py-3">{uiText("Updated")}</th>
+              <th className="px-4 py-3 text-right">{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -694,6 +722,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
                       </button>
                       {kind === "lessons" && (
                         <>
+                          <ContentTranslationEditor kind="lessons" source={item as Lesson} />
                           <button
                             className={iconBtn}
                             disabled={saveLesson.isPending || deleteLesson.isPending}
@@ -763,7 +792,7 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
           <div className="p-6">
             <EmptyState
               title={`No ${kind} found`}
-              description="Adjust search or create a new record."
+              description={uiText("Adjust search or create a new record.")}
             />
           </div>
         )}
@@ -771,7 +800,9 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
       <Dialog open={!!previewLesson} onOpenChange={(open) => !open && setPreviewLesson(null)}>
         <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Preview {previewLesson?.title}</DialogTitle>
+            <DialogTitle>
+              {uiText("Preview")} {previewLesson?.title}
+            </DialogTitle>
             <DialogDescription>{previewLesson?.summary}</DialogDescription>
           </DialogHeader>
           {previewLesson && (
@@ -818,6 +849,8 @@ function ContentEditor({
   value: Lesson | Article | Poster | Infographic | QuizQuestion | "new" | null;
   onClose: () => void;
 }) {
+  const uiText = useInterfaceText();
+
   const s = useNcap();
   const repository = useRepository();
   const saveLesson = useSaveRepositoryRecord(repository, "lessons");
@@ -954,7 +987,7 @@ function ContentEditor({
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (videoBusy) {
-      toast.error("Wait for the video to finish preparing before saving.");
+      toast.error(uiText("Wait for the video to finish preparing before saving."));
       return;
     }
     if (!title.trim()) {
@@ -962,7 +995,7 @@ function ContentEditor({
       return;
     }
     if ((kind === "lessons" || kind === "questions") && !moduleId) {
-      toast.error("Create a learning module before adding linked content.");
+      toast.error(uiText("Create a learning module before adding linked content."));
       return;
     }
     if (
@@ -971,7 +1004,7 @@ function ContentEditor({
       !media &&
       !(original && "file" in original && original.file)
     ) {
-      toast.error("Add an image before publishing this visual resource.");
+      toast.error(uiText("Add an image before publishing this visual resource."));
       return;
     }
     if (status === "Published" && !summary.trim() && kind !== "questions") {
@@ -983,7 +1016,7 @@ function ContentEditor({
       return;
     }
     if (kind === "articles" && status === "Published" && !articleBody.trim()) {
-      toast.error("Add the article body before publishing.");
+      toast.error(uiText("Add the article body before publishing."));
       return;
     }
     const id =
@@ -1007,7 +1040,7 @@ function ContentEditor({
         return;
       }
       if (status === "Published" && parsedVideo?.data && !parsedVideo.data.transcript.trim()) {
-        toast.error("Add a video transcript before publishing this video lesson.");
+        toast.error(uiText("Add a video transcript before publishing this video lesson."));
         return;
       }
       const item: Lesson = {
@@ -1124,16 +1157,16 @@ function ContentEditor({
         .map((text, originalIndex) => ({ text: text.trim(), originalIndex }))
         .filter((option) => option.text);
       if (validOptions.length < 2) {
-        toast.error("Add at least two valid answer choices");
+        toast.error(uiText("Add at least two valid answer choices"));
         return;
       }
       const correctIndex = validOptions.findIndex((option) => option.originalIndex === correct);
       if (correctIndex < 0) {
-        toast.error("Choose a non-empty answer as the correct choice");
+        toast.error(uiText("Choose a non-empty answer as the correct choice"));
         return;
       }
       if (!explanation.trim()) {
-        toast.error("An answer explanation is required");
+        toast.error(uiText("An answer explanation is required"));
         return;
       }
       const item: QuizQuestion = {
@@ -1217,7 +1250,7 @@ function ContentEditor({
           <div className="grid gap-4 sm:grid-cols-2">
             {(kind === "lessons" || kind === "questions") && (
               <label className="text-sm font-semibold">
-                Module
+                {uiText("Module")}{" "}
                 <select
                   value={moduleId}
                   onChange={(e) => {
@@ -1249,7 +1282,7 @@ function ContentEditor({
             {kind === "lessons" && (
               <>
                 <label className="text-sm font-semibold">
-                  Estimated minutes
+                  {uiText("Estimated minutes")}{" "}
                   <input
                     type="number"
                     min={1}
@@ -1260,7 +1293,7 @@ function ContentEditor({
                   />
                 </label>
                 <label className="text-sm font-semibold">
-                  Lesson order
+                  {uiText("Lesson order")}{" "}
                   <input
                     type="number"
                     min={1}
@@ -1273,7 +1306,7 @@ function ContentEditor({
               </>
             )}
             <label className="text-sm font-semibold">
-              Topic
+              {uiText("Topic")}{" "}
               <select
                 value={topic}
                 onChange={(e) => setTopic(e.target.value as Topic)}
@@ -1288,34 +1321,34 @@ function ContentEditor({
             </label>
             {(kind === "lessons" || kind === "questions") && (
               <label className="text-sm font-semibold">
-                Difficulty
+                {uiText("Difficulty")}{" "}
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
                   className={field}
                 >
-                  <option>Beginner</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
+                  <option>{uiText("Beginner")}</option>
+                  <option>{uiText("Intermediate")}</option>
+                  <option>{uiText("Advanced")}</option>
                 </select>
               </label>
             )}
             <label className="text-sm font-semibold">
-              Status
+              {uiText("Status")}{" "}
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as typeof status)}
                 className={field}
               >
-                <option>Draft</option>
-                <option>Published</option>
+                <option>{uiText("Draft")}</option>
+                <option>{uiText("Published")}</option>
               </select>
             </label>
           </div>
           {kind === "lessons" && (
             <>
               <label className="text-sm font-semibold">
-                Learning objectives (one per line)
+                {uiText("Learning objectives (one per line)")}{" "}
                 <textarea
                   value={objectivesText}
                   onChange={(event) => setObjectivesText(event.target.value)}
@@ -1334,7 +1367,7 @@ function ContentEditor({
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 <label className="text-sm font-semibold sm:col-span-1">
-                  Author
+                  {uiText("Author")}{" "}
                   <input
                     value={author}
                     onChange={(event) => setAuthor(event.target.value)}
@@ -1343,7 +1376,7 @@ function ContentEditor({
                   />
                 </label>
                 <label className="text-sm font-semibold">
-                  Reading minutes
+                  {uiText("Reading minutes")}{" "}
                   <input
                     type="number"
                     min={1}
@@ -1354,7 +1387,7 @@ function ContentEditor({
                   />
                 </label>
                 <label className="text-sm font-semibold">
-                  Publication date
+                  {uiText("Publication date")}{" "}
                   <input
                     type="date"
                     value={publishedAt}
@@ -1364,12 +1397,12 @@ function ContentEditor({
                 </label>
               </div>
               <label className="text-sm font-semibold">
-                Article body *
+                {uiText("Article body *")}{" "}
                 <textarea
                   value={articleBody}
                   onChange={(event) => setArticleBody(event.target.value)}
                   className="mt-1.5 min-h-48 w-full rounded-lg border p-3"
-                  placeholder="Separate paragraphs with a blank line."
+                  placeholder={uiText("Separate paragraphs with a blank line.")}
                 />
               </label>
             </>
@@ -1403,7 +1436,7 @@ function ContentEditor({
           {kind === "questions" && (
             <>
               <fieldset>
-                <legend className="text-sm font-semibold">Answer choices *</legend>
+                <legend className="text-sm font-semibold">{uiText("Answer choices *")}</legend>
                 <div className="mt-2 grid gap-2">
                   {options.map((o, i) => (
                     <div key={i} className="flex items-center gap-2">
@@ -1427,7 +1460,7 @@ function ContentEditor({
                 </div>
               </fieldset>
               <label className="text-sm font-semibold">
-                Explanation *
+                {uiText("Explanation *")}{" "}
                 <textarea
                   value={explanation}
                   onChange={(e) => setExplanation(e.target.value)}
@@ -1438,10 +1471,10 @@ function ContentEditor({
           )}
           <DialogFooter>
             <button type="button" className={outline} onClick={onClose}>
-              Cancel
+              {uiText("Cancel")}{" "}
             </button>
             <button className={primary} disabled={videoBusy || saveLesson.isPending}>
-              Save {kind === "questions" ? "question" : "record"}
+              {uiText("Save")} {kind === "questions" ? "question" : "record"}
             </button>
           </DialogFooter>
         </form>
@@ -1451,6 +1484,8 @@ function ContentEditor({
 }
 
 export function AdminCertificatesPage() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const [view, setView] = useState<"registry" | "template">("registry");
   const [page, setPage] = useState(1);
@@ -1482,7 +1517,7 @@ export function AdminCertificatesPage() {
     event.preventDefault();
     try {
       await settings.save.mutateAsync(template);
-      toast.success("Certificate template saved");
+      toast.success(uiText("Certificate template saved"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to save template.");
     }
@@ -1490,7 +1525,7 @@ export function AdminCertificatesPage() {
   const issue = async (userId: string, moduleId: string) => {
     try {
       await registry.issue.mutateAsync({ userId, moduleId });
-      toast.success("Certificate issued");
+      toast.success(uiText("Certificate issued"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to issue certificate.");
     }
@@ -1500,7 +1535,7 @@ export function AdminCertificatesPage() {
     if (!reason?.trim()) return;
     try {
       await registry.revoke.mutateAsync({ id, reason });
-      toast.success("Certificate revoked");
+      toast.success(uiText("Certificate revoked"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to revoke certificate.");
     }
@@ -1508,9 +1543,11 @@ export function AdminCertificatesPage() {
   return (
     <div className="container-ncap max-w-[1400px] py-2">
       <PageHeader
-        eyebrow="Administration · Certificates"
-        title="Certificate management"
-        description="Use one policy for learner eligibility, issuance records, and the print-friendly template."
+        eyebrow={uiText("Administration · Certificates")}
+        title={uiText("Certificate management")}
+        description={uiText(
+          "Use one policy for learner eligibility, issuance records, and the print-friendly template.",
+        )}
         actions={
           <div className="flex gap-2">
             <button
@@ -1518,26 +1555,26 @@ export function AdminCertificatesPage() {
               onClick={() => setView("registry")}
             >
               <FileCheck2 />
-              Registry
+              {uiText("Registry")}{" "}
             </button>
             <button
               className={view === "template" ? primary : outline}
               onClick={() => setView("template")}
             >
               <Settings />
-              Template
+              {uiText("Template")}{" "}
             </button>
           </div>
         }
       />
       {(registry.isPending || settings.isPending) && (
         <p role="status" className="mt-4">
-          Loading certificates…
+          {uiText("Loading certificates…")}{" "}
         </p>
       )}
       {(registry.isError || settings.isError) && (
         <p role="alert" className="mt-4">
-          Certificate data unavailable. Please refresh.
+          {uiText("Certificate data unavailable. Please refresh.")}{" "}
         </p>
       )}
       <CertificatePreview id={preview} onClose={() => setPreview(null)} />
@@ -1549,10 +1586,10 @@ export function AdminCertificatesPage() {
               setSearch(value);
               setPage(1);
             }}
-            placeholder="Search learners or modules…"
+            placeholder={uiText("Search learners or modules…")}
           />
           <select
-            aria-label="Certificate module"
+            aria-label={uiText("Certificate module")}
             className={dashboardSelect}
             value={moduleId}
             onChange={(event) => {
@@ -1560,7 +1597,7 @@ export function AdminCertificatesPage() {
               setPage(1);
             }}
           >
-            <option value="">All modules</option>
+            <option value="">{uiText("All modules")}</option>
             {store.modules.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.title}
@@ -1599,8 +1636,12 @@ export function AdminCertificatesPage() {
                     <StatusBadge value={r.eligibility.eligible ? "Eligible" : "Not eligible"} />
                   </td>
                   <td className="px-4 py-4 text-xs">
-                    <span className="block">Lessons: {r.eligibility.completionPercent}%</span>
-                    <span className="block">Best quiz: {r.eligibility.bestScore}%</span>
+                    <span className="block">
+                      {uiText("Lessons:")} {r.eligibility.completionPercent}%
+                    </span>
+                    <span className="block">
+                      {uiText("Best quiz:")} {r.eligibility.bestScore}%
+                    </span>
                   </td>
                   <td className="px-4 py-4">
                     <StatusBadge value={r.record?.status ?? "Pending"} />
@@ -1615,7 +1656,7 @@ export function AdminCertificatesPage() {
                         onClick={() => setPreview(r.record?.id ?? null)}
                       >
                         <Eye />
-                        Preview
+                        {uiText("Preview")}{" "}
                       </button>
                       {r.record?.status === "Issued" ? (
                         <button
@@ -1623,7 +1664,7 @@ export function AdminCertificatesPage() {
                           disabled={registry.revoke.isPending}
                           onClick={() => void revoke(r.record!.id)}
                         >
-                          Revoke
+                          {uiText("Revoke")}{" "}
                         </button>
                       ) : (
                         <button
@@ -1635,7 +1676,7 @@ export function AdminCertificatesPage() {
                           }
                           onClick={() => void issue(r.user.id, r.module.id)}
                         >
-                          Mark issued
+                          {uiText("Mark issued")}{" "}
                         </button>
                       )}
                     </div>
@@ -1647,8 +1688,8 @@ export function AdminCertificatesPage() {
           {!registry.isPending && !rows.length && (
             <div className="p-6">
               <EmptyState
-                title="No certificate records"
-                description="Adjust the search or module filter."
+                title={uiText("No certificate records")}
+                description={uiText("Adjust the search or module filter.")}
               />
             </div>
           )}
@@ -1665,9 +1706,9 @@ export function AdminCertificatesPage() {
             onSubmit={(event) => void saveTemplate(event)}
             className="grid content-start gap-4 rounded-xl border bg-white p-5"
           >
-            <h2 className="text-xl font-semibold">Template settings</h2>
+            <h2 className="text-xl font-semibold">{uiText("Template settings")}</h2>
             <label className="text-sm font-semibold">
-              Title *
+              {uiText("Title *")}{" "}
               <input
                 value={template.title}
                 onChange={(event) =>
@@ -1678,7 +1719,7 @@ export function AdminCertificatesPage() {
               />
             </label>
             <label className="text-sm font-semibold">
-              Supporting text
+              {uiText("Supporting text")}{" "}
               <input
                 value={template.subtitle}
                 onChange={(event) =>
@@ -1689,7 +1730,7 @@ export function AdminCertificatesPage() {
               />
             </label>
             <label className="text-sm font-semibold">
-              Issuer *
+              {uiText("Issuer *")}{" "}
               <input
                 value={template.issuer}
                 onChange={(event) =>
@@ -1700,7 +1741,7 @@ export function AdminCertificatesPage() {
               />
             </label>
             <label className="text-sm font-semibold">
-              Certificate wording *
+              {uiText("Certificate wording *")}{" "}
               <textarea
                 value={template.body}
                 onChange={(event) =>
@@ -1712,7 +1753,7 @@ export function AdminCertificatesPage() {
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm font-semibold">
-                Signatory name
+                {uiText("Signatory name")}{" "}
                 <input
                   value={template.signatoryName}
                   onChange={(event) =>
@@ -1722,7 +1763,7 @@ export function AdminCertificatesPage() {
                 />
               </label>
               <label className="text-sm font-semibold">
-                Signatory title
+                {uiText("Signatory title")}{" "}
                 <input
                   value={template.signatoryTitle}
                   onChange={(event) =>
@@ -1733,7 +1774,7 @@ export function AdminCertificatesPage() {
               </label>
             </div>
             <label className="text-sm font-semibold">
-              Theme
+              {uiText("Theme")}{" "}
               <select
                 value={template.theme}
                 onChange={(event) =>
@@ -1744,13 +1785,13 @@ export function AdminCertificatesPage() {
                 }
                 className={field}
               >
-                <option value="navy">NCAP navy</option>
-                <option value="blue">NCAP blue</option>
-                <option value="teal">NCAP teal</option>
+                <option value="navy">{uiText("NCAP navy")}</option>
+                <option value="blue">{uiText("NCAP blue")}</option>
+                <option value="teal">{uiText("NCAP teal")}</option>
               </select>
             </label>
             <MediaField
-              label="Certificate logo"
+              label={uiText("Certificate logo")}
               acceptedTypes={["image/png", "image/jpeg"]}
               storage="learning"
               asset={template.logo}
@@ -1761,7 +1802,7 @@ export function AdminCertificatesPage() {
               }
             />
             <button className={primary} disabled={!settings.data || settings.save.isPending}>
-              Save template
+              {uiText("Save template")}{" "}
             </button>
           </form>
           <section className="rounded-xl border bg-white p-4 md:p-8">
@@ -1776,20 +1817,22 @@ export function AdminCertificatesPage() {
               )}
             >
               <ShieldCheck className="mx-auto size-12 text-primary" aria-hidden="true" />
-              <p className="meta mt-5 text-primary">{template.issuer} · Template preview</p>
+              <p className="meta mt-5 text-primary">
+                {template.issuer} {uiText("· Template preview")}
+              </p>
               <h2 className="mt-5 text-4xl font-semibold">
                 {template.title || "Certificate title"}
               </h2>
               <p className="mt-3 text-muted-foreground">{template.subtitle}</p>
               <p className="mx-auto mt-8 max-w-2xl">{template.body}</p>
-              <p className="mt-8 text-3xl font-semibold">Sample Learner</p>
-              <p className="mt-3 text-xl">Digital Safety Fundamentals</p>
+              <p className="mt-8 text-3xl font-semibold">{uiText("Sample Learner")}</p>
+              <p className="mt-3 text-xl">{uiText("Digital Safety Fundamentals")}</p>
               <div className="mx-auto mt-12 max-w-xs border-t pt-2">
                 <p className="font-semibold">{template.signatoryName}</p>
                 <p className="text-sm text-muted-foreground">{template.signatoryTitle}</p>
               </div>
               <p className="mt-8 font-mono text-xs text-muted-foreground">
-                Template preview · No certificate issued
+                {uiText("Template preview · No certificate issued")}{" "}
               </p>
             </div>
             <button
@@ -1798,7 +1841,7 @@ export function AdminCertificatesPage() {
               className={cn(outline, "no-print mt-4")}
             >
               <Printer />
-              Print / Save as PDF
+              {uiText("Print / Save as PDF")}{" "}
             </button>
           </section>
         </div>
@@ -1808,6 +1851,8 @@ export function AdminCertificatesPage() {
 }
 
 export function AdminProfilePage() {
+  const uiText = useInterfaceText();
+
   const store = useNcap();
   const auth = useAuth();
   const { language, setLanguage } = useI18n();
@@ -1825,11 +1870,11 @@ export function AdminProfilePage() {
   const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
     if (profile.name.trim().length < 2) {
-      toast.error("Enter your full name.");
+      toast.error(uiText("Enter your full name."));
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(profile.email.trim())) {
-      toast.error("Enter a valid email address.");
+      toast.error(uiText("Enter a valid email address."));
       return;
     }
     const phone = phoneSchema.safeParse(profile.phone);
@@ -1862,7 +1907,7 @@ export function AdminProfilePage() {
     });
     setLanguage(profile.language);
     await auth.refresh();
-    toast.success("Administrator profile updated");
+    toast.success(uiText("Administrator profile updated"));
   };
   const changePassword = async (event: FormEvent) => {
     event.preventDefault();
@@ -1872,7 +1917,7 @@ export function AdminProfilePage() {
       return;
     }
     if (passwords.next !== passwords.confirm) {
-      toast.error("New passwords do not match.");
+      toast.error(uiText("New passwords do not match."));
       return;
     }
     setSavingPassword(true);
@@ -1882,7 +1927,7 @@ export function AdminProfilePage() {
       });
       if (!result.ok) throw new Error(result.message);
       setPasswords({ current: "", next: "", confirm: "" });
-      toast.success("Password changed securely.");
+      toast.success(uiText("Password changed securely."));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The request could not be completed.");
     } finally {
@@ -1892,19 +1937,19 @@ export function AdminProfilePage() {
   return (
     <div className="container-ncap max-w-5xl py-2">
       <PageHeader
-        eyebrow="Administration · Account"
-        title="Profile and account settings"
-        description="Manage your secure Super Administrator profile and password."
+        eyebrow={uiText("Administration · Account")}
+        title={uiText("Profile and account settings")}
+        description={uiText("Manage your secure Super Administrator profile and password.")}
       />
       <div className="mt-7 grid gap-6 lg:grid-cols-2">
         <form
           onSubmit={saveProfile}
           className="grid content-start gap-4 rounded-xl border bg-white p-6"
         >
-          <h2 className="text-xl font-semibold">Profile</h2>
+          <h2 className="text-xl font-semibold">{uiText("Profile")}</h2>
           <MediaField
             storage="profile"
-            label="Profile picture"
+            label={uiText("Profile picture")}
             asset={profile.avatar}
             initialAlt={`${profile.name} profile picture`}
             guidance="A square image is recommended."
@@ -1916,7 +1961,7 @@ export function AdminProfilePage() {
             }
           />
           <label className="text-sm font-semibold">
-            Full name *
+            {uiText("Full name *")}{" "}
             <input
               value={profile.name}
               onChange={(event) => setProfile((value) => ({ ...value, name: event.target.value }))}
@@ -1926,7 +1971,7 @@ export function AdminProfilePage() {
             />
           </label>
           <label className="text-sm font-semibold">
-            Email address *
+            {uiText("Email address *")}{" "}
             <input
               type="email"
               value={profile.email}
@@ -1935,7 +1980,7 @@ export function AdminProfilePage() {
             />
           </label>
           <label className="text-sm font-semibold">
-            Phone number
+            {uiText("Phone number")}{" "}
             <input
               type="tel"
               value={profile.phone}
@@ -1946,7 +1991,7 @@ export function AdminProfilePage() {
             />
           </label>
           <label className="text-sm font-semibold">
-            Preferred language
+            {uiText("Preferred language")}{" "}
             <select
               value={profile.language}
               onChange={(event) =>
@@ -1957,13 +2002,13 @@ export function AdminProfilePage() {
               }
               className={field}
             >
-              <option value="en">English</option>
+              <option value="en">{uiText("English")}</option>
               <option value="si">සිංහල</option>
               <option value="ta">தமிழ்</option>
             </select>
           </label>
           <label className="flex min-h-12 items-center justify-between gap-3 rounded-lg border p-4 text-sm font-semibold">
-            Admin notifications
+            {uiText("Admin notifications")}{" "}
             <input
               type="checkbox"
               checked={profile.notifications}
@@ -1981,13 +2026,14 @@ export function AdminProfilePage() {
           onSubmit={(event) => void changePassword(event)}
           className="grid content-start gap-4 rounded-xl border bg-white p-6"
         >
-          <h2 className="text-xl font-semibold">Change password</h2>
+          <h2 className="text-xl font-semibold">{uiText("Change password")}</h2>
           <p className="rounded-lg bg-warning-soft p-4 text-sm">
-            Your current password is required. Password values are sent only to the protected
-            authentication endpoint and are never stored by NCAP.
+            {uiText(
+              "Your current password is required. Password values are sent only to the protected authentication endpoint and are never stored by NCAP.",
+            )}{" "}
           </p>
           <label className="text-sm font-semibold">
-            Current password *
+            {uiText("Current password *")}{" "}
             <input
               type="password"
               value={passwords.current}
@@ -2000,7 +2046,7 @@ export function AdminProfilePage() {
             />
           </label>
           <label className="text-sm font-semibold">
-            New password *
+            {uiText("New password *")}{" "}
             <input
               type="password"
               value={passwords.next}
@@ -2013,10 +2059,10 @@ export function AdminProfilePage() {
             />
           </label>
           <p className="text-xs text-muted-foreground">
-            Use 8–128 characters with at least one letter and one number.
+            {uiText("Use 8–128 characters with at least one letter and one number.")}{" "}
           </p>
           <label className="text-sm font-semibold">
-            Confirm new password *
+            {uiText("Confirm new password *")}{" "}
             <input
               type="password"
               value={passwords.confirm}

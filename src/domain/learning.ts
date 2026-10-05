@@ -64,6 +64,7 @@ export const learningSchemas = {
     }),
 };
 export const learningListSchema = z.object({
+  language: z.enum(["en", "si", "ta"]).default("en"),
   kind: z.enum(learningKinds),
   admin: z.boolean().default(false),
   search: z.string().trim().max(200).default(""),

@@ -1,3 +1,4 @@
+import { useInterfaceText } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -118,13 +119,15 @@ export function DashboardPagination({
   onPageChange: (page: number) => void;
   count: number;
 }) {
+  const uiText = useInterfaceText();
+
   return (
     <nav
       className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"
-      aria-label="Results pagination"
+      aria-label={uiText("Results pagination")}
     >
       <span aria-live="polite">
-        {count} records · Page {page} of {pages}
+        {count} {uiText("records · Page")} {page} {uiText("of")} {pages}
       </span>
       <div className="flex gap-2">
         <button
@@ -132,7 +135,7 @@ export function DashboardPagination({
           className={dashboardButton.icon}
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          aria-label="Previous page"
+          aria-label={uiText("Previous page")}
         >
           <ChevronLeft />
         </button>
@@ -141,7 +144,7 @@ export function DashboardPagination({
           className={dashboardButton.icon}
           disabled={page >= pages}
           onClick={() => onPageChange(page + 1)}
-          aria-label="Next page"
+          aria-label={uiText("Next page")}
         >
           <ChevronRight />
         </button>
