@@ -366,7 +366,7 @@ export function AdminAnnouncementsPage() {
           role="presentation"
         >
           <form
-            className="grid w-full max-w-xl gap-4 rounded-xl bg-white p-6"
+            className="grid max-h-[90vh] w-full max-w-xl gap-4 overflow-y-auto rounded-xl bg-white p-6"
             onSubmit={submit}
             role="dialog"
             aria-modal="true"
