@@ -31,7 +31,7 @@ async function sql(query) {
 const tables = await sql(`select c.relname as name,c.relrowsecurity as rls,
   (select count(*)::integer from pg_policy p where p.polrelid=c.oid) as policies
   from pg_class c where c.relnamespace='public'::regnamespace and c.relkind='r'
-  and (c.relname ~ '^(awareness_|learning_|quiz_|dashboard_|certificate)' or c.relname in ('profiles','admin_user_audit')) order by c.relname`);
+  and (c.relname ~ '^(awareness_|learning_|quiz_|dashboard_|certificate)' or c.relname in ('profiles','admin_user_audit','announcement_audit','in_app_notifications','notification_generation_audit','content_translations','content_translation_audit')) order by c.relname`);
 const unsafe =
   await sql(`select n.nspname as schema,p.proname as name from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname in ('public','private') and p.prosecdef and not exists(select 1 from unnest(p.proconfig) cfg where cfg like 'search_path=%')`);

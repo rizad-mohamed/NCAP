@@ -94,6 +94,12 @@ const integrityTables = [
   "learning_bookmarks",
   "quiz_attempts",
   "certificates",
+  "dashboard_announcements",
+  "announcement_audit",
+  "in_app_notifications",
+  "notification_generation_audit",
+  "content_translations",
+  "content_translation_audit",
 ];
 async function integritySnapshot() {
   return sql(
@@ -492,6 +498,7 @@ try {
       delete from public.learning_audit where actor_id='${adminId}';
       delete from public.quiz_audit where actor_id='${adminId}';
       delete from public.admin_user_audit where actor_id='${adminId}' or target_id in ('${learnerId}','${outsiderId}');
+      delete from public.notification_generation_audit where user_uuid::text in ('${adminId}','${learnerId}','${outsiderId}');
       -- Remove only this run's direct-SQL audit fixtures; preserve earlier history.
       delete from public.learning_audit a where actor_id is null and kind='lessons'
         and coalesce(after_data->>'moduleId',before_data->>'moduleId')='${moduleId}'
@@ -530,6 +537,6 @@ try {
   await rm(recoveryManifest, { force: true });
   if (adminId || learnerId)
     console.log(
-      "Disposable staging accounts, content, activity and certificates removed; all 11 content/progress table digests match the baseline.",
+      `Disposable staging accounts, content, activity and certificates removed; all ${integrityTables.length} content/progress table digests match the baseline.`,
     );
 }
