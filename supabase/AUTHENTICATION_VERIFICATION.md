@@ -30,7 +30,7 @@ Applied and recorded transactionally:
 
 No existing production data was dropped or recreated. Auth profile creation and email-sync triggers remain in place; registration metadata cannot set a privileged role. Existing final-admin safeguards, role/status RPCs, and account ban/request-hook architecture remain in use.
 
-With explicit approval, staging now requires email confirmation and an eight-character password with a letter and a digit. Supabase also requires the current password for ordinary password updates. Staging Site URL is `http://127.0.0.1:4173`; its allowlist contains only the local worker callback and encoded recovery callback. This is a development test configuration, not a production HTTPS configuration.
+With explicit approval, the October 4 verification configured staging to require email confirmation and an eight-character password with a letter and a digit. The October 7 inspection found auto-confirmation enabled; see [registration throttle and email-quota verification](AUTH_REGISTRATION_RATE_LIMITS.md) for current configuration, the safely restored test setting, and the registration error-mapping correction. Supabase also requires the current password for ordinary password updates. Staging Site URL is `http://127.0.0.1:4173`; its allowlist contains only the local worker callback and encoded recovery callback. This is a development test configuration, not a production HTTPS configuration.
 
 SMTP is absent; built-in email quota is two per hour. CAPTCHA is disabled and no provider site key/secret was supplied. JWT expiry is 3600 seconds. Existing Supabase Auth endpoint rate limits remain enabled.
 
