@@ -4,6 +4,7 @@ import { z } from "zod";
 const mocks = vi.hoisted(() => ({
   client: {} as Record<string, unknown>,
   allow: vi.fn(),
+  checkAttempt: vi.fn(),
   recovery: vi.fn(),
 }));
 vi.mock("@tanstack/react-start", () => ({
@@ -29,7 +30,10 @@ vi.mock("@/server/auth/supabase", () => ({ createSupabaseServerClient: () => moc
 vi.mock("@/server/auth/env", () => ({
   getServerAuthEnv: () => ({ APP_URL: "https://ncap.test" }),
 }));
-vi.mock("@/server/auth/abuse", () => ({ allowAuthAttempt: mocks.allow }));
+vi.mock("@/server/auth/abuse", () => ({
+  allowAuthAttempt: mocks.allow,
+  checkAuthAttempt: mocks.checkAttempt,
+}));
 vi.mock("@/server/auth/recovery", () => ({ hasRecentRecovery: mocks.recovery }));
 import { verifyCurrentPassword } from "@/server/auth/password";
 import {
@@ -75,6 +79,7 @@ let table: {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.allow.mockResolvedValue(true);
+  mocks.checkAttempt.mockResolvedValue("allowed");
   mocks.recovery.mockResolvedValue(true);
   auth = Object.fromEntries(
     [
@@ -99,11 +104,82 @@ beforeEach(() => {
   mocks.client = { auth, from: vi.fn().mockReturnValue(table) };
 });
 describe("authentication server actions", () => {
+  const registration = {
+    data: {
+      name: "Learner",
+      email: "test@example.invalid",
+      password: "LongPassword123",
+      language: "en" as const,
+    },
+  };
+  it("consumes one registration action per request and allows five before the sixth is limited", async () => {
+    auth["signUp"]!.mockResolvedValue({
+      data: {},
+      error: { status: 429, code: "over_email_send_rate_limit" },
+    });
+    for (let i = 0; i < 5; i++) {
+      expect(await register(registration)).toEqual({
+        ok: false,
+        message: "Verification email requests are temporarily limited. Please try again later.",
+      });
+      expect(mocks.checkAttempt).toHaveBeenCalledTimes(i + 1);
+      expect(auth["signUp"]).toHaveBeenCalledTimes(i + 1);
+    }
+    mocks.checkAttempt.mockResolvedValue("limited");
+    expect(await register(registration)).toEqual({
+      ok: false,
+      message: "Too many registration attempts. Please wait and try again.",
+    });
+    expect(auth["signUp"]).toHaveBeenCalledTimes(5);
+    expect(mocks.allow).not.toHaveBeenCalled();
+    expect(mocks.checkAttempt).toHaveBeenLastCalledWith("register", registration.data.email);
+  });
+  it.each([
+    [
+      429,
+      "over_email_send_rate_limit",
+      "Verification email requests are temporarily limited. Please try again later.",
+    ],
+    [
+      429,
+      "over_request_rate_limit",
+      "The registration service is receiving too many requests. Please try again later.",
+    ],
+    [
+      429,
+      undefined,
+      "The registration service is receiving too many requests. Please try again later.",
+    ],
+    [503, "unexpected_failure", "Registration is temporarily unavailable. Please try again later."],
+    [0, undefined, "Registration is temporarily unavailable. Please try again later."],
+    [
+      400,
+      "email_address_invalid",
+      "Unable to create the account. Check the details and try again.",
+    ],
+    [422, "user_already_exists", "Unable to create the account. Check the details and try again."],
+  ])("safely distinguishes upstream registration errors (%s/%s)", async (status, code, message) => {
+    auth["signUp"]!.mockResolvedValue({
+      data: {},
+      error: { status, code, message: "private provider detail" },
+    });
+    expect(await register(registration)).toEqual({ ok: false, message });
+    expect(mocks.checkAttempt).toHaveBeenCalledTimes(1);
+  });
+  it("fails closed without mislabeling an unavailable throttle as a reached limit", async () => {
+    mocks.checkAttempt.mockResolvedValue("unavailable");
+    expect(await register(registration)).toEqual({
+      ok: false,
+      message: "Registration is temporarily unavailable. Please try again later.",
+    });
+    expect(auth["signUp"]).not.toHaveBeenCalled();
+  });
   it("validates registration before contacting Auth and ignores privileged metadata", async () => {
     await expect(
       register({ data: { name: "a", email: "invalid", password: "short", language: "en" } }),
     ).rejects.toBeInstanceOf(z.ZodError);
     expect(auth["signUp"]).not.toHaveBeenCalled();
+    expect(mocks.checkAttempt).not.toHaveBeenCalled();
     const result = await register({
       data: {
         name: "Learner",

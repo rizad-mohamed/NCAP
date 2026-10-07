@@ -307,10 +307,16 @@ describe("administrator users database contracts", () => {
     await db.exec("begin");
     try {
       await as(null);
+      await expect(query("select * from private.auth_attempt_limits")).rejects.toMatchObject({
+        code: "42501",
+      });
       await expect(
         query("select public.auth_consume_attempt($1,2,60)", ["a".repeat(64)]),
       ).rejects.toMatchObject({ code: "42501" });
       await as(alice);
+      await expect(query("delete from private.auth_attempt_limits")).rejects.toMatchObject({
+        code: "42501",
+      });
       await expect(
         query("select public.auth_consume_attempt($1,2,60)", ["a".repeat(64)]),
       ).rejects.toMatchObject({ code: "42501" });
@@ -343,6 +349,56 @@ describe("administrator users database contracts", () => {
           ])
         )[0]?.allowed,
       ).toBe(true);
+    } finally {
+      await db.exec("rollback; reset role");
+    }
+  });
+  it("allows exactly five registration increments, expires, and atomically bounds concurrent calls", async () => {
+    await db.exec("begin; set role service_role");
+    const bucket = "f".repeat(64);
+    try {
+      for (const allowed of [true, true, true, true, true, false]) {
+        expect(
+          (
+            await query<{ allowed: boolean }>(
+              "select public.auth_consume_attempt($1,5,300) allowed",
+              [bucket],
+            )
+          )[0]?.allowed,
+        ).toBe(allowed);
+      }
+      await db.exec("reset role");
+      expect(
+        (
+          await query<{ attempts: number }>(
+            "select attempts from private.auth_attempt_limits where bucket=$1",
+            [bucket],
+          )
+        )[0]?.attempts,
+      ).toBe(6);
+      await query(
+        "update private.auth_attempt_limits set started_at=clock_timestamp()-interval '301 seconds' where bucket=$1",
+        [bucket],
+      );
+      await db.exec("set role service_role");
+      // Queue directly on the database connection; savepoints in query() are for sequential statements.
+      const results = await Promise.all(
+        Array.from({ length: 12 }, () =>
+          db.query<{ allowed: boolean }>("select public.auth_consume_attempt($1,5,300) allowed", [
+            bucket,
+          ]),
+        ),
+      );
+      expect(results.filter((r) => r.rows[0]?.allowed)).toHaveLength(5);
+      await db.exec("reset role");
+      expect(
+        (
+          await query<{ attempts: number }>(
+            "select attempts from private.auth_attempt_limits where bucket=$1",
+            [bucket],
+          )
+        )[0]?.attempts,
+      ).toBe(12);
     } finally {
       await db.exec("rollback; reset role");
     }
