@@ -5,7 +5,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { AuthActionResult, AuthState, AuthUser } from "@/auth/types";
 import { avatarSchema, interestsSchema } from "@/domain/auth-profile";
 import { inspectImage } from "@/server/awareness/inspect-media";
-import { allowAuthAttempt } from "@/server/auth/abuse";
+import { allowAuthAttempt, checkAuthAttempt } from "@/server/auth/abuse";
 import { verifyCurrentPassword } from "@/server/auth/password";
 import { hasRecentRecovery } from "@/server/auth/recovery";
 import { emailSchema, passwordSchema } from "@/domain/validation";
@@ -151,8 +151,15 @@ export const register = createServerFn({ method: "POST" })
   .validator(registrationSchema)
   .handler(async ({ data }): Promise<AuthActionResult<{ requiresEmailVerification: boolean }>> => {
     noStore();
-    if (!(await allowAuthAttempt("register", data.email)))
-      return { ok: false, message: "Too many attempts. Please wait and try again." };
+    const attempt = await checkAuthAttempt("register", data.email);
+    if (attempt !== "allowed")
+      return {
+        ok: false,
+        message:
+          attempt === "limited"
+            ? "Too many registration attempts. Please wait and try again."
+            : "Registration is temporarily unavailable. Please try again later.",
+      };
     const supabase = createSupabaseServerClient();
     const { data: authData, error } = await supabase.auth.signUp({
       email: data.email,
@@ -170,9 +177,13 @@ export const register = createServerFn({ method: "POST" })
       return {
         ok: false,
         message:
-          error.status === 429
-            ? "Too many registration attempts. Please wait and try again."
-            : "Unable to create the account. Check the details and try again.",
+          error.code === "over_email_send_rate_limit"
+            ? "Verification email requests are temporarily limited. Please try again later."
+            : error.status === 429 || error.code === "over_request_rate_limit"
+              ? "The registration service is receiving too many requests. Please try again later."
+              : !error.status || error.status >= 500
+                ? "Registration is temporarily unavailable. Please try again later."
+                : "Unable to create the account. Check the details and try again.",
       };
     }
 

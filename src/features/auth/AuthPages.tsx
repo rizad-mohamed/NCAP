@@ -1,6 +1,6 @@
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -312,8 +312,10 @@ export function RegisterPage() {
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
+  const registrationPending = useRef(false);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (registrationPending.current) return;
     const n: Errors = {};
     if (form.name.trim().length < 2) n.name = "Enter your full name.";
     if (!validEmail(form.email)) n.email = "Enter a valid email address.";
@@ -324,6 +326,7 @@ export function RegisterPage() {
     if (!form.terms) n.terms = "Accept the terms of use and privacy notice to continue.";
     setErrors(n);
     if (Object.keys(n).length) return;
+    registrationPending.current = true;
     setBusy(true);
     setFormError("");
     const result = await authAction(() =>
@@ -335,8 +338,10 @@ export function RegisterPage() {
           language: form.language,
         },
       }),
-    );
-    setBusy(false);
+    ).finally(() => {
+      registrationPending.current = false;
+      setBusy(false);
+    });
     if (!result.ok) {
       setFormError(result.message);
       return;

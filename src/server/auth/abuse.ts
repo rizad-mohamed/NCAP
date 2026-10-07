@@ -5,10 +5,13 @@ import { getServerAuthEnv } from "./env";
 import type { Database } from "@/types/database";
 
 /** Fail closed. Counters are shared by every worker and never lock an account globally. */
-export async function allowAuthAttempt(action: string, identity: string) {
+export async function checkAuthAttempt(
+  action: string,
+  identity: string,
+): Promise<"allowed" | "limited" | "unavailable"> {
   const env = getServerAuthEnv();
   const secret = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-  if (!secret) return false;
+  if (!secret) return "unavailable";
   // Cloudflare overwrites this header. Do not enable it behind an untrusted proxy.
   const source =
     process.env["AUTH_TRUST_PROXY"] === "cloudflare"
@@ -17,7 +20,7 @@ export async function allowAuthAttempt(action: string, identity: string) {
           new URL(env.APP_URL).hostname === "localhost"
         ? "local-development"
         : undefined;
-  if (!source) return false;
+  if (!source) return "unavailable";
   const client = createClient<Database>(env.SUPABASE_URL, secret, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -38,14 +41,21 @@ export async function allowAuthAttempt(action: string, identity: string) {
       max_attempts: max,
       window_seconds: seconds,
     });
-    return !error && data === true;
+    return error || typeof data !== "boolean" ? "unavailable" : data ? "allowed" : "limited";
   };
-  return (
-    (await consume(`source:${source}`, 120, 600)) &&
-    (await consume(
+  try {
+    const sourceResult = await consume(`source:${source}`, 120, 600);
+    if (sourceResult !== "allowed") return sourceResult;
+    return await consume(
       `${action}:${source}:${identity.trim().toLowerCase()}`,
       action === "signIn" ? 10 : action === "adminChange" ? 30 : 5,
       300,
-    ))
-  );
+    );
+  } catch {
+    return "unavailable";
+  }
+}
+
+export async function allowAuthAttempt(action: string, identity: string) {
+  return (await checkAuthAttempt(action, identity)) === "allowed";
 }
