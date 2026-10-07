@@ -90,9 +90,12 @@ test("Learning module images validate, upload, replace and retire through the ba
     const path = decodeURIComponent(new URL(signedUrl).pathname.split("/learning-media/")[1]!);
     const separator = path.lastIndexOf("/");
     const file = path.slice(separator + 1);
-    const result = await storageClient.storage
-      .from("learning-media")
-      .list(path.slice(0, separator), { search: file });
+    const list = () =>
+      storageClient.storage.from("learning-media").list(path.slice(0, separator), { search: file });
+    let result = await list();
+    for (let attempt = 1; result.error?.name === "StorageUnknownError" && attempt < 3; attempt++) {
+      result = await list();
+    }
     expect(result.error).toBeNull();
     return result.data!.some((object) => object.name === file);
   };

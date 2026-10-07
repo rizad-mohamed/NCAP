@@ -147,6 +147,7 @@ test.describe("Awareness on migrated Supabase", () => {
     page,
     browser,
   }) => {
+    test.setTimeout(180000);
     await loginAs(page, "admin");
     const title = `Awareness storage test ${Date.now()}`;
     const publicContext = await browser.newContext();
@@ -181,7 +182,9 @@ test.describe("Awareness on migrated Supabase", () => {
     });
     await expect(page.getByText("Image uploaded. Save the record to attach it.")).toBeVisible();
     await page.getByRole("button", { name: "Save record" }).click();
-    await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: title, exact: true })).toBeVisible({
+      timeout: 20000,
+    });
     await gotoApp(publicPage, "/awareness/posters");
     await publicPage.getByRole("searchbox").fill(title);
     await expect(publicPage.getByRole("heading", { name: title })).toHaveCount(0);

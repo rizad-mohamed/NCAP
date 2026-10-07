@@ -27,7 +27,7 @@ function mockClient(replies: Record<string, Reply[]> = {}, role = "super_admin")
     createSignedUrl: vi
       .fn()
       .mockResolvedValue({ data: { signedUrl: "https://storage.example/display" }, error: null }),
-    info: vi.fn().mockResolvedValue({ data: { size: 32, contentType: "image/png" }, error: null }),
+    info: vi.fn().mockResolvedValue({ data: { size: 33, contentType: "image/png" }, error: null }),
   };
   const client = {
     auth: {
@@ -146,7 +146,7 @@ describe("Awareness mutations and media lifecycle", () => {
     await prepareMedia(client, {
       fileName: "friendly.png",
       mimeType: "image/png",
-      sizeBytes: 32,
+      sizeBytes: 33,
       width: 10,
       height: 10,
       altText: "A poster",
@@ -212,7 +212,7 @@ describe("Awareness mutations and media lifecycle", () => {
       path: "object",
       role: "image",
       file_name: "poster.png",
-      size_bytes: 32,
+      size_bytes: 33,
       mime_type: "image/png",
       width: 10,
       height: 10,

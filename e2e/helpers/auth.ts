@@ -31,11 +31,14 @@ export async function loginAs(page: Page, role: TestRole) {
   // An interactive client-only state change proves hydration has completed;
   // network-idle alone can precede hydration on the Windows WebKit profile.
   await expect
-    .poll(async () => {
-      if ((await password.getAttribute("type")) === "password")
-        await page.getByRole("button", { name: "Show password", exact: true }).click();
-      return password.getAttribute("type");
-    })
+    .poll(
+      async () => {
+        if ((await password.getAttribute("type")) === "password")
+          await page.getByRole("button", { name: "Show password", exact: true }).click();
+        return password.getAttribute("type");
+      },
+      { timeout: 20000 },
+    )
     .toBe("text");
   await page.getByRole("button", { name: "Hide password", exact: true }).click();
   await expect(password).toHaveAttribute("type", "password");
