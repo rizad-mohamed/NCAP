@@ -460,7 +460,7 @@ function WorkspaceShell({
   const side = (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-6">
-        <Brand inverse />
+        <Brand />
         <span className="mt-4 inline-flex rounded-md bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           {kind === "admin" ? "Administration" : "Learning workspace"}
         </span>
@@ -475,10 +475,7 @@ function WorkspaceShell({
             href={href}
             onClick={() => setMobileOpen(false)}
             aria-current={active(href) ? "page" : undefined}
-            className={cn(
-              "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white",
-              active(href) && "bg-white text-primary shadow-md hover:bg-white hover:text-primary",
-            )}
+            className="workspace-nav-link flex min-h-11 items-center gap-3 px-3 text-sm font-bold"
           >
             <Icon className="size-5 shrink-0" aria-hidden="true" />
             <span>{uiText(label)}</span>

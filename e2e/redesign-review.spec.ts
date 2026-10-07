@@ -19,6 +19,8 @@ async function audit(page: Page) {
 test("public language switching preserves navigation, layout and reduced motion", async ({
   page,
 }) => {
+  // Nine full axe scans exceed the standard 60s budget on Windows Firefox/WebKit.
+  test.setTimeout(180000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.emulateMedia({ reducedMotion: "reduce" });

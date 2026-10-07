@@ -563,6 +563,9 @@ html[lang="ta"] {
 .home-hero-visual {
   position: relative;
   min-width: 0;
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
 }
 .home-hero-image {
   width: 100%;
@@ -736,6 +739,19 @@ html[lang="ta"] {
   }
   .home-family-banner img {
     max-height: 15rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .learner-stat-grid .metric-card {
+    padding: 1rem;
+  }
+  .learner-stat-grid .metric-card > div > span {
+    display: none;
+  }
+  .learner-stat-grid .metric-card > div > p {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 

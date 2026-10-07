@@ -1078,39 +1078,10 @@ export function DashboardPage() {
           </AppLink>
         }
       />
-      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label={uiText("Overall learning progress")}
-          value={`${stats.overall}%`}
-          hint={`${stats.completedCount} of ${stats.totalLessons} lessons`}
-          icon={<Target />}
-          tone="violet"
-        />
-        <StatCard
-          label={uiText("Quiz average")}
-          value={`${quizAverage}%`}
-          hint={`${completedQuizAttempts.length} completed attempts`}
-          icon={<Trophy />}
-          tone="ember"
-        />
-        <StatCard
-          label={uiText("Completed lessons")}
-          value={stats.completedCount}
-          hint={`${stats.totalLessons - stats.completedCount} remaining`}
-          icon={<BookCheck />}
-          tone="success"
-        />
-        <StatCard
-          label={uiText("Learning hours")}
-          value={stats.hours}
-          hint="Time spent in lessons"
-          icon={<Clock3 />}
-        />
-      </section>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_.75fr]">
-        <div className="rounded-xl border bg-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="learner-focus p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
               <p className="meta text-violet">{uiText("Continue learning")}</p>
               <h2 className="mt-2 text-2xl font-semibold">{next.title}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -1141,6 +1112,35 @@ export function DashboardPage() {
             {uiText("This suggestion is based on your saved learning progress.")}{" "}
           </p>
         </div>
+      </section>
+      <section className="learner-stat-grid mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard
+          label={uiText("Overall learning progress")}
+          value={`${stats.overall}%`}
+          hint={`${stats.completedCount} of ${stats.totalLessons} lessons`}
+          icon={<Target />}
+          tone="violet"
+        />
+        <StatCard
+          label={uiText("Quiz average")}
+          value={`${quizAverage}%`}
+          hint={`${completedQuizAttempts.length} completed attempts`}
+          icon={<Trophy />}
+          tone="ember"
+        />
+        <StatCard
+          label={uiText("Completed lessons")}
+          value={stats.completedCount}
+          hint={`${stats.totalLessons - stats.completedCount} remaining`}
+          icon={<BookCheck />}
+          tone="success"
+        />
+        <StatCard
+          label={uiText("Learning hours")}
+          value={stats.hours}
+          hint="Time spent in lessons"
+          icon={<Clock3 />}
+        />
       </section>
       <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-xl border bg-white p-6">

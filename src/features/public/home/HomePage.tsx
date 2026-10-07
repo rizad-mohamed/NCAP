@@ -27,6 +27,14 @@ import type { MediaAsset } from "@/data/types";
 import { useRepository } from "@/services/repository-provider";
 import { useRepositoryList } from "@/services/query-hooks";
 
+export const homeHeroImage = {
+  src: "/images/home/hero-family.webp",
+  srcSet:
+    "/images/home/hero-family-small.webp 560w, /images/home/hero-family-medium.webp 720w, /images/home/hero-family.webp 960w",
+  sizes:
+    "(min-width: 1280px) 496px, (min-width: 1024px) 42vw, (min-width: 768px) 512px, calc(100vw - 64px)",
+} as const;
+
 function useModules() {
   const repository = useRepository();
   return useRepositoryList(repository, "modules").data ?? [];
@@ -212,9 +220,9 @@ function HeroVisual() {
   return (
     <div className="home-hero-visual">
       <img
-        src="/images/home/hero-family.webp"
-        srcSet="/images/home/hero-family-small.webp 560w, /images/home/hero-family.webp 960w"
-        sizes="(min-width: 1024px) 42vw, 90vw"
+        src={homeHeroImage.src}
+        srcSet={homeHeroImage.srcSet}
+        sizes={homeHeroImage.sizes}
         alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
         width="960"
         height="720"
@@ -446,8 +454,9 @@ function TopicsGrid() {
                 <Icon className={`size-7 ${iconClass}`} strokeWidth={1.75} aria-hidden="true" />
               </span>
               <span className="text-sm font-bold leading-5 text-foreground group-hover:text-violet">
-                {label}
+                {uiText(label)}
               </span>
+              <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
             </AppLink>
           ))}
         </div>

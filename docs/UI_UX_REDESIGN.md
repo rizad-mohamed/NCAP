@@ -108,9 +108,40 @@ on demand; no new runtime dependency is introduced. The main hero image changes
 from 370,579 to 85,282 bytes, with a separate 560px variant; course images now
 range from 9,576 to 36,192 bytes. Original photography remains available.
 
-Final browser, staging, Lighthouse and CI evidence is recorded in the completion
-report. Authenticated staging checks use disposable accounts and exact fixture
-IDs, then verify cleanup; opt-in skips must never be reported as passes.
+Final browser, staging, Lighthouse and CI evidence is recorded in the
+[completion report](./UI_UX_REDESIGN_VERIFICATION.md). The guarded staging
+runner uses disposable accounts and exact fixture IDs, then verifies cleanup;
+it was blocked before execution by automatic approval review. Opt-in skips
+must never be reported as passes.
+
+The first stable redesigned production measurement produced:
+
+| Route | Performance | Accessibility | Best practices | SEO | LCP | CLS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/` | 53 | 100 | 100 | 100 | 4.45s | 0 |
+| `/awareness/articles` | 72 | 100 | 100 | 100 | 1.58s | 0.000019 |
+| `/learn` | 77 | 100 | 100 | 100 | 2.20s | 0 |
+
+The remaining homepage bottleneck is the hero's load/render timing. The final
+optimization adds a 720px source, accurate responsive sizing and a matching
+head preload. The route already imports the homepage directly; that separation
+is retained. Tablet photography is constrained to a sensible reading width.
+The final homepage run improved performance to 73 and LCP to 3.88s, with CLS
+remaining zero. Accessibility, best practices and SEO remained 100. This still
+misses the 90+ performance and 2.5s LCP goals; main-thread work and shared
+JavaScript are recorded as remaining limitations in the completion report.
+
+The screenshot audit of `/`, `/login`, `/awareness`, `/learn` and `/quizzes`
+at 390px and 1440px found no axe violations, runtime errors or document
+overflow. It also observed the awareness/quiz loading-state shifts disappear.
+These local, unthrottled measurements must not be confused with Lighthouse's
+simulated mobile timings.
+
+A verification build initially used different source snapshots for client and
+server because source updates overlapped the build. Its stylesheet references
+did not match. A stable rebuild resolved the issue, and immediate-render
+responsive checks passed at all eight widths. Do not edit sources during a
+release build; verify client/server stylesheet references as part of review.
 
 ## Review and rollback
 
