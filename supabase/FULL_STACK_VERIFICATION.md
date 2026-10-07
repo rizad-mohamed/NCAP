@@ -102,3 +102,8 @@ It records profile persistence, session/password hardening, durable account-audi
 staging migration/configuration verification. SMTP delivery, CAPTCHA, production HTTPS
 redirects and the delivered-email lifecycle remain release gates; the historical whole-system
 verification above does not certify those gates.
+
+Communications/localization follow-up (5–7 October 2026): see
+[operations and limitations](COMMUNICATIONS_LOCALIZATION.md) and
+[verification evidence](COMMUNICATIONS_VERIFICATION.md) for the announcement audit,
+persistent notifications, translation governance and media hardening changes.

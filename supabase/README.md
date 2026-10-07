@@ -1,5 +1,8 @@
 # Supabase authentication setup
 
+See [Announcements, notifications, localization and media](COMMUNICATIONS_LOCALIZATION.md) for the
+application feature migrations, permissions, translation governance and staging test operations.
+
 See [Authentication verification and release gates](AUTHENTICATION_VERIFICATION.md) for the
 current staging configuration, finalization migrations, security results, and production requirements.
 
