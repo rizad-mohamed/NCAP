@@ -40,6 +40,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 export function AppLink({
   href,
@@ -61,8 +67,10 @@ export function AppLink({
           event.metaKey ||
           event.ctrlKey ||
           event.shiftKey ||
-          props.target === "_blank" ||
-          href.startsWith("http") ||
+          event.altKey ||
+          props.download !== undefined ||
+          (props.target !== undefined && props.target !== "_self") ||
+          /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href) ||
           href.startsWith("#")
         )
           return;
@@ -164,32 +172,43 @@ function PublicHeader({ pathname }: { pathname: string }) {
   const awarenessActive = active("/awareness") && !resourcesActive && !newsActive;
   const learnActive = active("/learn") && !searchActive;
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-border/80 bg-white/95 shadow-[0_1px_0_rgb(15_23_42/0.02)] backdrop-blur-xl">
-      <div className="container-ncap flex h-[68px] items-center justify-between gap-4">
+    <header className="no-print sticky top-0 z-40 border-b border-border/80 bg-white">
+      <div className="container-ncap flex min-h-[80px] items-center justify-between gap-2 sm:gap-4">
         <Brand />
         <nav
-          className="hidden items-center gap-1 lg:flex"
+          className="hidden items-center gap-1 xl:flex"
           aria-label={uiText("Primary navigation")}
         >
-          <div className="group relative">
+          <div className="flex items-center">
             <AppLink
               href="/awareness"
               className={navClass(awarenessActive)}
               aria-current={awarenessActive ? "page" : undefined}
             >
-              {uiText("Awareness")} <ChevronDown className="size-4" aria-hidden="true" />
+              {uiText("Awareness")}
             </AppLink>
-            <div className="invisible absolute left-0 top-full w-60 translate-y-2 rounded-xl border bg-white p-2 opacity-0 shadow-overlay transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              {awarenessLinks.map(([label, href]) => (
-                <AppLink
-                  key={href}
-                  href={href}
-                  className="flex min-h-11 items-center rounded-lg px-3 text-sm font-bold text-secondary-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-accent"
+                  aria-label={uiText("Browse NCAP awareness and learning areas.")}
                 >
-                  {uiText(label)}
-                </AppLink>
-              ))}
-            </div>
+                  <ChevronDown className="size-4" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-60 p-2">
+                {awarenessLinks.map(([label, href]) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <AppLink
+                      href={href}
+                      className="flex min-h-11 items-center rounded-lg px-3 text-sm font-bold text-secondary-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent"
+                    >
+                      {uiText(label)}
+                    </AppLink>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <AppLink
             href="/learn"
@@ -217,7 +236,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
             className={navClass(newsActive)}
             aria-current={newsActive ? "page" : undefined}
           >
-                    {uiText("News & Updates")}{" "}
+            {uiText("News & Updates")}{" "}
           </AppLink>
           <AppLink
             href="/learn/search"
@@ -231,35 +250,38 @@ function PublicHeader({ pathname }: { pathname: string }) {
             <Search className="size-5" aria-hidden="true" />
           </AppLink>
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
-          {session.role === "guest" ? (
-            <>
+        <div className="ml-auto flex items-center gap-2">
+          <LanguageSelector compact />
+          <div className="hidden items-center gap-2 md:flex">
+            {session.role === "guest" ? (
+              <>
+                <AppLink
+                  href="/login"
+                  className="inline-flex min-h-11 items-center rounded-xl border border-primary px-4 text-sm font-bold text-primary transition hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
+                >
+                  {uiText("Sign In")}{" "}
+                </AppLink>
+                <AppLink
+                  href="/register"
+                  className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet hover:shadow-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
+                >
+                  {uiText("Sign Up")}{" "}
+                </AppLink>
+              </>
+            ) : (
               <AppLink
-                href="/login"
-                className="inline-flex min-h-11 items-center rounded-xl border border-primary px-4 text-sm font-bold text-primary transition hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
+                href={session.role === "admin" ? "/admin" : "/dashboard"}
+                className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
               >
-                {uiText("Sign In")}{" "}
+                {uiText("Open")} {session.role === "admin" ? "administration" : "dashboard"}
               </AppLink>
-              <AppLink
-                href="/register"
-                className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet hover:shadow-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
-              >
-                {uiText("Sign Up")}{" "}
-              </AppLink>
-            </>
-          ) : (
-            <AppLink
-              href={session.role === "admin" ? "/admin" : "/dashboard"}
-              className="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm transition hover:bg-violet focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
-            >
-              {uiText("Open")} {session.role === "admin" ? "administration" : "dashboard"}
-            </AppLink>
-          )}
+            )}
+          </div>
         </div>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button
-              className="grid size-11 place-items-center rounded-xl border bg-white shadow-sm hover:border-violet hover:bg-accent lg:hidden"
+              className="grid size-11 shrink-0 place-items-center rounded-xl border bg-white shadow-sm hover:border-violet hover:bg-accent xl:hidden"
               aria-label={uiText("Open navigation menu")}
             >
               <Menu className="size-5" />
@@ -323,7 +345,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(newsActive)}
               >
-                  {uiText("News & Updates")}{" "}
+                {uiText("News & Updates")}{" "}
               </AppLink>
               <AppLink
                 href="/learn/search"
@@ -437,14 +459,14 @@ function WorkspaceShell({
   const currentLabel = nav.find(([, href]) => active(href))?.[0] ?? "Workspace";
   const side = (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/10 px-5 py-5">
+      <div className="border-b border-border px-5 py-6">
         <Brand inverse />
-        <span className="mt-4 inline-flex rounded-full border border-sky-300/20 bg-sky-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-200">
+        <span className="mt-4 inline-flex rounded-md bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           {kind === "admin" ? "Administration" : "Learning workspace"}
         </span>
       </div>
       <nav
-        className="app-scrollbar mt-3 grid gap-1 overflow-y-auto px-3"
+        className="app-scrollbar mt-5 grid gap-1 overflow-y-auto px-4"
         aria-label={`${kind} navigation`}
       >
         {nav.map(([label, href, Icon]) => (
@@ -463,14 +485,14 @@ function WorkspaceShell({
           </AppLink>
         ))}
       </nav>
-      <div className="mt-auto border-t border-white/10 p-3">
-        <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-3 text-white">
-          <span className="grid size-10 place-items-center rounded-full bg-sky-400/20 text-sm font-bold text-sky-100 ring-1 ring-white/10">
+      <div className="mt-auto border-t border-border p-4">
+        <div className="mb-2 flex items-center gap-3 rounded-lg bg-background px-3 py-3 text-foreground">
+          <span className="grid size-10 place-items-center rounded-full bg-primary-soft text-sm font-bold text-violet ring-1 ring-border">
             {(session.name || "D").slice(0, 1)}
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{session.name || kind}</p>
-            <p className="truncate text-xs text-white/55">
+            <p className="truncate text-xs text-muted-foreground">
               {kind === "admin" ? "Super Administrator" : "Learner"}
             </p>
           </div>
@@ -482,7 +504,7 @@ function WorkspaceShell({
               else toast.error(uiText("Unable to sign out. Please try again."));
             });
           }}
-          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-bold text-white/65 hover:bg-white/10 hover:text-white"
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-bold text-muted-foreground hover:bg-muted hover:text-primary"
         >
           <LogOut className="size-5" />
           {uiText("Log out")}{" "}
@@ -492,7 +514,7 @@ function WorkspaceShell({
             if (window.confirm("Reset all locally saved demo progress and content changes?"))
               resetDemo();
           }}
-          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-xs font-bold text-white/50 hover:bg-white/10 hover:text-white"
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-primary"
         >
           <CircleHelp className="size-4" />
           {uiText("Reset demo data")}{" "}
@@ -501,12 +523,15 @@ function WorkspaceShell({
     </div>
   );
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
-      <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[272px] bg-rail shadow-overlay lg:block">
+    <div
+      className="workspace-shell min-h-screen bg-background lg:grid lg:grid-cols-[248px_minmax(0,1fr)]"
+      data-workspace={kind}
+    >
+      <aside className="workspace-rail no-print fixed inset-y-0 left-0 z-40 hidden w-[248px] lg:block">
         {side}
       </aside>
       <div className="min-w-0 lg:col-start-2">
-        <header className="no-print sticky top-0 z-30 flex min-h-[72px] flex-wrap items-center justify-between gap-2 border-b bg-white/95 px-4 py-2 shadow-[0_1px_0_rgb(15_23_42/0.02)] backdrop-blur-xl md:px-6 lg:px-8">
+        <header className="no-print sticky top-0 z-30 flex min-h-[80px] flex-wrap items-center justify-between gap-2 border-b bg-white px-4 py-2 md:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -519,7 +544,7 @@ function WorkspaceShell({
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-[min(88vw,320px)] border-0 bg-rail p-0 text-white sm:max-w-[320px]"
+                className="workspace-rail w-[min(88vw,320px)] p-0 text-foreground sm:max-w-[320px]"
               >
                 <SheetTitle className="sr-only">
                   {kind} {uiText("navigation")}
@@ -544,7 +569,11 @@ function WorkspaceShell({
             <NotificationBell />
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="page-enter min-w-0 p-4 md:p-6 lg:p-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="workspace-content page-enter mx-auto min-w-0 max-w-[1560px] p-4 md:p-7 lg:p-10"
+        >
           {children}
         </main>
       </div>
@@ -712,7 +741,7 @@ export function AppShell({ pathname, children }: { pathname: string; children: R
   return (
     <>
       <PublicHeader pathname={pathname} />
-      <main id="main-content" tabIndex={-1} className="page-enter">
+      <main id="main-content" tabIndex={-1} className="public-content page-enter">
         {children}
       </main>
       <PublicFooter pathname={pathname} />

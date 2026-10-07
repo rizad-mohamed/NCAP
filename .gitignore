@@ -18,6 +18,7 @@ coverage
 playwright-report
 test-results
 *.local
+scripts/*.local.*
 
 # Environment configuration (only the placeholder template is tracked)
 .env

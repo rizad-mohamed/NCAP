@@ -1,7 +1,17 @@
 import { useInterfaceText } from "@/lib/i18n";
 import { useContentReport, exportFilteredReport } from "@/services/report-hooks";
-import { useState, type FormEvent } from "react";
-import { Download, Printer, Plus, Edit3, Trash2, Check } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  Download,
+  Printer,
+  Plus,
+  Edit3,
+  Trash2,
+  Check,
+  CalendarDays,
+  Megaphone,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useNcap } from "@/state/ncap-store";
 import { useQuizCatalogue } from "@/services/quiz-hooks";
@@ -11,11 +21,16 @@ import { PageHeader, StatCard, EmptyState } from "@/components/common/primitives
 import {
   dashboardButton,
   dashboardField,
+  dashboardSelect,
+  FilterToolbar,
+  ResultCount,
   StatusBadge,
   DashboardSearchInput,
   DashboardPagination,
   ResponsiveTableContainer,
 } from "@/components/common/dashboard-primitives";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { useI18n } from "@/lib/i18n";
 import { AdminReportCharts } from "./AdminCharts";
 
 const primary = dashboardButton.primary;
@@ -237,19 +252,46 @@ const blank = (): Announcement => ({
 });
 export function AdminAnnouncementsPage() {
   const uiText = useInterfaceText();
-
+  const { language } = useI18n();
   const announcements = useDashboardAnnouncements();
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const original = useRef("");
+  const returnFocus = useRef<HTMLButtonElement | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const visible = (announcements.data ?? []).filter(
+  const [page, setPage] = useState(1);
+  const records = announcements.data ?? [];
+  const visible = records.filter(
     (item) =>
-      `${item.title} ${item.body}`.toLowerCase().includes(search.toLowerCase()) &&
+      (item.title + " " + item.body).toLowerCase().includes(search.toLowerCase()) &&
       (activeFilter === "all" || item.active === (activeFilter === "active")),
   );
+  const pages = Math.max(1, Math.ceil(visible.length / 8));
+  const currentPage = Math.min(page, pages);
+  const pageItems = visible.slice((currentPage - 1) * 8, currentPage * 8);
+  const dirty = editing !== null && JSON.stringify(editing) !== original.current;
+  useEffect(() => {
+    if (!dirty) return;
+    const protect = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [dirty]);
+  const openEditor = (item: Announcement, target: HTMLButtonElement) => {
+    original.current = JSON.stringify(item);
+    returnFocus.current = target;
+    setEditing({ ...item });
+  };
+  const closeEditor = () => {
+    if (announcements.save.isPending) return;
+    if (dirty && !window.confirm(uiText("Discard unsaved announcement changes?"))) return;
+    setEditing(null);
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!editing) return;
+    if (!editing || announcements.save.isPending) return;
     try {
       await announcements.save.mutateAsync({ ...editing, id: editing.id || undefined });
       setEditing(null);
@@ -267,6 +309,11 @@ export function AdminAnnouncementsPage() {
       toast.error(error instanceof Error ? error.message : "Unable to delete announcement");
     }
   };
+  const dateLabel = (date: string) =>
+    new Date(date + "T00:00:00Z").toLocaleDateString(language, {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    });
   return (
     <div className="container-ncap max-w-6xl py-2">
       <PageHeader
@@ -274,200 +321,296 @@ export function AdminAnnouncementsPage() {
         title={uiText("Announcements")}
         description={uiText("Create and schedule notices shown on learner dashboards.")}
         actions={
-          <button className={primary} onClick={() => setEditing(blank())}>
+          <button className={primary} onClick={(event) => openEditor(blank(), event.currentTarget)}>
             <Plus />
-            {uiText("New announcement")}{" "}
+            {uiText("New announcement")}
           </button>
         }
       />
-      <div className="mt-7 flex flex-wrap gap-3">
+      {!announcements.isPending && !announcements.isError && (
+        <section className="mt-6 grid gap-3 sm:grid-cols-3" aria-label={uiText("Announcements")}>
+          <StatCard label={uiText("Announcements")} value={records.length} icon={<Megaphone />} />
+          <StatCard
+            label={uiText("Active")}
+            value={records.filter((item) => item.active).length}
+            icon={<Check />}
+            tone="success"
+          />
+          <StatCard
+            label={uiText("Inactive")}
+            value={records.filter((item) => !item.active).length}
+            icon={<CalendarDays />}
+          />
+        </section>
+      )}
+      <FilterToolbar label={uiText("Search announcements…")}>
         <DashboardSearchInput
           value={search}
-          onChange={setSearch}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
           placeholder={uiText("Search announcements…")}
         />
         <select
-          className={dashboardField}
+          className={dashboardSelect}
           aria-label={uiText("Announcement status")}
           value={activeFilter}
-          onChange={(event) => setActiveFilter(event.target.value)}
+          onChange={(event) => {
+            setActiveFilter(event.target.value);
+            setPage(1);
+          }}
         >
           <option value="all">{uiText("All statuses")}</option>
           <option value="active">{uiText("Active")}</option>
           <option value="inactive">{uiText("Inactive")}</option>
         </select>
-      </div>
+        <ResultCount>
+          {visible.length} {uiText("records")}
+        </ResultCount>
+      </FilterToolbar>
       {announcements.isPending && (
-        <p role="status" className="mt-7">
-          {uiText("Loading announcements…")}{" "}
-        </p>
-      )}
-      {announcements.isError && (
-        <p role="alert" className="mt-7">
-          {uiText("Announcements are unavailable. Please refresh.")}{" "}
-        </p>
-      )}
-      <div className="mt-7 grid gap-4">
-        {visible.map((item) => (
-          <article key={item.id} className="rounded-xl border bg-white p-5">
-            <div className="flex justify-between gap-4">
-              <div>
-                <div className="flex gap-2">
-                  <StatusBadge value={item.active ? "Active" : "Inactive"} />
-                  <span className="meta text-muted-foreground">{item.audience}</span>
-                </div>
-                <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
-                <p className="mt-4 font-mono text-xs text-muted-foreground">
-                  {item.startsAt} → {item.endsAt}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className={outline}
-                  onClick={() => setEditing(item)}
-                  aria-label={`Edit ${item.title}`}
-                >
-                  <Edit3 />
-                </button>
-                <button
-                  className={outline}
-                  disabled={announcements.save.isPending}
-                  onClick={() =>
-                    void announcements.save
-                      .mutateAsync({ ...item, active: !item.active })
-                      .catch(() => toast.error(uiText("Unable to save announcement")))
-                  }
-                  aria-label={`${item.active ? "Deactivate" : "Activate"} ${item.title}`}
-                >
-                  <Check />
-                </button>
-                <button
-                  className={outline}
-                  onClick={() => void remove(item.id)}
-                  aria-label={`Delete ${item.title}`}
-                >
-                  <Trash2 />
-                </button>
-              </div>
-            </div>
-          </article>
-        ))}
-        {!announcements.isPending && !announcements.data?.length && (
-          <EmptyState
-            title={uiText("No announcements")}
-            description={uiText("Create a scheduled notice for learners.")}
-          />
-        )}
-      </div>
-      {editing && (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
-          role="presentation"
-        >
-          <form
-            className="grid max-h-[90vh] w-full max-w-xl gap-4 overflow-y-auto rounded-xl bg-white p-6"
-            onSubmit={submit}
-            role="dialog"
-            aria-modal="true"
-            aria-label={uiText("Announcement editor")}
-          >
-            <h2 className="text-xl font-semibold">
-              {editing.id ? "Edit" : "Create"} {uiText("announcement")}
-            </h2>
-            <label>
-              {uiText("Title")}{" "}
-              <input
-                required
-                maxLength={160}
-                className={dashboardField}
-                value={editing.title}
-                onChange={(event) => setEditing({ ...editing, title: event.target.value })}
-              />
-            </label>
-            <label>
-              {uiText("Message")}{" "}
-              <textarea
-                required
-                maxLength={2000}
-                className={dashboardField}
-                value={editing.body}
-                onChange={(event) => setEditing({ ...editing, body: event.target.value })}
-              />
-            </label>
-            <label>
-              {uiText("Audience")}{" "}
-              <select
-                className={dashboardField}
-                value={editing.audience}
-                onChange={(event) =>
-                  setEditing({
-                    ...editing,
-                    audience: event.target.value as Announcement["audience"],
-                  })
-                }
-              >
-                <option>{uiText("All Learners")}</option>
-                <option>{uiText("New Learners")}</option>
-                <option>{uiText("Administrators")}</option>
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label>
-                {uiText("Start date")}{" "}
-                <input
-                  required
-                  type="date"
-                  className={dashboardField}
-                  value={editing.startsAt}
-                  onChange={(event) => setEditing({ ...editing, startsAt: event.target.value })}
-                />
-              </label>
-              <label>
-                {uiText("End date")}{" "}
-                <input
-                  required
-                  type="date"
-                  min={editing.startsAt}
-                  className={dashboardField}
-                  value={editing.endsAt}
-                  onChange={(event) => setEditing({ ...editing, endsAt: event.target.value })}
-                />
-              </label>
-            </div>
-            <label className="flex gap-2">
-              <input
-                type="checkbox"
-                checked={editing.active}
-                onChange={(event) => setEditing({ ...editing, active: event.target.checked })}
-              />
-              {uiText("Active")}{" "}
-            </label>
-            <details className="rounded-lg border p-3">
-              <summary className="cursor-pointer font-semibold">
-                {uiText("Preview announcement")}
-              </summary>
-              <article className="mt-3">
-                <h3 className="text-xl font-semibold">{editing.title}</h3>
-                <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                  {editing.body}
-                </p>
-                <p className="mt-3 text-xs">
-                  {uiText(editing.audience)} · {editing.startsAt} → {editing.endsAt}
-                </p>
-              </article>
-            </details>
-            <div className="flex justify-end gap-2">
-              <button type="button" className={outline} onClick={() => setEditing(null)}>
-                {uiText("Cancel")}{" "}
-              </button>
-              <button className={primary} disabled={announcements.save.isPending}>
-                {uiText("Save announcement")}{" "}
-              </button>
-            </div>
-          </form>
+        <div role="status" className="mt-6 grid gap-3">
+          <p className="text-sm text-muted-foreground">{uiText("Loading announcements…")}</p>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-36 animate-pulse rounded-xl border bg-muted" />
+          ))}
         </div>
       )}
+      {announcements.isError && (
+        <div
+          role="alert"
+          className="mt-6 rounded-xl border border-destructive/20 bg-destructive-soft p-6"
+        >
+          <p>{uiText("Announcements are unavailable. Please refresh.")}</p>
+        </div>
+      )}
+      {!announcements.isPending && !announcements.isError && (
+        <div className="mt-5 grid gap-3">
+          {pageItems.map((item) => (
+            <article key={item.id} className="rounded-xl border bg-white p-5 sm:p-6">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <StatusBadge value={item.active ? "Active" : "Inactive"} />
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Users className="size-3.5" aria-hidden="true" />
+                      {uiText(item.audience)}
+                    </span>
+                  </div>
+                  <h2 className="mt-3 break-words text-xl font-bold leading-snug">{item.title}</h2>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
+                    {item.body}
+                  </p>
+                  <p className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <CalendarDays className="size-3.5" aria-hidden="true" />
+                    <time dateTime={item.startsAt}>{dateLabel(item.startsAt)}</time>
+                    <span aria-hidden="true">→</span>
+                    <time dateTime={item.endsAt}>{dateLabel(item.endsAt)}</time>
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2 border-t pt-3 sm:border-0 sm:pt-0">
+                  <button
+                    className={dashboardButton.icon}
+                    onClick={(event) => openEditor(item, event.currentTarget)}
+                    aria-label={"Edit " + item.title}
+                  >
+                    <Edit3 />
+                  </button>
+                  <button
+                    className={dashboardButton.icon}
+                    disabled={announcements.save.isPending}
+                    onClick={() =>
+                      void announcements.save
+                        .mutateAsync({ ...item, active: !item.active })
+                        .catch(() => toast.error(uiText("Unable to save announcement")))
+                    }
+                    aria-label={(item.active ? "Deactivate " : "Activate ") + item.title}
+                  >
+                    <Check />
+                  </button>
+                  <button
+                    className={
+                      dashboardButton.icon +
+                      " text-destructive hover:border-destructive hover:text-destructive"
+                    }
+                    disabled={announcements.remove.isPending}
+                    onClick={() => void remove(item.id)}
+                    aria-label={"Delete " + item.title}
+                  >
+                    <Trash2 />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+          {visible.length === 0 && (
+            <EmptyState
+              icon={<Megaphone />}
+              title={uiText(records.length ? "No announcements match" : "No announcements")}
+              description={uiText(
+                records.length
+                  ? "Clear the search or choose a different status."
+                  : "Create a scheduled notice for learners.",
+              )}
+              action={
+                records.length > 0 ? (
+                  <button
+                    className={outline}
+                    onClick={() => {
+                      setSearch("");
+                      setActiveFilter("all");
+                      setPage(1);
+                    }}
+                  >
+                    {uiText("Clear filters")}
+                  </button>
+                ) : undefined
+              }
+            />
+          )}
+          {visible.length > 8 && (
+            <DashboardPagination
+              page={currentPage}
+              pages={pages}
+              count={visible.length}
+              onPageChange={setPage}
+            />
+          )}
+        </div>
+      )}
+      <Sheet
+        open={editing !== null}
+        onOpenChange={(value) => {
+          if (!value) closeEditor();
+        }}
+      >
+        <SheetContent
+          aria-label={uiText("Announcement editor")}
+          aria-labelledby={undefined}
+          className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-xl"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            returnFocus.current?.focus();
+          }}
+        >
+          <div className="border-b px-6 py-6 pr-16">
+            <p className="meta mb-2 text-violet">{uiText("Announcements")}</p>
+            <SheetTitle>
+              {editing?.id ? uiText("Edit announcement") : uiText("New announcement")}
+            </SheetTitle>
+            <SheetDescription className="mt-2">
+              {uiText("Create and schedule notices shown on learner dashboards.")}
+            </SheetDescription>
+          </div>
+          {editing && (
+            <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+              <div className="app-scrollbar grid min-h-0 flex-1 gap-5 overflow-y-auto p-6">
+                <label className="text-sm font-bold">
+                  {uiText("Title")}
+                  <input
+                    required
+                    maxLength={160}
+                    className={dashboardField}
+                    value={editing.title}
+                    onChange={(event) => setEditing({ ...editing, title: event.target.value })}
+                  />
+                </label>
+                <label className="text-sm font-bold">
+                  {uiText("Message")}
+                  <textarea
+                    required
+                    maxLength={2000}
+                    className={dashboardField + " min-h-36 resize-y py-3 font-normal leading-6"}
+                    value={editing.body}
+                    onChange={(event) => setEditing({ ...editing, body: event.target.value })}
+                  />
+                </label>
+                <label className="text-sm font-bold">
+                  {uiText("Audience")}
+                  <select
+                    className={dashboardField}
+                    value={editing.audience}
+                    onChange={(event) =>
+                      setEditing({
+                        ...editing,
+                        audience: event.target.value as Announcement["audience"],
+                      })
+                    }
+                  >
+                    <option value="All Learners">{uiText("All Learners")}</option>
+                    <option value="New Learners">{uiText("New Learners")}</option>
+                    <option value="Administrators">{uiText("Administrators")}</option>
+                  </select>
+                </label>
+                <div className="grid gap-4 min-[400px]:grid-cols-2">
+                  <label className="min-w-0 text-sm font-bold">
+                    {uiText("Start date")}
+                    <input
+                      required
+                      type="date"
+                      className={dashboardField}
+                      value={editing.startsAt}
+                      onChange={(event) => setEditing({ ...editing, startsAt: event.target.value })}
+                    />
+                  </label>
+                  <label className="min-w-0 text-sm font-bold">
+                    {uiText("End date")}
+                    <input
+                      required
+                      type="date"
+                      min={editing.startsAt}
+                      className={dashboardField}
+                      value={editing.endsAt}
+                      onChange={(event) => setEditing({ ...editing, endsAt: event.target.value })}
+                    />
+                  </label>
+                </div>
+                <label className="flex min-h-11 items-center gap-3 rounded-lg border bg-background px-3 text-sm font-bold">
+                  <input
+                    type="checkbox"
+                    className="size-4 min-h-0 accent-violet"
+                    checked={editing.active}
+                    onChange={(event) => setEditing({ ...editing, active: event.target.checked })}
+                  />
+                  {uiText("Active")}
+                </label>
+                <details className="rounded-xl border bg-background p-4">
+                  <summary className="min-h-8 cursor-pointer text-sm font-bold">
+                    {uiText("Preview announcement")}
+                  </summary>
+                  <article className="announcement-row mt-4">
+                    <h3 className="break-words text-lg font-bold">{editing.title}</h3>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
+                      {editing.body}
+                    </p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {uiText(editing.audience)} · {editing.startsAt} → {editing.endsAt}
+                    </p>
+                  </article>
+                </details>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2 border-t bg-white px-6 py-4">
+                <button
+                  type="button"
+                  className={outline}
+                  onClick={closeEditor}
+                  disabled={announcements.save.isPending}
+                >
+                  {uiText("Cancel")}
+                </button>
+                <button
+                  className={primary}
+                  disabled={announcements.save.isPending}
+                  aria-busy={announcements.save.isPending}
+                >
+                  {uiText("Save announcement")}
+                </button>
+              </div>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, CheckCheck, Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { useI18n } from "@/lib/i18n";
@@ -74,55 +75,91 @@ function AccountNotificationBell() {
     >
       <PopoverTrigger asChild>
         <button
-          className="relative grid size-11 place-items-center rounded-xl hover:bg-muted"
+          className="relative grid size-11 place-items-center rounded-lg border border-border bg-white hover:bg-muted"
           aria-label={`${t("notifications.title")}: ${query.data?.unreadCount ?? 0}`}
         >
-          <Bell className="size-5" />
+          <Bell className="size-5" aria-hidden="true" />
           {!!query.data?.unreadCount && (
-            <span className="absolute right-0 top-0 rounded-full bg-success px-1.5 text-xs text-white">
-              {query.data.unreadCount}
+            <span
+              aria-hidden="true"
+              className="absolute -right-1 -top-1 min-w-5 rounded-full border-2 border-white bg-violet px-1 text-center text-[10px] font-bold leading-4 text-white"
+            >
+              {query.data.unreadCount > 99 ? "99+" : query.data.unreadCount}
             </span>
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(92vw,420px)]">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-semibold">{t("notifications.title")}</h2>
+      <PopoverContent
+        align="end"
+        className="w-[min(92vw,420px)] overflow-hidden rounded-xl p-0 shadow-overlay"
+        aria-label={t("notifications.title")}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3">
+          <h2 className="text-lg font-bold">{t("notifications.title")}</h2>
           <button
-            className="text-sm text-violet"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-bold text-violet hover:bg-primary-soft disabled:opacity-45"
             disabled={mutation.isPending || !query.data?.unreadCount}
             onClick={() => mutation.mutate(null)}
           >
+            <CheckCheck className="size-4" aria-hidden="true" />
             {t("notifications.readAll")}
           </button>
         </div>
-        {query.isPending && <p role="status">{t("notifications.loading")}</p>}
+        {query.isPending && (
+          <p role="status" className="px-5 py-8 text-sm text-muted-foreground">
+            {t("notifications.loading")}
+          </p>
+        )}
         {(query.isError || mutation.isError) && (
-          <p role="alert">
+          <p role="alert" className="m-4 rounded-lg bg-destructive-soft p-4 text-sm">
             {t("notifications.error")}{" "}
-            <button onClick={() => void query.refetch()}>{t("action.retry")}</button>
+            <button className="min-h-11 font-bold underline" onClick={() => void query.refetch()}>
+              {t("action.retry")}
+            </button>
           </p>
         )}
         {!query.isPending && !query.isError && !items.length && (
-          <p className="py-4 text-sm text-muted-foreground">{t("notifications.empty")}</p>
+          <div className="flex flex-col items-center gap-3 px-5 py-10 text-sm text-muted-foreground">
+            <Inbox className="size-8 text-violet" strokeWidth={1.5} aria-hidden="true" />
+            <p>{t("notifications.empty")}</p>
+          </div>
         )}
-        <ul className="max-h-[60vh] overflow-y-auto">
+        <ul className="app-scrollbar max-h-[min(60dvh,560px)] overflow-y-auto">
           {items.map((item) => (
-            <li key={item.id} className="border-b py-3 text-sm">
-              <p className={item.read_at ? "font-medium" : "font-bold"}>
+            <li
+              key={item.id}
+              className={cn(
+                "relative border-b px-5 py-4 text-sm last:border-0",
+                !item.read_at && "bg-primary-soft/60",
+              )}
+            >
+              {!item.read_at && (
+                <span
+                  className="absolute left-2 top-6 size-1.5 rounded-full bg-violet"
+                  aria-hidden="true"
+                />
+              )}
+              <p className={item.read_at ? "break-words font-medium" : "break-words font-bold"}>
                 {item.available ? item.title : t("notifications.unavailable")}
               </p>
-              <p className="whitespace-pre-wrap break-words text-muted-foreground">{item.body}</p>
-              <time dateTime={item.created_at} className="text-xs text-muted-foreground">
+              <p className="mt-1 whitespace-pre-wrap break-words leading-6 text-muted-foreground">
+                {item.body}
+              </p>
+              <time dateTime={item.created_at} className="mt-2 block text-xs text-muted-foreground">
                 {new Date(item.created_at).toLocaleString(language)}
               </time>
-              <div className="mt-2 flex justify-between gap-3">
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 {item.href && ["/dashboard", "/admin/announcements"].includes(item.href) && (
-                  <AppLink href={item.href} onClick={() => setOpen(false)} className="text-violet">
+                  <AppLink
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-bold text-violet hover:bg-white"
+                  >
                     {t("notifications.view")}
                   </AppLink>
                 )}
                 <button
+                  className="min-h-11 rounded-lg px-2 text-xs font-bold text-muted-foreground hover:bg-white hover:text-violet disabled:opacity-50"
                   disabled={mutation.isPending}
                   onClick={() => mutation.mutate({ id: item.id, read: !item.read_at })}
                 >
@@ -132,10 +169,20 @@ function AccountNotificationBell() {
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex justify-between text-sm">
-          {cursor && <button onClick={() => setCursor(null)}>{t("notifications.latest")}</button>}
+        <div className="flex justify-between border-t bg-background px-4 text-sm empty:hidden">
+          {cursor && (
+            <button
+              className="min-h-11 rounded-lg px-2 font-bold text-violet"
+              onClick={() => setCursor(null)}
+            >
+              {t("notifications.latest")}
+            </button>
+          )}
           {items.length === 20 && last && (
-            <button onClick={() => setCursor({ before: last.created_at, beforeId: last.id })}>
+            <button
+              className="min-h-11 rounded-lg px-2 font-bold text-violet"
+              onClick={() => setCursor({ before: last.created_at, beforeId: last.id })}
+            >
               {t("notifications.older")}
             </button>
           )}

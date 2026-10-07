@@ -152,7 +152,7 @@ export function LearningCataloguePage() {
           {cards.map(({ m, lessons: lessonCount, done, progress }) => (
             <article
               key={m.id}
-              className="flex min-h-[350px] flex-col rounded-xl border bg-white p-6 hover:border-violet hover:shadow-raised"
+              className="interactive-card flex min-h-[350px] flex-col rounded-xl border bg-white p-6"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="meta text-violet">{m.topic}</span>
@@ -1078,7 +1078,7 @@ export function DashboardPage() {
           </AppLink>
         }
       />
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={uiText("Overall learning progress")}
           value={`${stats.overall}%`}
@@ -1122,19 +1122,22 @@ export function DashboardPage() {
             </span>
           </div>
           <p className="mt-5 text-muted-foreground">{next.summary}</p>
-          <AppLink href={`/learn/lessons/${next.id}`} className={cn(primary, "mt-6")}>
+          <AppLink
+            href={`/learn/lessons/${next.id}`}
+            className="mt-6 inline-flex min-h-12 items-center gap-3 rounded-lg bg-signal px-5 font-bold text-signal-foreground hover:bg-white"
+          >
             {uiText("Resume lesson")} <ArrowRight />
           </AppLink>
         </div>
-        <div className="rounded-xl border bg-primary p-6 text-white">
-          <p className="meta text-white/60">{uiText("Recommended next step")}</p>
+        <div className="rounded-xl border bg-white p-6 sm:p-8">
+          <p className="meta text-violet">{uiText("Recommended next step")}</p>
           <Sparkles className="mt-6 size-7 text-ember" />
           <h2 className="mt-3 text-xl font-semibold">
             {stats.overall < 40
               ? "Complete one short lesson today"
               : "Strengthen your lowest quiz topic"}
           </h2>
-          <p className="mt-2 text-sm text-white/70">
+          <p className="mt-2 text-sm text-muted-foreground">
             {uiText("This suggestion is based on your saved learning progress.")}{" "}
           </p>
         </div>
@@ -1243,9 +1246,11 @@ export function DashboardPage() {
           <SectionHeading title={uiText("Announcements")} />
           <div className="grid gap-3">
             {visibleAnnouncements.map((a) => (
-              <article key={a.id} className="border-l-2 border-violet pl-4">
+              <article key={a.id} className="announcement-row">
                 <h3 className="font-semibold">{a.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{a.body}</p>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
+                  {a.body}
+                </p>
               </article>
             ))}
             {visibleAnnouncements.length === 0 && (

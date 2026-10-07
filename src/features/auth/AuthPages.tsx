@@ -57,13 +57,13 @@ function AuthLayout({
   return (
     <>
       <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[minmax(420px,.9fr)_1.1fr]">
-        <aside className="grid-motif relative hidden min-h-dvh overflow-hidden bg-primary p-10 text-white lg:flex lg:flex-col xl:p-14">
+        <aside className="relative hidden min-h-dvh overflow-hidden bg-primary p-10 text-white lg:flex lg:flex-col xl:p-14">
           <div
-            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-amber-500 to-emerald-500"
+            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-signal to-signal"
             aria-hidden="true"
           />
           <div
-            className="absolute -right-32 top-1/3 size-96 rounded-full bg-sky-500/15 blur-3xl"
+            className="absolute -right-32 top-1/3 size-96 rounded-full border border-white/15"
             aria-hidden="true"
           />
           <Brand inverse />
@@ -71,7 +71,7 @@ function AuthLayout({
             <span className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-white/10 shadow-lg">
               <ShieldCheck className="size-8" />
             </span>
-            <p className="meta mt-8 text-sky-300">{uiText("Your digital safety journey")}</p>
+            <p className="meta mt-8 text-signal">{uiText("Your digital safety journey")}</p>
             <h2 className="mt-3 text-4xl font-bold leading-tight xl:text-5xl">
               {uiText("Build safer habits, one clear step at a time.")}{" "}
             </h2>
@@ -95,8 +95,8 @@ function AuthLayout({
               </li>
             </ul>
           </div>
-          <p className="relative text-xs text-white/50">
-            {uiText("Secure account access powered by Supabase")}{" "}
+          <p className="relative text-xs text-slate-200">
+            {uiText("Designed for accessible learning")}{" "}
           </p>
         </aside>
         <main
@@ -115,7 +115,7 @@ function AuthLayout({
               <ArrowLeft className="size-4" />
               {uiText("Back to NCAP")}{" "}
             </AppLink>
-            <div className="panel p-6 sm:p-9">
+            <div className="rounded-xl border border-border bg-white p-6 shadow-panel sm:p-9">
               <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
               <p className="mt-3 leading-7 text-muted-foreground">{description}</p>
               {children}

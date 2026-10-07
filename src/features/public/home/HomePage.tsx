@@ -27,10 +27,6 @@ import type { MediaAsset } from "@/data/types";
 import { useRepository } from "@/services/repository-provider";
 import { useRepositoryList } from "@/services/query-hooks";
 
-const primaryButton =
-  "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-sm transition hover:bg-violet hover:shadow-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft";
-const secondaryButton =
-  "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-6 text-sm font-bold text-foreground shadow-sm transition hover:border-violet hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft";
 function useModules() {
   const repository = useRepository();
   return useRepositoryList(repository, "modules").data ?? [];
@@ -52,24 +48,24 @@ type Course = {
 
 const courseVisuals: Record<string, { image: string; alt: string; featured?: boolean }> = {
   "m-fundamentals": {
-    image: "/images/home/course-family-safety.jpg",
+    image: "/images/home/course-family-safety.webp",
     alt: "Sri Lankan family learning practical online safety together",
   },
   "m-phishing": {
-    image: "/images/home/course-phishing.jpg",
+    image: "/images/home/course-phishing.webp",
     alt: "Laptop displaying a clear phishing warning",
   },
   "m-passwords": {
-    image: "/images/home/course-passwords.jpg",
+    image: "/images/home/course-passwords.webp",
     alt: "Smartphone and secure padlock representing strong passwords",
     featured: true,
   },
   "m-devices": {
-    image: "/images/home/course-mfa.jpg",
+    image: "/images/home/course-mfa.webp",
     alt: "Person securing a digital account on a smartphone",
   },
   "m-privacy": {
-    image: "/images/home/course-online-banking.jpg",
+    image: "/images/home/course-online-banking.webp",
     alt: "Secure mobile banking interface protected by a shield",
   },
 };
@@ -162,118 +158,83 @@ export function HomePage() {
 
 function HomeHero() {
   const uiText = useInterfaceText();
-
   return (
-    <section className="relative overflow-hidden border-b border-border bg-[radial-gradient(circle_at_88%_42%,var(--color-violet-soft)_0,transparent_33%)]">
-      <div
-        className="pointer-events-none absolute right-[-60px] top-14 size-72 rounded-full border-[54px] border-primary-soft sm:size-[430px]"
-        aria-hidden="true"
-      />
-      <div className="container-ncap relative grid gap-8 pb-7 pt-10 lg:min-h-[500px] lg:grid-cols-[.96fr_1.04fr] lg:items-center lg:gap-10 lg:pb-5 lg:pt-8 xl:min-h-[535px] xl:gap-16">
-        <div className="relative z-10 max-w-[650px]">
-          <p className="meta inline-flex items-center gap-2 rounded-full bg-violet-soft px-3 py-2 text-violet">
-            <span className="size-2 rounded-full bg-violet" aria-hidden="true" />
-            {uiText("Build cyber confidence")}{" "}
-          </p>
-          <h1 className="mt-6 max-w-[650px] text-[2.25rem] font-bold leading-[1.02] tracking-[-0.035em] text-foreground min-[440px]:text-[2.65rem] sm:text-[3.7rem] lg:text-[3.35rem] xl:text-[4rem]">
-            {uiText("Safer digital habits for")}{" "}
-            <span className="text-violet">{uiText("every Sri Lankan.")}</span>
-          </h1>
-          <p className="mt-5 max-w-[570px] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            {uiText(
-              "Practical guidance, short lessons and trusted resources to help you stay safe, confident and responsible online—at home, at work and everywhere in between.",
-            )}{" "}
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <AppLink href="/learn" className={primaryButton}>
-              {uiText("Start learning")} <ArrowRight className="size-4" aria-hidden="true" />
-            </AppLink>
-            <AppLink href="/learn/search" className={secondaryButton}>
-              <BookOpenCheck className="size-4 text-violet" aria-hidden="true" />{" "}
-              {uiText("Explore topics")}{" "}
-            </AppLink>
+    <>
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="container-ncap home-hero-inner">
+          <div className="home-hero-copy">
+            <p className="home-hero-eyebrow">{uiText("Build cyber confidence")}</p>
+            <h1 id="home-title" className="mt-6">
+              {uiText("Safer digital habits for")} <span>{uiText("every Sri Lankan.")}</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-base leading-7 text-slate-200 sm:text-lg sm:leading-8">
+              {uiText(
+                "Practical guidance, short lessons and trusted resources to help you stay safe, confident and responsible online—at home, at work and everywhere in between.",
+              )}
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <AppLink
+                href="/learn"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-signal px-6 font-bold text-signal-foreground hover:bg-white"
+              >
+                {uiText("Start learning")} <ArrowRight className="size-4" aria-hidden="true" />
+              </AppLink>
+              <AppLink
+                href="/learn/search"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg border border-white/35 px-6 font-bold text-white hover:bg-white/10"
+              >
+                {uiText("Explore topics")} <BookOpenCheck className="size-4" aria-hidden="true" />
+              </AppLink>
+            </div>
           </div>
+          <HeroVisual />
         </div>
-
-        <HeroVisual />
-
-        <div className="relative z-10 col-span-full grid grid-cols-2 gap-x-3 gap-y-4 border-t border-border pt-5 sm:grid-cols-3 lg:grid-cols-5 lg:border-0 lg:pt-0">
+      </section>
+      <div className="home-trust-strip">
+        <div className="container-ncap">
           {benefits.map(({ label, icon: Icon }) => (
             <div
               key={label}
-              className="flex min-h-11 items-center gap-2.5 text-xs font-bold leading-4 text-muted-foreground"
+              className="flex items-center gap-3 text-xs font-bold leading-5 text-muted-foreground"
             >
-              <Icon className="size-5 shrink-0 text-violet" strokeWidth={1.8} aria-hidden="true" />
-              <span>{label}</span>
+              <Icon className="size-5 shrink-0 text-violet" strokeWidth={1.6} aria-hidden="true" />
+              <span>{uiText(label)}</span>
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </>
   );
 }
 
 function HeroVisual() {
   const uiText = useInterfaceText();
-
   return (
-    <div className="relative mx-auto min-h-[370px] w-full max-w-[650px] sm:min-h-[470px] lg:min-h-[420px] xl:min-h-[455px]">
-      <div
-        className="absolute right-2 top-8 h-[78%] w-[65%] rotate-[5deg] rounded-[28px] bg-violet"
-        aria-hidden="true"
+    <div className="home-hero-visual">
+      <img
+        src="/images/home/hero-family.webp"
+        srcSet="/images/home/hero-family-small.webp 560w, /images/home/hero-family.webp 960w"
+        sizes="(min-width: 1024px) 42vw, 90vw"
+        alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
+        width="960"
+        height="720"
+        fetchPriority="high"
+        className="home-hero-image"
       />
-      <div className="absolute right-[8%] top-0 h-[72%] w-[72%] overflow-hidden rounded-[28px] bg-muted shadow-overlay sm:right-[7%] sm:w-[70%]">
-        <img
-          src="/images/home/hero-family.jpg"
-          alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
-          width="1920"
-          height="1440"
-          fetchPriority="high"
-          className="size-full object-cover object-center"
-        />
-      </div>
-
-      <div className="absolute bottom-2 left-0 z-10 w-[62%] rounded-2xl bg-primary p-4 text-white shadow-overlay sm:bottom-5 sm:w-[56%] sm:p-5">
-        <div className="flex gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet shadow-md">
-            <ShieldCheck className="size-6" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="font-bold">{uiText("Stay alert. Stay secure.")}</p>
-            <p className="mt-1 hidden text-xs leading-5 text-white/70 sm:block">
-              {uiText("Small steps today build a safer tomorrow for you and your community.")}{" "}
-            </p>
-            <AppLink
-              href="/awareness/videos"
-              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs font-bold text-white transition hover:text-sky-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <span className="grid size-5 place-items-center rounded-full border border-white/40">
-                <Play className="ml-0.5 size-2.5 fill-current" aria-hidden="true" />
-              </span>
-              {uiText("Watch intro video")}{" "}
-            </AppLink>
-          </div>
+      <div className="home-hero-caption">
+        <span>
+          <ShieldCheck className="size-6" strokeWidth={1.7} aria-hidden="true" />
+        </span>
+        <div>
+          <p className="font-bold">{uiText("Stay alert. Stay secure.")}</p>
+          <AppLink
+            href="/awareness/videos"
+            className="mt-1 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-violet hover:underline"
+          >
+            {uiText("Watch intro video")} <Play className="size-3" aria-hidden="true" />
+          </AppLink>
         </div>
       </div>
-
-      <div className="absolute bottom-5 right-0 z-20 h-[38%] w-[30%] overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-raised sm:h-[41%] sm:w-[31%]">
-        <img
-          src="/images/home/hero-phone-user.jpg"
-          alt={uiText("Young Sri Lankan woman using her phone with confidence")}
-          width="1537"
-          height="1920"
-          fetchPriority="high"
-          className="size-full object-cover object-center"
-        />
-      </div>
-      <div
-        className="absolute right-0 top-0 hidden h-16 w-20 opacity-70 sm:block"
-        style={{
-          backgroundImage: "radial-gradient(var(--color-violet) 1.5px, transparent 1.5px)",
-          backgroundSize: "14px 14px",
-        }}
-        aria-hidden="true"
-      />
     </div>
   );
 }
@@ -289,17 +250,18 @@ function SectionHeading({
   href: string;
   action: string;
 }) {
+  const uiText = useInterfaceText();
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
+    <div className="home-section-heading">
       <div>
-        <h2 className="text-xl font-bold text-foreground sm:text-2xl">{title}</h2>
+        <h2 className="font-bold text-foreground">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
       <AppLink
         href={href}
         className="hidden min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-bold text-violet transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft sm:inline-flex"
       >
-        {action} <ArrowRight className="size-4" aria-hidden="true" />
+        {uiText(action)} <ArrowRight className="size-4" aria-hidden="true" />
       </AppLink>
     </div>
   );
@@ -338,7 +300,7 @@ function FeaturedLearning() {
     });
   return (
     <section
-      className="border-b border-border py-8 sm:py-10"
+      className="home-section border-b border-border"
       aria-labelledby="featured-learning-heading"
     >
       <div className="container-ncap relative">
@@ -360,7 +322,14 @@ function FeaturedLearning() {
         </div>
         <button
           type="button"
-          onClick={() => trackRef.current?.scrollBy({ left: 280, behavior: "smooth" })}
+          onClick={() =>
+            trackRef.current?.scrollBy({
+              left: 280,
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "instant"
+                : "smooth",
+            })
+          }
           className="absolute right-0 top-[52%] z-20 grid size-11 cursor-pointer place-items-center rounded-xl border border-border bg-card text-violet shadow-raised transition hover:border-violet hover:bg-accent focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft xl:hidden"
           aria-label={uiText("Show more featured courses")}
         >
@@ -394,7 +363,7 @@ function LearningCard({
 
   const resolvedImage = useMediaUrl(imageAsset, image);
   return (
-    <article className="group w-[76vw] max-w-[270px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-card shadow-panel transition hover:-translate-y-0.5 hover:border-violet hover:shadow-raised sm:w-[245px] xl:w-auto">
+    <article className="group w-[76vw] max-w-[270px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-card transition hover:border-violet hover:shadow-raised sm:w-[245px] xl:w-auto">
       <AppLink
         href={href}
         className="flex h-full cursor-pointer flex-col focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-violet-soft"
@@ -411,7 +380,7 @@ function LearningCard({
           <span
             className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold ${level === "Beginner" ? "bg-card text-foreground" : "bg-success-soft text-success"}`}
           >
-            {level}
+            {uiText(level)}
           </span>
           <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/85 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
             <Clock3 className="size-3" aria-hidden="true" /> {minutes} {uiText("min")}{" "}
@@ -453,7 +422,10 @@ function TopicsGrid() {
   const uiText = useInterfaceText();
 
   return (
-    <section className="border-b border-border py-8 sm:py-9" aria-labelledby="topics-heading">
+    <section
+      className="home-section border-b border-border bg-white"
+      aria-labelledby="topics-heading"
+    >
       <div className="container-ncap">
         <div id="topics-heading">
           <SectionHeading
@@ -463,17 +435,17 @@ function TopicsGrid() {
             action="View all topics"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+        <div className="grid overflow-hidden rounded-xl border border-border sm:grid-cols-2 lg:grid-cols-4">
           {topics.map(({ label, icon: Icon, iconClass, bubbleClass, query }) => (
             <AppLink
               key={label}
               href={`/learn/search?q=${encodeURIComponent(query)}`}
-              className="group flex min-h-[148px] cursor-pointer flex-col items-center justify-center rounded-xl border border-border bg-card p-3 text-center shadow-panel transition hover:-translate-y-0.5 hover:border-violet hover:shadow-raised focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
+              className="home-topic group"
             >
-              <span className={`grid size-14 place-items-center rounded-full ${bubbleClass}`}>
+              <span className={`home-topic-icon ${bubbleClass}`}>
                 <Icon className={`size-7 ${iconClass}`} strokeWidth={1.75} aria-hidden="true" />
               </span>
-              <span className="mt-3 text-[13px] font-bold leading-[1.35] text-foreground group-hover:text-violet">
+              <span className="text-sm font-bold leading-5 text-foreground group-hover:text-violet">
                 {label}
               </span>
             </AppLink>
@@ -492,45 +464,36 @@ function TopicsGrid() {
 
 function FamilyBanner() {
   const uiText = useInterfaceText();
-
   return (
-    <section className="container-ncap py-8 sm:py-10" aria-labelledby="family-safety-heading">
-      <div className="relative isolate min-h-[400px] overflow-hidden rounded-2xl border border-border bg-primary-soft shadow-panel sm:min-h-[360px]">
-        <img
-          src="/images/home/family-banner.jpg"
-          alt={uiText("Sri Lankan parents and child using digital devices together")}
-          width="1920"
-          height="1081"
-          loading="lazy"
-          className="absolute inset-0 size-full object-cover object-[64%_center]"
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-primary-soft from-35% via-primary-soft/90 via-52% to-transparent to-80%"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-primary-soft via-primary-soft/50 to-transparent sm:hidden"
-          aria-hidden="true"
-        />
-        <div className="relative z-10 flex min-h-[400px] max-w-xl flex-col justify-end p-6 sm:min-h-[360px] sm:justify-center sm:p-10 lg:p-12">
-          <p className="meta w-fit rounded-full bg-card/90 px-3 py-1.5 text-violet">
-            {uiText("Stay safe together")}{" "}
-          </p>
+    <section className="container-ncap home-section" aria-labelledby="family-safety-heading">
+      <div className="home-family-banner">
+        <div>
+          <p className="meta text-signal">{uiText("Stay safe together")}</p>
           <h2
             id="family-safety-heading"
-            className="mt-4 max-w-[430px] text-3xl font-bold leading-[1.05] text-foreground sm:text-[2.65rem]"
+            className="mt-5 max-w-md text-3xl font-bold leading-tight sm:text-4xl"
           >
-            {uiText("Build safer digital habits as a family.")}{" "}
+            {uiText("Build safer digital habits as a family.")}
           </h2>
-          <p className="mt-3 max-w-[430px] text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+          <p className="mt-4 max-w-md text-base leading-7 text-slate-200">
             {uiText(
               "Practical lessons, trusted guidance and simple actions for parents, students and everyday users in Sri Lanka.",
-            )}{" "}
+            )}
           </p>
-          <AppLink href="/learn" className={`${primaryButton} mt-5 w-fit`}>
+          <AppLink
+            href="/learn"
+            className="mt-6 inline-flex min-h-12 items-center gap-3 rounded-lg bg-signal px-5 font-bold text-signal-foreground hover:bg-white"
+          >
             {uiText("Start learning")} <ArrowRight className="size-4" aria-hidden="true" />
           </AppLink>
         </div>
+        <img
+          src="/images/home/family-banner.webp"
+          alt={uiText("Sri Lankan parents and child using digital devices together")}
+          width="960"
+          height="540"
+          loading="lazy"
+        />
       </div>
     </section>
   );
@@ -545,7 +508,7 @@ function LatestResources() {
       labelClass: "bg-violet-soft text-violet",
       title: "How to identify scams in 5 simple steps",
       description: "A quick guide to help you recognise and avoid common online scams.",
-      image: "/images/home/resource-scam-guide.jpg",
+      image: "/images/home/resource-scam-guide.webp",
       alt: "A scam warning displayed beside a person using a laptop",
       action: "5 min read",
       href: "/awareness/articles",
@@ -567,7 +530,7 @@ function LatestResources() {
       labelClass: "bg-primary-soft text-primary",
       title: "NCAP Foundation Release demo updates",
       description: "New lessons, improved navigation and smarter bug fixes are now live.",
-      image: "/images/home/resource-platform-update.jpg",
+      image: "/images/home/resource-platform-update.webp",
       alt: "Laptop displaying the NCAP learning dashboard",
       action: "Read platform update",
       href: "/awareness/news",
@@ -577,7 +540,7 @@ function LatestResources() {
 
   return (
     <section
-      className="border-t border-border pb-5 pt-8 sm:pb-6 sm:pt-9"
+      className="home-section border-t border-border bg-white"
       aria-labelledby="latest-resources-heading"
     >
       <div className="container-ncap">
@@ -592,20 +555,20 @@ function LatestResources() {
         <div className="grid gap-4 lg:grid-cols-3">
           {resources.map((resource) => (
             <article
-              key={resource.title}
+              key={uiText(resource.title)}
               className="group grid min-h-[230px] grid-cols-[1.04fr_.96fr] overflow-hidden rounded-xl border border-border bg-card shadow-panel transition hover:border-violet hover:shadow-raised"
             >
               <div className="flex min-w-0 flex-col p-4 sm:p-5">
                 <span
                   className={`w-fit rounded-full px-2 py-1 text-[9px] font-bold uppercase ${resource.labelClass}`}
                 >
-                  {resource.label}
+                  {uiText(resource.label)}
                 </span>
                 <h3 className="mt-3 text-base font-bold leading-[1.25] text-foreground">
                   {resource.title}
                 </h3>
                 <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
-                  {resource.description}
+                  {uiText(resource.description)}
                 </p>
                 {resource.kind === "download" ? (
                   <a
@@ -613,7 +576,7 @@ function LatestResources() {
                     download
                     className="mt-auto inline-flex min-h-10 w-fit cursor-pointer items-center gap-2 rounded-lg pt-3 text-xs font-bold text-violet hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-soft"
                   >
-                    <Download className="size-4" aria-hidden="true" /> {resource.action}
+                    <Download className="size-4" aria-hidden="true" /> {uiText(resource.action)}
                   </a>
                 ) : (
                   <AppLink
@@ -664,7 +627,7 @@ function ImpactStrip() {
   const publishedArticles = useAwarenessSummary().data?.kinds.articles?.count ?? "—";
   return (
     <section
-      className="container-ncap pb-3 pt-1"
+      className="container-ncap py-8"
       aria-label={uiText("NCAP demonstration impact indicators")}
     >
       <div className="grid overflow-hidden rounded-2xl bg-primary px-6 py-5 text-white shadow-raised md:grid-cols-[1.75fr_repeat(3,.65fr)] md:items-center md:px-8">
@@ -676,7 +639,7 @@ function ImpactStrip() {
             <h2 className="text-base font-bold">
               {uiText("A transparent Foundation Release demonstration")}
             </h2>
-            <p className="mt-1 max-w-lg text-xs leading-5 text-white/65">
+            <p className="mt-1 max-w-lg text-xs leading-5 text-slate-200">
               {uiText(
                 "These counts are derived from the learning and awareness records available in this browser.",
               )}{" "}
@@ -696,7 +659,7 @@ function ImpactStrip() {
             className="border-white/15 py-4 text-center first-of-type:border-t md:border-l md:border-t-0 md:py-0"
           >
             <strong className="block text-3xl tracking-[-0.04em]">{value}</strong>
-            <span className="mt-1 block text-[11px] text-white/65">{label}</span>
+            <span className="mt-1 block text-[11px] text-slate-200">{uiText(label ?? "")}</span>
           </div>
         ))}
       </div>

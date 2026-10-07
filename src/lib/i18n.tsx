@@ -190,6 +190,25 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = "ltr";
   }, [language]);
 
+  useEffect(() => {
+    // Keep language fonts local and off the English critical rendering path.
+    const fonts =
+      language === "si"
+        ? [
+            import("@fontsource/noto-sans-sinhala/400.css"),
+            import("@fontsource/noto-sans-sinhala/700.css"),
+          ]
+        : language === "ta"
+          ? [
+              import("@fontsource/noto-sans-tamil/400.css"),
+              import("@fontsource/noto-sans-tamil/700.css"),
+            ]
+          : [];
+    void Promise.all(fonts).catch(() => {
+      /* Native system script fonts remain a readable fallback. */
+    });
+  }, [language]);
+
   const setLanguage = useCallback((code: LanguageCode, persist = true) => {
     setLanguageState(code);
     if (persist) window.localStorage.setItem(STORAGE_KEY, code);

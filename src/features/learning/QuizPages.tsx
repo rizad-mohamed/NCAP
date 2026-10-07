@@ -10,6 +10,7 @@ import {
   PageHeader,
   ProgressMeter,
   SectionHeading,
+  PageSkeleton,
 } from "@/components/common/primitives";
 import { dashboardButton } from "@/components/common/dashboard-primitives";
 import { cn } from "@/lib/utils";
@@ -41,7 +42,7 @@ export function QuizzesPage() {
   const history = useQuizHistory();
   const repository = useRepository();
   const modules = useRepositoryList(repository, "modules").data ?? [];
-  if (catalogue.isPending) return <Message>{uiText("Loading quizzes…")}</Message>;
+  if (catalogue.isPending) return <PageSkeleton label={uiText("Loading quizzes…")} />;
   if (catalogue.error) return <Message>{catalogue.error.message}</Message>;
   return (
     <div className="container-ncap max-w-7xl py-2">
@@ -61,7 +62,7 @@ export function QuizzesPage() {
           return (
             <article
               key={quiz.id}
-              className="flex min-h-[310px] flex-col rounded-xl border bg-white p-6"
+              className="interactive-card flex min-h-[310px] flex-col rounded-xl border bg-white p-6"
             >
               <div className="flex items-center justify-between">
                 <span className="meta text-violet">{quiz.topic}</span>
@@ -78,7 +79,7 @@ export function QuizzesPage() {
                 </span>
                 <span>· {modules.find((m) => m.id === quiz.moduleId)?.title ?? "Module"}</span>
               </div>
-              <div className="mt-auto flex items-end justify-between pt-7">
+              <div className="mt-auto flex flex-wrap items-end justify-between gap-4 pt-7">
                 <div>
                   <p className="text-xs text-muted-foreground">
                     {mine.length ? "Best score" : "Attempt status"}

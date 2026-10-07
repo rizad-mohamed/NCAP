@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 
 export const dashboardButton = {
   primary:
-    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   secondary:
-    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-4 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
-  icon: "grid size-11 shrink-0 place-items-center rounded-xl border border-border-strong bg-white shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4",
+    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg border border-border-strong bg-white px-4 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  icon: "grid size-11 shrink-0 place-items-center rounded-lg border border-border-strong bg-white shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4",
   destructive:
     "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
 } as const;
@@ -31,7 +31,7 @@ export function FilterToolbar({
   return (
     <section
       className={cn(
-        "mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-3 sm:flex-row sm:flex-wrap sm:items-center",
+        "mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center",
         className,
       )}
       aria-label={label}
@@ -165,7 +165,7 @@ export function ResponsiveTableContainer({
   return (
     <div
       className={cn(
-        "app-scrollbar mt-4 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border bg-white",
+        "data-table app-scrollbar mt-4 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border bg-white",
         className,
       )}
       role="region"

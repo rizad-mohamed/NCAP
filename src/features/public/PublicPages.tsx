@@ -27,7 +27,13 @@ import type {
   VideoResource,
 } from "@/data/types";
 import { AppLink, PageCrumbs } from "@/components/layout/AppShell";
-import { DemoTag, EmptyState, PageHeader, SectionHeading } from "@/components/common/primitives";
+import {
+  DemoTag,
+  EmptyState,
+  PageHeader,
+  PageSkeleton,
+  SectionHeading,
+} from "@/components/common/primitives";
 import {
   Dialog,
   DialogContent,
@@ -131,14 +137,14 @@ export function AwarenessHubPage() {
           >
             <div
               className={cn(
-                "grid h-28 place-items-center border-b",
-                index % 3 === 0 && "bg-sky-50 text-sky-800",
-                index % 3 === 1 && "bg-amber-50 text-amber-800",
-                index % 3 === 2 && "bg-emerald-50 text-emerald-800",
+                "flex items-center px-6 pt-6",
+                index % 3 === 0 && "text-violet",
+                index % 3 === 1 && "text-ember",
+                index % 3 === 2 && "text-success",
               )}
             >
-              <span className="grid size-14 place-items-center rounded-2xl border border-current/15 bg-white/80 shadow-sm">
-                <Icon className="size-7" aria-hidden="true" />
+              <span className="grid size-12 place-items-center rounded-xl border border-current/15 bg-background">
+                <Icon className="size-6" strokeWidth={1.6} aria-hidden="true" />
               </span>
             </div>
             <div className="p-6">
@@ -1049,6 +1055,9 @@ export function AwarenessQueryState({
   query: { isPending: boolean; error: Error | null; refetch: () => unknown };
 }) {
   const uiText = useInterfaceText();
+
+  if (query.isPending && !query.error)
+    return <PageSkeleton label={uiText("Loading Awareness resources…")} />;
 
   return (
     <div className="container-ncap py-8" role={query.error ? "alert" : "status"}>
