@@ -217,7 +217,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
             className={navClass(newsActive)}
             aria-current={newsActive ? "page" : undefined}
           >
-            {uiText("News &amp; Updates")}{" "}
+                    {uiText("News & Updates")}{" "}
           </AppLink>
           <AppLink
             href="/learn/search"
@@ -323,7 +323,7 @@ function PublicHeader({ pathname }: { pathname: string }) {
                 onClick={() => setOpen(false)}
                 className={mobileNavClass(newsActive)}
               >
-                {uiText("News &amp; Updates")}{" "}
+                  {uiText("News & Updates")}{" "}
               </AppLink>
               <AppLink
                 href="/learn/search"

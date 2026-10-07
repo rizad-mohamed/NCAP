@@ -16,6 +16,24 @@ const attributes = new Set([
   "label",
   "alt",
 ]);
+// Use the JSX compiler's entity semantics before moving JSX literals into JS
+// strings. JavaScript strings do not decode HTML entities as JSX literals do.
+function decodeJsxLiteral(text) {
+  if (!/&(?:#x[\da-f]+|#\d+|[a-z]+);/i.test(text)) return text;
+  const output = ts.transpileModule(
+    `const value = <span title="${text.replace(/"/g, "&#34;")}" />;`,
+    { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 } },
+  ).outputText;
+  const ast = ts.createSourceFile("literal.js", output, ts.ScriptTarget.Latest, true);
+  let decoded = text;
+  function visit(node) {
+    if (ts.isPropertyAssignment(node) && node.name.getText(ast) === "title" &&
+        ts.isStringLiteral(node.initializer)) decoded = node.initializer.text;
+    ts.forEachChild(node, visit);
+  }
+  visit(ast);
+  return decoded;
+}
 function files(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
     entry.isDirectory() ? files(join(dir, entry.name)) : [join(dir, entry.name)],
@@ -54,7 +72,7 @@ for (const path of [
   function visit(node) {
     if (ts.isJsxText(node)) {
       const raw = node.getFullText(ast);
-      const text = raw.replace(/\s+/g, " ").trim();
+      const text = decodeJsxLiteral(raw.replace(/\s+/g, " ").trim());
       replace(
         node,
         text,
@@ -70,7 +88,7 @@ for (const path of [
     ) {
       replace(
         node.initializer,
-        node.initializer.text,
+        decodeJsxLiteral(node.initializer.text),
         (value) => `{uiText(${JSON.stringify(value)})}`,
       );
     }
