@@ -1,3 +1,4 @@
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { Download, Printer, ShieldCheck } from "lucide-react";
 import {
@@ -44,7 +45,7 @@ export function CertificatePreview({ id, onClose }: { id: string | null; onClose
             {uiText("Certificate facts and wording recorded at issuance.")}
           </DialogDescription>
         </DialogHeader>
-        {query.isPending && <p role="status">{uiText("Loading certificate…")}</p>}
+        {query.isPending && <ContentSkeleton label={uiText("Loading certificate…")} />}
         {query.isError && <p role="alert">{uiText("Certificate unavailable. Please refresh.")}</p>}
         {record && (
           <>

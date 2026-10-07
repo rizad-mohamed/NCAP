@@ -1,3 +1,5 @@
+import { confirmAction, requestReason } from "@/components/common/ConfirmationPanel";
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
@@ -177,7 +179,7 @@ export function AdminDashboardPage() {
   ];
   return (
     <div className="container-ncap max-w-[1400px] py-2">
-      {dashboard.isPending && <p role="status">{uiText("Loading administration metrics…")}</p>}
+      {dashboard.isPending && <ContentSkeleton label={uiText("Loading administration metrics…")} />}
       {dashboard.isError && (
         <p role="alert">{uiText("Administration metrics are unavailable. Please refresh.")}</p>
       )}
@@ -340,7 +342,7 @@ export function AdminTopicsPage() {
     toast.success(original ? "Topic updated" : "Topic created");
     setEditing(null);
   };
-  const remove = (topic: TopicRecord) => {
+  const remove = async (topic: TopicRecord) => {
     if (referenced(topic)) {
       store.setTopics(
         store.topics.map((item) =>
@@ -352,7 +354,7 @@ export function AdminTopicsPage() {
       toast.info(uiText("Referenced topics are deactivated instead of deleted."));
       return;
     }
-    if (!window.confirm(`Delete the unreferenced topic “${topic.name}”?`)) return;
+    if (!(await confirmAction(`Delete the unreferenced topic “${topic.name}”?`))) return;
     store.setTopics(store.topics.filter((item) => item.id !== topic.id));
     toast.success(uiText("Topic deleted"));
   };
@@ -543,9 +545,9 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (kind === "lessons") {
-      if (!window.confirm("Delete this lesson and its saved progress?")) return;
+      if (!(await confirmAction("Delete this lesson and its saved progress?"))) return;
       const lesson = s.lessons.find((l) => l.id === id);
       void deleteLesson
         .mutateAsync({ id, version: lesson?.version })
@@ -553,7 +555,8 @@ export function AdminContentPage({ kind }: { kind: ContentKind }) {
         .catch((error) => toast.error(error.message));
       return;
     }
-    if (!window.confirm("Delete this demo record? This action updates browser state only.")) return;
+    if (!(await confirmAction("Delete this demo record? This action updates browser state only.")))
+      return;
     const record = config.items.find((item) => item.id === id);
     if (record && "image" in record && record.image?.status === "local-demo") {
       void DemoMediaService.remove(record.image).catch(() => undefined);
@@ -1531,7 +1534,7 @@ export function AdminCertificatesPage() {
     }
   };
   const revoke = async (id: string) => {
-    const reason = window.prompt("Reason for revoking this certificate:");
+    const reason = await requestReason("Reason for revoking this certificate:");
     if (!reason?.trim()) return;
     try {
       await registry.revoke.mutateAsync({ id, reason });
@@ -1568,9 +1571,7 @@ export function AdminCertificatesPage() {
         }
       />
       {(registry.isPending || settings.isPending) && (
-        <p role="status" className="mt-4">
-          {uiText("Loading certificates…")}{" "}
-        </p>
+        <ContentSkeleton label={uiText("Loading certificates…")} />
       )}
       {(registry.isError || settings.isError) && (
         <p role="alert" className="mt-4">

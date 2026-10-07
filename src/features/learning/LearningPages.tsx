@@ -1,3 +1,4 @@
+import { PageSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -1022,11 +1023,7 @@ export function DashboardPage() {
   const next =
     publishedLessons.find((l) => !store.completedLessons.includes(l.id)) ?? publishedLessons[0];
   if (dashboard.isPending || store.learningPending) {
-    return (
-      <div className="container-ncap py-8" role="status">
-        {uiText("Loading your dashboard…")}{" "}
-      </div>
-    );
+    return <PageSkeleton label={uiText("Loading your dashboard…")} />;
   }
   if (dashboard.isError || store.learningError || quizHistory.isError) {
     return (

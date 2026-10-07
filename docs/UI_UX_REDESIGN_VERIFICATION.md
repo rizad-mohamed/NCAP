@@ -1,5 +1,9 @@
 # NCAP redesign completion and verification
 
+This records the initial redesign. The subsequent
+[consistency and motion refinement](./UI_CONSISTENCY_AND_MOTION.md) extends
+dialog coverage, controls, skeletons and motion, with its own verification.
+
 ## Delivery status
 
 The local redesign is ready for design review on `feat/ui-ux-redesign` in

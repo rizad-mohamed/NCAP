@@ -65,8 +65,9 @@ below 1280px, where the full navigation plus language and account controls no
 longer fit comfortably. Workspace navigation switches below 1024px. Sheet
 editors use the full width on phones and a constrained side panel on desktops.
 
-Dialogs remain appropriate for confirmations and focused tasks. Dedicated
-lesson, quiz and authoring routes retain their URLs and history behavior.
+Contextual dialogs and confirmations follow the common right-side panel
+pattern, extended in the [consistency refinement](./UI_CONSISTENCY_AND_MOTION.md).
+Dedicated lesson, quiz and authoring routes retain their URLs and history behavior.
 
 ## Regression boundaries
 

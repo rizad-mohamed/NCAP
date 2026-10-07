@@ -1,5 +1,9 @@
 ﻿# NCAP design system
 
+The [consistency refinement](../../docs/UI_CONSISTENCY_AND_MOTION.md) extends
+this system with contextual side panels, common control presets, structured
+skeletons and reduced-motion-aware interactions. New pages must use these.
+
 NCAP is a public-service cybersecurity learning platform. Public pages introduce
 learning; learners need focus and a clear next action; administrators need
 readable density and efficient management controls.

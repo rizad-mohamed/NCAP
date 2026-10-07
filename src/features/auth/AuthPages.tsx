@@ -1,3 +1,5 @@
+import { buttonVariants } from "@/components/ui/button";
+import { fieldStyles } from "@/components/common/control-styles";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useRef, useState, type FormEvent } from "react";
@@ -26,12 +28,9 @@ import {
 } from "@/auth/auth.functions";
 import { safeInternalPath } from "@/auth/redirect";
 
-const inputClass =
-  "mt-1.5 h-12 w-full rounded-xl border bg-white px-4 text-base placeholder:text-muted-foreground focus:border-violet";
-const primary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised disabled:cursor-not-allowed disabled:opacity-50";
-const secondary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-5 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
+const inputClass = `mt-1.5 ${fieldStyles}`;
+const primary = buttonVariants({ size: "lg" });
+const secondary = buttonVariants({ variant: "outline", size: "lg" });
 type Errors = {
   email?: string;
   password?: string;

@@ -1,3 +1,4 @@
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useState } from "react";
 import { Languages } from "lucide-react";
@@ -103,7 +104,7 @@ function TranslationLoader({
         getAdminTranslations({ data: { kind, id: source.id, language } }),
       ),
   });
-  if (query.isPending) return <p role="status">{uiText("Loading translations…")}</p>;
+  if (query.isPending) return <ContentSkeleton label={uiText("Loading translations…")} />;
   if (query.isError)
     return (
       <p role="alert">

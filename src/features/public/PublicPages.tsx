@@ -1,3 +1,9 @@
+import { buttonVariants } from "@/components/ui/button";
+import {
+  FilterToolbar,
+  DashboardSearchInput,
+  dashboardSelect,
+} from "@/components/common/dashboard-primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -50,10 +56,8 @@ import { AwarenessMediaService } from "@/services/awareness-media";
 
 export { HomePage } from "@/features/public/home/HomePage";
 
-const btn =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised";
-const btnOutline =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-6 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
+const btn = buttonVariants({ size: "lg" });
+const btnOutline = buttonVariants({ variant: "outline", size: "lg" });
 export function AwarenessHubPage() {
   const uiText = useInterfaceText();
 
@@ -209,29 +213,24 @@ function FilterBar({
   const uiText = useInterfaceText();
 
   return (
-    <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 md:flex-row">
-      <label className="relative flex-1">
-        <span className="sr-only">{uiText("Search resources")}</span>
-        <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
-          placeholder={uiText("Search by title or keyword…")}
-        />
-      </label>
+    <FilterToolbar label={uiText("Filter by topic")} className="mt-8">
+      <DashboardSearchInput
+        value={search}
+        onChange={setSearch}
+        label={uiText("Search resources")}
+        placeholder={uiText("Search by title or keyword…")}
+      />
       <select
         value={topic}
         onChange={(e) => setTopic(e.target.value)}
-        className="h-11 rounded-lg border bg-white px-3"
+        className={dashboardSelect}
         aria-label={uiText("Filter by topic")}
       >
         {topics.map((x) => (
           <option key={x}>{x}</option>
         ))}
       </select>
-    </div>
+    </FilterToolbar>
   );
 }
 

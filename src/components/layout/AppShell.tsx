@@ -1,3 +1,4 @@
+import { confirmAction } from "@/components/common/ConfirmationPanel";
 import { useInterfaceText } from "@/lib/i18n";
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -507,8 +508,8 @@ function WorkspaceShell({
           {uiText("Log out")}{" "}
         </button>
         <button
-          onClick={() => {
-            if (window.confirm("Reset all locally saved demo progress and content changes?"))
+          onClick={async () => {
+            if (await confirmAction("Reset all locally saved demo progress and content changes?"))
               resetDemo();
           }}
           className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-primary"

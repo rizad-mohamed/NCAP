@@ -121,7 +121,7 @@ export function LessonContentBuilder({
               type="button"
               disabled={blocks.length >= 100}
               onClick={() => onChange([...blocks, createBlock(kind)])}
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-border-strong bg-white px-3 text-sm font-semibold shadow-sm hover:border-violet hover:bg-accent"
+              className={cn(dashboardButton.secondary, "shrink-0")}
             >
               <Icon className="size-4" aria-hidden="true" />
               {label}

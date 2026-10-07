@@ -1,3 +1,5 @@
+import { confirmAction } from "@/components/common/ConfirmationPanel";
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useContentReport, exportFilteredReport } from "@/services/report-hooks";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -157,11 +159,7 @@ export function AdminReportsPage() {
           </button>
         </div>
       </section>
-      {report.isPending && (
-        <p className="mt-4" role="status">
-          {uiText("Loading report…")}{" "}
-        </p>
-      )}
+      {report.isPending && <ContentSkeleton label={uiText("Loading report…")} />}
       {report.isError && (
         <p className="mt-4" role="alert">
           {uiText("Report unavailable. Please try again.")}{" "}
@@ -284,9 +282,9 @@ export function AdminAnnouncementsPage() {
     returnFocus.current = target;
     setEditing({ ...item });
   };
-  const closeEditor = () => {
+  const closeEditor = async () => {
     if (announcements.save.isPending) return;
-    if (dirty && !window.confirm(uiText("Discard unsaved announcement changes?"))) return;
+    if (dirty && !(await confirmAction(uiText("Discard unsaved announcement changes?")))) return;
     setEditing(null);
   };
   const submit = async (event: FormEvent) => {
@@ -301,7 +299,7 @@ export function AdminAnnouncementsPage() {
     }
   };
   const remove = async (id: string) => {
-    if (!window.confirm("Delete this announcement?")) return;
+    if (!(await confirmAction("Delete this announcement?"))) return;
     try {
       await announcements.remove.mutateAsync(id);
       toast.success(uiText("Announcement deleted"));

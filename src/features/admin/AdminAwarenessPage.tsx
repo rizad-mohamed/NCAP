@@ -1,3 +1,4 @@
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Check, Edit3, Eye, FileText, LoaderCircle, Plus, Trash2 } from "lucide-react";
@@ -209,7 +210,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
         )}
       />
       <nav
-        className="app-scrollbar mt-7 flex gap-2 overflow-x-auto border-b"
+        className="ncap-section-nav app-scrollbar mt-7"
         aria-label={uiText("Awareness content types")}
       >
         {kinds.map((item) => (
@@ -277,12 +278,7 @@ export function AdminAwarenessPage({ kind = "articles" }: { kind?: AwarenessKind
           </ResultCount>
         </FilterToolbar>
         {busy ? (
-          <div
-            className="mt-5 flex min-h-48 items-center justify-center rounded-xl border bg-white"
-            aria-busy="true"
-          >
-            <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading content…")}{" "}
-          </div>
+          <ContentSkeleton label={uiText("Loading content…")} />
         ) : queryError ? (
           <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
             <h2 className="font-semibold">{uiText("Awareness content could not be loaded")}</h2>

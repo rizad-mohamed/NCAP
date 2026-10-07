@@ -1,3 +1,5 @@
+import { confirmAction } from "@/components/common/ConfirmationPanel";
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, Check, Edit3, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
@@ -191,12 +193,7 @@ function ModulesPanel() {
         </ResultCount>
       </FilterToolbar>
       {isPending ? (
-        <div
-          className="mt-5 flex min-h-44 items-center justify-center rounded-xl border bg-white"
-          aria-busy="true"
-        >
-          <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading modules…")}{" "}
-        </div>
+        <ContentSkeleton label={uiText("Loading modules…")} />
       ) : error ? (
         <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
           {error.message}
@@ -794,9 +791,7 @@ function TopicsPanel() {
         </ResultCount>
       </FilterToolbar>
       {isPending ? (
-        <div className="mt-5 flex min-h-44 items-center justify-center">
-          <LoaderCircle className="mr-2 size-5 animate-spin" /> {uiText("Loading topics…")}{" "}
-        </div>
+        <ContentSkeleton label={uiText("Loading topics…")} />
       ) : error ? (
         <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive-soft p-6">
           {error.message}
@@ -853,7 +848,7 @@ function TopicsPanel() {
                       </button>
                       <button
                         className={cn(iconButton, "text-destructive")}
-                        onClick={() => {
+                        onClick={async () => {
                           if (isReferenced(topic.name)) {
                             toast.error(
                               uiText(
@@ -862,7 +857,9 @@ function TopicsPanel() {
                             );
                             return;
                           }
-                          if (!window.confirm(`Delete the unreferenced topic “${topic.name}”?`))
+                          if (
+                            !(await confirmAction(`Delete the unreferenced topic “${topic.name}”?`))
+                          )
                             return;
                           void removeMutation
                             .mutateAsync({ id: topic.id, version: topic.version })

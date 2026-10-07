@@ -1,3 +1,4 @@
+import { Parallax } from "@/components/common/Parallax";
 import { useInterfaceText } from "@/lib/i18n";
 import { useAwarenessSummary } from "@/services/awareness-hooks";
 import { useRef } from "react";
@@ -219,16 +220,18 @@ function HeroVisual() {
   const uiText = useInterfaceText();
   return (
     <div className="home-hero-visual">
-      <img
-        src={homeHeroImage.src}
-        srcSet={homeHeroImage.srcSet}
-        sizes={homeHeroImage.sizes}
-        alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
-        width="960"
-        height="720"
-        fetchPriority="high"
-        className="home-hero-image"
-      />
+      <Parallax>
+        <img
+          src={homeHeroImage.src}
+          srcSet={homeHeroImage.srcSet}
+          sizes={homeHeroImage.sizes}
+          alt={uiText("Sri Lankan family building safer digital habits together on a laptop")}
+          width="960"
+          height="720"
+          fetchPriority="high"
+          className="home-hero-image"
+        />
+      </Parallax>
       <div className="home-hero-caption">
         <span>
           <ShieldCheck className="size-6" strokeWidth={1.7} aria-hidden="true" />

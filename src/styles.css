@@ -795,3 +795,173 @@ html[lang="ta"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* One contextual panel pattern for editors, previews and confirmations. */
+.ncap-panel {
+  max-height: 100dvh !important;
+  border-radius: 0;
+  animation-duration: 300ms;
+  animation-timing-function: var(--ease-ui);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+.ncap-panel[data-state="closed"] {
+  animation-duration: 200ms;
+}
+.ncap-panel > * {
+  flex-shrink: 0;
+}
+.ncap-panel > button:last-child {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  background: var(--card);
+}
+.ncap-panel > :last-child:not(button),
+.ncap-panel > form {
+  min-width: 0;
+}
+.ncap-panel-header {
+  position: sticky;
+  top: -1.5rem;
+  z-index: 2;
+  background: var(--card);
+  padding-top: 1.5rem;
+  margin-top: -1.5rem;
+  padding-right: 2.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.ncap-panel-footer {
+  position: sticky;
+  bottom: -1.5rem;
+  margin-top: auto;
+  padding-block: 1rem;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 1;
+}
+.ncap-panel [role="heading"],
+.ncap-panel h2 {
+  line-height: 1.3;
+}
+.ncap-panel form > .mt-6.flex.justify-end {
+  position: sticky;
+  bottom: -1.5rem;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding-block: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Native legacy fields use the same shape, focus and motion as Input/Select. */
+:where(main, [role="dialog"], [role="alertdialog"])
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(
+        [type="hidden"]
+      ),
+    select,
+    textarea
+  ),
+.ncap-field {
+  border-radius: var(--radius-sm);
+  border-color: var(--input);
+  color: var(--foreground);
+  background-color: var(--card);
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+:where(main, [role="dialog"], [role="alertdialog"]) textarea {
+  min-height: 7rem;
+}
+:where(main, [role="dialog"], [role="alertdialog"]) :is(input, select, textarea):focus-visible {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 12%, transparent);
+}
+.ncap-filter-toolbar {
+  box-shadow: var(--shadow-panel);
+}
+
+:is([role="tablist"], .ncap-section-nav) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+}
+:is([role="tablist"] [role="tab"], .ncap-section-nav a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding-inline: 1rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+:is(
+  [role="tab"][aria-selected="true"],
+  [role="tab"][data-state="active"],
+  .ncap-section-nav [aria-current="page"]
+) {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: var(--shadow-panel);
+}
+:is([role="tab"], .ncap-section-nav a):hover {
+  background: var(--accent);
+  color: var(--primary);
+}
+.ncap-menu
+  :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"]) {
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+}
+.ncap-button {
+  transition:
+    background-color var(--motion-fast),
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+}
+.ncap-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ncap-button:hover:not(:disabled) {
+  box-shadow: var(--shadow-panel);
+}
+.content-skeleton {
+  animation: skeleton-appear var(--motion-standard) var(--ease-ui);
+}
+@keyframes skeleton-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ncap-parallax {
+  transform: translate3d(0, var(--parallax-y, 0px), 0);
+}
+@media (prefers-reduced-motion: reduce), (max-width: 1023px), (pointer: coarse) {
+  .ncap-parallax {
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .ncap-panel {
+    max-width: 100%;
+    padding-inline: 1rem;
+  }
+  .ncap-panel-footer {
+    bottom: -1.5rem;
+  }
+}

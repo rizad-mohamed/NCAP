@@ -163,6 +163,23 @@ export function CardListSkeleton({ count = 3 }: { count?: number }) {
 }
 
 /** Reserve a realistic page footprint while route data is being fetched. */
+export function ContentSkeleton({ label, rows = 4 }: { label: string; rows?: number }) {
+  return (
+    <div role="status" aria-busy="true" className="content-skeleton mt-5 space-y-3">
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true" className="space-y-3">
+        {Array.from({ length: rows }, (_, index) => (
+          <div key={index} className="panel p-5">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="mt-3 h-4 w-3/4" />
+            <Skeleton className="mt-3 h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PageSkeleton({ label }: { label: string }) {
   return (
     <div className="container-ncap min-h-[75dvh] py-8" role="status" aria-busy="true">

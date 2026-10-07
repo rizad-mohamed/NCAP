@@ -1,3 +1,4 @@
+import { dashboardButton, dashboardField } from "@/components/common/dashboard-primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useId, useState, type DragEvent } from "react";
 import { ImagePlus, LoaderCircle, RefreshCw, Trash2, Upload } from "lucide-react";
@@ -176,16 +177,13 @@ export function MediaField({
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <label
-                htmlFor={inputId}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-semibold"
-              >
+              <label htmlFor={inputId} className={dashboardButton.secondary}>
                 <RefreshCw className="size-4" /> {uiText("Replace")}{" "}
               </label>
               <button
                 type="button"
                 onClick={remove}
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-semibold text-destructive"
+                className={cn(dashboardButton.secondary, "text-destructive hover:text-destructive")}
               >
                 <Trash2 className="size-4" /> {uiText("Remove")}{" "}
               </button>
@@ -210,10 +208,7 @@ export function MediaField({
             <p className="mt-2 text-sm font-semibold">
               {uiText("Drop an image here or choose a file")}
             </p>
-            <label
-              htmlFor={inputId}
-              className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white"
-            >
+            <label htmlFor={inputId} className={cn(dashboardButton.primary, "mt-3")}>
               <Upload className="size-4" /> {uiText("Choose image")}{" "}
             </label>
           </div>
@@ -232,7 +227,7 @@ export function MediaField({
           value={altText}
           onChange={(event) => setAltText(event.target.value)}
           maxLength={240}
-          className="mt-1.5 h-11 w-full rounded-lg border px-3"
+          className={dashboardField}
           placeholder={uiText("Describe the image's useful information")}
         />
       </label>
@@ -244,7 +239,7 @@ export function MediaField({
           type="button"
           disabled={busy || !altText.trim()}
           onClick={() => void prepare()}
-          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white disabled:opacity-50"
+          className={cn(dashboardButton.primary, "mt-3")}
         >
           {busy ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}
           {busy ? "Preparing…" : "Use this image"}

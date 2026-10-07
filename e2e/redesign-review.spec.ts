@@ -100,3 +100,58 @@ for (const role of ["learner", "admin"] as const) {
     }
   });
 }
+
+test("resource previews slide from the right, trap focus and reflow on phones", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/awareness/videos", { waitUntil: "networkidle" });
+    const trigger = page
+      .getByRole("button", { name: /^(Open video|Open transcript preview) .+/ })
+      .first();
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+    const panel = page.getByRole("dialog");
+    await expect(panel).toBeVisible();
+    await expect(panel).toHaveClass(/ncap-panel/);
+    await expect
+      .poll(async () => {
+        const box = await panel.boundingBox();
+        return box ? Math.abs(box.x + box.width - width) : 100;
+      })
+      .toBeLessThanOrEqual(1);
+    const box = await panel.boundingBox();
+    expect(box?.height).toBe(900);
+    if (width === 390) expect(box?.width).toBe(390);
+    await page.keyboard.press("Tab");
+    expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+    await audit(page);
+    await page.keyboard.press("Escape");
+    await expect(panel).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+  }
+});
+
+test("photographic parallax follows scroll and respects reduced motion", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/", { waitUntil: "networkidle" });
+  const visual = page.locator(".ncap-parallax");
+  const initial = await visual.evaluate((element) =>
+    element.style.getPropertyValue("--parallax-y"),
+  );
+  await page.evaluate(() => window.scrollTo({ top: 300, behavior: "instant" }));
+  // Touch-emulation profiles intentionally keep decorative photography still.
+  const finePointer = await page.evaluate(() => matchMedia("(pointer: fine)").matches);
+  if (finePointer)
+    await expect
+      .poll(() => visual.evaluate((element) => element.style.getPropertyValue("--parallax-y")))
+      .not.toBe(initial);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() => visual.evaluate((element) => getComputedStyle(element).transform))
+    .toBe("none");
+  await audit(page);
+});

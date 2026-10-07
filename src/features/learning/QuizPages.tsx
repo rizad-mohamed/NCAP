@@ -120,7 +120,7 @@ export function QuizInstructionsPage({ quizId }: { quizId: string }) {
   const catalogue = useQuizCatalogue();
   const history = useQuizHistory(quizId);
   const quiz = catalogue.data?.find((item) => item.id === quizId);
-  if (catalogue.isPending) return <Message>{uiText("Loading quiz…")}</Message>;
+  if (catalogue.isPending) return <PageSkeleton label={uiText("Loading quiz…")} />;
   if (!quiz) return <Message>{uiText("Quiz unavailable.")}</Message>;
   const completed = (history.data ?? []).filter((attempt) => attempt.status !== "in_progress");
   const active = (history.data ?? []).find((attempt) => attempt.status === "in_progress");
@@ -258,7 +258,7 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
         setBusy(false);
       });
   }, [remaining, attempt, busy, client, navigate, quizId]);
-  if (attemptQuery.isPending) return <Message>{uiText("Preparing your quiz…")}</Message>;
+  if (attemptQuery.isPending) return <PageSkeleton label={uiText("Preparing your quiz…")} />;
   if (attemptQuery.error)
     return (
       <Message>
@@ -472,7 +472,7 @@ export function QuizResultsPage({ quizId }: { quizId: string }) {
   const recommendation =
     publishedLessons.find((l) => l.topic === weakest?.topic) ?? publishedLessons[0];
   if (history.isPending || (latest && result.isPending))
-    return <Message>{uiText("Loading results…")}</Message>;
+    return <PageSkeleton label={uiText("Loading results…")} />;
   if (!attempt || !quiz || !module)
     return (
       <div className="mx-auto max-w-3xl">

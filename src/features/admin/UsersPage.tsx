@@ -2,8 +2,9 @@ import { useInterfaceText } from "@/lib/i18n";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthProvider";
-import { PageHeader, EmptyState } from "@/components/common/primitives";
+import { PageHeader, EmptyState, ContentSkeleton } from "@/components/common/primitives";
 import {
+  FilterToolbar,
   dashboardButton,
   dashboardField,
   DashboardSearchInput,
@@ -11,6 +12,13 @@ import {
   ResponsiveTableContainer,
   StatusBadge,
 } from "@/components/common/dashboard-primitives";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   useAdminUsers,
   useAdminUserDetails,
@@ -71,7 +79,7 @@ export function AdminUsersPage() {
         title={uiText("Users")}
         description={uiText("Review accounts, learning progress and assessment activity.")}
       />
-      <div className="mt-7">
+      <FilterToolbar label={uiText("Filter users")}>
         <DashboardSearchInput
           value={search}
           onChange={(value) => {
@@ -128,9 +136,9 @@ export function AdminUsersPage() {
             </select>
           </label>
         </div>
-      </div>
+      </FilterToolbar>
       <div className="my-4 min-h-6">
-        {users.isPending && <p role="status">{uiText("Loading users…")}</p>}
+        {users.isPending && <ContentSkeleton label={uiText("Loading users…")} />}
         {users.isError && (
           <p role="alert">{uiText("User records are unavailable. Please try again.")}</p>
         )}
@@ -190,7 +198,7 @@ export function AdminUsersPage() {
             ))}
           </tbody>
         </table>
-        {!users.isPending && !users.data?.items.length && (
+        {!users.isPending && !users.isError && !users.data?.items.length && (
           <div className="p-6">
             <EmptyState
               title={uiText("No users found")}
@@ -200,107 +208,102 @@ export function AdminUsersPage() {
         )}
       </ResponsiveTableContainer>
       {selected && (
-        <section
-          className="mt-5 rounded-xl border bg-white p-5"
-          aria-label={uiText("User details")}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h2 className="text-lg font-semibold">{uiText("User details")}</h2>
-            <button
-              type="button"
-              className={dashboardButton.secondary}
-              onClick={() => setSelected(null)}
-            >
-              {uiText("Close")}
-            </button>
-          </div>
-          {details.isPending && <p role="status">{uiText("Loading details…")}</p>}
-          {details.isError && <p role="alert">{uiText("User details are unavailable.")}</p>}
-          {details.data && (
-            <>
-              <p className="mt-3 font-semibold">
-                {details.data.name} · {details.data.email}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {uiText("ID:")} {details.data.id} {uiText("· Joined:")} {details.data.joinedAt}{" "}
-                {uiText("· Last activity:")} {details.data.lastActivity}
-              </p>
-              <p className="mt-2 text-sm">
-                {details.data.completedLessons} {uiText("lessons completed ·")}{" "}
-                {details.data.attempts} {uiText("quiz attempts ·")} {details.data.quizAverage}
-                {uiText("% quiz average")}
-              </p>
-              <ul className="mt-2 text-sm">
-                {details.data.modules.map((module) => (
-                  <li key={module.id}>
-                    {module.title}: {module.completed}/{module.total} {uiText("lessons")}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-sm">
-                {uiText("Recent learning activity:")} {details.data.recentActivity.length}{" "}
-                {uiText("events")}
-              </p>
-            </>
-          )}
-          {selected !== actor?.id && (
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-              <label className="text-sm">
-                {uiText("Role")}
-                <select
-                  className={dashboardField}
-                  value={role}
-                  onChange={(event) => setRole(event.target.value as AdminUser["role"])}
+        <Dialog open onOpenChange={(open) => !open && setSelected(null)}>
+          <DialogContent className="max-w-2xl" aria-describedby={undefined}>
+            <DialogHeader>
+              <DialogTitle>{uiText("User details")}</DialogTitle>
+              <DialogDescription>
+                {uiText("Review accounts, learning progress and assessment activity.")}
+              </DialogDescription>
+            </DialogHeader>
+            {details.isPending && <ContentSkeleton label={uiText("Loading details…")} rows={2} />}
+            {details.isError && <p role="alert">{uiText("User details are unavailable.")}</p>}
+            {details.data && (
+              <div className="space-y-3">
+                <p className="mt-3 font-semibold">
+                  {details.data.name} · {details.data.email}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {uiText("ID:")} {details.data.id} {uiText("· Joined:")} {details.data.joinedAt}{" "}
+                  {uiText("· Last activity:")} {details.data.lastActivity}
+                </p>
+                <p className="mt-2 text-sm">
+                  {details.data.completedLessons} {uiText("lessons completed ·")}{" "}
+                  {details.data.attempts} {uiText("quiz attempts ·")} {details.data.quizAverage}
+                  {uiText("% quiz average")}
+                </p>
+                <ul className="mt-2 text-sm">
+                  {details.data.modules.map((module) => (
+                    <li key={module.id}>
+                      {module.title}: {module.completed}/{module.total} {uiText("lessons")}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-sm">
+                  {uiText("Recent learning activity:")} {details.data.recentActivity.length}{" "}
+                  {uiText("events")}
+                </p>
+              </div>
+            )}
+            {selected !== actor?.id && (
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <label className="text-sm">
+                  {uiText("Role")}
+                  <select
+                    className={dashboardField}
+                    value={role}
+                    onChange={(event) => setRole(event.target.value as AdminUser["role"])}
+                  >
+                    <option value="learner">{uiText("Learner")}</option>
+                    <option value="super_admin">{uiText("Super Admin")}</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className={dashboardButton.secondary}
+                  disabled={change.isPending || role === details.data?.role}
+                  onClick={() => void apply("role")}
                 >
-                  <option value="learner">{uiText("Learner")}</option>
-                  <option value="super_admin">{uiText("Super Admin")}</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className={dashboardButton.secondary}
-                disabled={change.isPending || role === details.data?.role}
-                onClick={() => void apply("role")}
-              >
-                {uiText("Update role")}
-              </button>
-              <label className="text-sm">
-                {uiText("Status")}
-                <select
-                  className={dashboardField}
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as AdminUser["status"])}
+                  {uiText("Update role")}
+                </button>
+                <label className="text-sm">
+                  {uiText("Status")}
+                  <select
+                    className={dashboardField}
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as AdminUser["status"])}
+                  >
+                    <option value="active">{uiText("Active / restore")}</option>
+                    <option value="suspended">{uiText("Suspend")}</option>
+                    <option value="disabled">{uiText("Disable")}</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className={dashboardButton.secondary}
+                  disabled={
+                    change.isPending ||
+                    status === details.data?.status ||
+                    (status !== "active" && reason.trim().length < 3)
+                  }
+                  onClick={() => void apply("status")}
                 >
-                  <option value="active">{uiText("Active / restore")}</option>
-                  <option value="suspended">{uiText("Suspend")}</option>
-                  <option value="disabled">{uiText("Disable")}</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className={dashboardButton.secondary}
-                disabled={
-                  change.isPending ||
-                  status === details.data?.status ||
-                  (status !== "active" && reason.trim().length < 3)
-                }
-                onClick={() => void apply("status")}
-              >
-                {uiText("Update status")}
-              </button>
-              <label className="text-sm">
-                {uiText("Reason")}
-                <input
-                  className={dashboardField}
-                  value={reason}
-                  maxLength={500}
-                  onChange={(event) => setReason(event.target.value)}
-                  placeholder={uiText("Required for restrictions")}
-                />
-              </label>
-            </div>
-          )}
-        </section>
+                  {uiText("Update status")}
+                </button>
+                <label className="text-sm">
+                  {uiText("Reason")}
+                  <input
+                    className={dashboardField}
+                    value={reason}
+                    maxLength={500}
+                    onChange={(event) => setReason(event.target.value)}
+                    placeholder={uiText("Required for restrictions")}
+                  />
+                </label>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       )}
       <DashboardPagination
         page={page}
