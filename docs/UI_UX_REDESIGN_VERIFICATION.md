@@ -3,6 +3,8 @@
 This records the initial redesign. The subsequent
 [consistency and motion refinement](./UI_CONSISTENCY_AND_MOTION.md) extends
 dialog coverage, controls, skeletons and motion, with its own verification.
+The October 8 [catalogue and workspace refinement](./CATALOGUE_UI_REFINEMENT.md)
+unifies public catalogues and fixes dashboard loading, user details and quiz layouts.
 
 ## Delivery status
 
@@ -181,3 +183,42 @@ Remaining review is human design acceptance, physical devices, manual
 assistive technology, guarded disposable authenticated staging workflows,
 feature-branch CI and production performance measurement. No production merge
 or deployment is requested as part of this review handoff.
+
+## October 8 catalogue and workspace refinement
+
+Scope: Awareness and its seven content categories, Learn, learner Quizzes,
+News & Updates, dashboard skeletons, Users and admin quiz management. The
+shared design-system record was updated with the resulting catalogue, loading,
+filter and independent-scroll patterns. Backend and database contracts are unchanged.
+
+| Check | Result |
+| --- | --- |
+| Full unit suite, `npm run test -- --maxWorkers=1` | 315 passed, 2 skipped; 46 test files passed, 1 skipped. |
+| User and quiz regressions after final focus/scroll polish | 7 passed. Checks include heading focus, restriction reasons, pending details and preserving the catalogue scroll position when another quiz is selected. |
+| Final TypeScript and ESLint | Passed. |
+| Final production build | Passed. The pre-existing route-test-file warning remains. |
+| Public catalogue browser matrix | All 15 cases verified across Chromium, Firefox, WebKit, mobile Chrome and mobile Safari emulation. Initial run: 14 passed; the remaining case passed unchanged in isolation against the final build. Ten routes at both 390 and 1440px include axe, control height/alignment, overflow and page-error assertions; quiz filters are also exercised. |
+| Role fixture browser review | 48 checks passed across 320, 390, 768 and 1440px. Actual components rendered with synthetic learner/admin data. No WCAG-tagged axe violations or page overflow; desktop filters aligned within 1px; quiz actions measured 44px high in consistent columns; native catalogue and question scrolling remained independent. |
+| Secret scan | Passed, 393 text files checked. |
+
+The fixture review includes loading dashboards, Users and its details/actions
+panel, 16 quizzes with 40 mixed-length questions, side-panel editors and
+confirmation controls. These checks verify presentation and interaction layout;
+they do not exercise authenticated backend writes. The final user-viewer focus
+adjustment was separately verified by the permanent regression test.
+
+The full unit run passed with its normal five-second test timeout after build and
+browser work stopped. An earlier overlapping run hit four timing limits. No
+assertions were removed to obtain the clean run. Browser and build work must use
+a stable `.output` directory; rebuilding a running worker invalidates asset hashes.
+The initial mobile-Safari/1440px browser case exceeded its five-second heading
+assertion while Learn still displayed its loading skeleton during overlapping
+typecheck/lint work. The same test passed in isolation after the final build,
+with the original timeout and every assertion intact. This is recorded as a
+timing failure and a successful rerun, not an uninterrupted green matrix.
+
+Earlier Lighthouse figures in this document are historical measurements of an
+earlier build. No fresh Lighthouse or production performance claim is made for
+this iteration. Human design acceptance, physical-device and manual assistive-
+technology review, authenticated staging workflows and feature-branch CI remain
+outside this local verification.

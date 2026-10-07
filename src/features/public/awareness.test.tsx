@@ -57,6 +57,14 @@ describe("backend Awareness screens", () => {
     render(<AwarenessHubPage />);
     expect(screen.getByText(articles[0]!.title)).toBeInTheDocument();
   });
+  it("keeps the catalogue heading and filters while results are loading", () => {
+    mocks.page.mockReturnValue({ isPending: true, error: null, refetch: vi.fn() });
+    render(<ArticlesPage />);
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("searchbox", { name: "Search resources" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading Awareness");
+    expect(screen.queryByText("No articles found")).not.toBeInTheDocument();
+  });
   it("sends article search, filter, and sort to the repository query", () => {
     mocks.page.mockReturnValue(ready({ items: [articles[0]], total: 1 }));
     render(<ArticlesPage />);

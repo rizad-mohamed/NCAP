@@ -1,5 +1,6 @@
 import { confirmAction, requestReason } from "@/components/common/ConfirmationPanel";
 import { ContentSkeleton } from "@/components/common/primitives";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
@@ -177,12 +178,10 @@ export function AdminDashboardPage() {
       icon: <GraduationCap />,
     },
   ];
+  const initialPending = dashboard.isPending || quizSummary.isPending || awareness.isPending;
+  const metricsError = dashboard.isError || quizSummary.isError || awareness.isError;
   return (
     <div className="container-ncap max-w-[1400px] py-2">
-      {dashboard.isPending && <ContentSkeleton label={uiText("Loading administration metrics…")} />}
-      {dashboard.isError && (
-        <p role="alert">{uiText("Administration metrics are unavailable. Please refresh.")}</p>
-      )}
       <PageHeader
         eyebrow={uiText("Administration")}
         title={uiText("Overview")}
@@ -190,61 +189,81 @@ export function AdminDashboardPage() {
           "Monitor learning activity, content readiness, and assessment engagement.",
         )}
       />
-      <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        {metrics.map((m) => (
-          <StatCard key={m.label} {...m} />
-        ))}
-      </section>
-      <Suspense fallback={<ChartLoading />}>
-        <AdminDashboardCharts
-          quizTrend={quizSummary.data?.trend ?? []}
-          topicEngagement={dashboard.data?.topicEngagement ?? []}
-        />
-      </Suspense>
-      <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
-        <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title={uiText("Recent activity")} />
-          <div className="grid gap-1">
-            {(dashboard.data?.recentActivity ?? []).map((a) => (
-              <div key={a.id} className="flex gap-3 rounded-lg p-3 hover:bg-muted">
-                <span className="mt-1.5 size-2 rounded-full bg-violet" />
-                <div>
-                  <p className="text-sm font-medium">{a.label}</p>
-                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">{a.at}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {metricsError ? (
+        <div role="alert" className="mt-5 rounded-xl border bg-white p-5">
+          <p>{uiText("Administration metrics are unavailable. Please refresh.")}</p>
+          <button
+            className={outline}
+            onClick={() => {
+              void dashboard.refetch();
+              void quizSummary.refetch();
+              void awareness.refetch();
+            }}
+          >
+            {uiText("Try again")}
+          </button>
         </div>
-        <div className="rounded-xl border bg-white p-6">
-          <SectionHeading title={uiText("Content overview")} />
-          <div className="grid gap-3">
-            {[
-              ["Published lessons", dashboard.data?.publishedLessons ?? 0],
-              ["Draft lessons", dashboard.data?.draftLessons ?? 0],
-              ["Published articles", awareness.data?.kinds.articles?.count ?? "—"],
-              ["Question bank", quizSummary.data?.publishedQuestions ?? 0],
-              ["Active announcements", dashboard.data?.announcements ?? 0],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="flex items-center justify-between border-b pb-3 text-sm last:border-0"
-              >
-                <span className="text-muted-foreground">{label}</span>
-                <strong className="font-mono">{value}</strong>
-              </div>
+      ) : initialPending ? (
+        <DashboardSkeleton header={false} label={uiText("Loading administration metrics…")} />
+      ) : (
+        <>
+          <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            {metrics.map((m) => (
+              <StatCard key={m.label} {...m} />
             ))}
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            <AppLink href="/admin/lessons" className={outline}>
-              {uiText("Manage content")}{" "}
-            </AppLink>
-            <AppLink href="/admin/questions" className={primary}>
-              {uiText("Question bank")}{" "}
-            </AppLink>
-          </div>
-        </div>
-      </section>
+          </section>
+          <Suspense fallback={<ChartLoading />}>
+            <AdminDashboardCharts
+              quizTrend={quizSummary.data?.trend ?? []}
+              topicEngagement={dashboard.data?.topicEngagement ?? []}
+            />
+          </Suspense>
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1fr_.8fr]">
+            <div className="rounded-xl border bg-white p-6">
+              <SectionHeading title={uiText("Recent activity")} />
+              <div className="grid gap-1">
+                {(dashboard.data?.recentActivity ?? []).map((a) => (
+                  <div key={a.id} className="flex gap-3 rounded-lg p-3 hover:bg-muted">
+                    <span className="mt-1.5 size-2 rounded-full bg-violet" />
+                    <div>
+                      <p className="text-sm font-medium">{a.label}</p>
+                      <p className="mt-1 font-mono text-[11px] text-muted-foreground">{a.at}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border bg-white p-6">
+              <SectionHeading title={uiText("Content overview")} />
+              <div className="grid gap-3">
+                {[
+                  ["Published lessons", dashboard.data?.publishedLessons ?? 0],
+                  ["Draft lessons", dashboard.data?.draftLessons ?? 0],
+                  ["Published articles", awareness.data?.kinds.articles?.count ?? "—"],
+                  ["Question bank", quizSummary.data?.publishedQuestions ?? 0],
+                  ["Active announcements", dashboard.data?.announcements ?? 0],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between border-b pb-3 text-sm last:border-0"
+                  >
+                    <span className="text-muted-foreground">{label}</span>
+                    <strong className="font-mono">{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 grid grid-cols-2 gap-2">
+                <AppLink href="/admin/lessons" className={outline}>
+                  {uiText("Manage content")}{" "}
+                </AppLink>
+                <AppLink href="/admin/questions" className={primary}>
+                  {uiText("Question bank")}{" "}
+                </AppLink>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

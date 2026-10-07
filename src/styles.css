@@ -424,7 +424,274 @@ html[lang="ta"] {
 
 /* Public pages are editorial; workspaces keep a tighter, task-oriented rhythm. */
 .public-content > .container-ncap {
-  padding-block: clamp(2rem, 5vw, 4rem);
+  padding-block: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+/* Shared catalogue surfaces: one brand, purposeful density, quiet motion. */
+.catalogue-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 218px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--primary);
+  color: white;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  box-shadow: var(--shadow-panel);
+}
+.catalogue-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(ellipse at 100% 30%, #08699b66, transparent 65%);
+}
+.catalogue-hero-copy {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+.catalogue-hero-actions .ncap-button {
+  background: white;
+  color: var(--primary);
+  border-color: white;
+}
+.catalogue-hero-actions .ncap-button:hover {
+  background: var(--signal);
+  border-color: var(--signal);
+}
+.catalogue-orbit {
+  position: relative;
+  flex: 0 0 200px;
+  height: 180px;
+  margin-left: 2rem;
+}
+.catalogue-orbit-ring {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  inset: -5px 5px;
+  border: 1px solid #ffffff26;
+  border-radius: 50%;
+}
+.catalogue-orbit-ring-inner {
+  width: 140px;
+  height: 140px;
+  inset: 20px 30px;
+  border-style: dashed;
+}
+.catalogue-orbit-core {
+  position: absolute;
+  inset: 45px 55px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff38;
+  border-radius: 24px;
+  background: #ffffff0d;
+  box-shadow: 0 12px 40px #00000020;
+  transform: rotate(-8deg);
+}
+.catalogue-orbit-core svg {
+  width: 48px;
+  height: 48px;
+  color: var(--signal);
+  transform: rotate(8deg);
+}
+.catalogue-orbit-spark {
+  position: absolute;
+  top: 7px;
+  right: 22px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--signal);
+  color: var(--signal-foreground);
+  animation: catalogue-float 7s ease-in-out infinite;
+}
+.catalogue-orbit-dot {
+  position: absolute;
+  bottom: 14px;
+  left: 20px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #89c8eb;
+  animation: catalogue-float 7s -3s ease-in-out infinite;
+}
+@keyframes catalogue-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.catalogue-cover {
+  height: 148px;
+  width: 100%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.catalogue-cover-graphic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.catalogue-cover-graphic > :not(.catalogue-cover-line) {
+  position: relative;
+  z-index: 1;
+}
+.catalogue-cover-line {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border: 1px solid #08699b20;
+  border-radius: 50%;
+  right: -50px;
+  top: -70px;
+  box-shadow:
+    0 0 0 30px #08699b06,
+    0 0 0 60px #08699b05;
+}
+.catalogue-card h2 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: -0.018em;
+}
+.catalogue-card > .catalogue-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
+}
+.catalogue-card p {
+  line-height: 1.65;
+}
+.catalogue-card details summary {
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+}
+.catalogue-card .catalogue-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.catalogue-card .catalogue-footer .ncap-button {
+  width: 100%;
+}
+.catalogue-results {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.quiz-manager {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.quiz-manager-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: white;
+  overflow: hidden;
+}
+.quiz-manager-heading {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.quiz-manager-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 1rem;
+}
+.quiz-manager-panel:first-child .quiz-manager-scroll {
+  max-height: 18rem;
+}
+.quiz-manager-detail .quiz-manager-scroll {
+  max-height: 65dvh;
+}
+.quiz-question-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.quiz-question-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+.quiz-question-actions {
+  display: grid;
+  grid-template-columns: minmax(60px, 1fr) minmax(100px, 1fr) 44px;
+  gap: 0.5rem;
+}
+.quiz-question-actions .ncap-button {
+  padding-inline: 0.75rem;
+  white-space: nowrap;
+}
+.quiz-manager-detail {
+  container-type: inline-size;
+}
+@container (min-width: 650px) {
+  .quiz-manager-summary {
+    grid-template-columns: minmax(0, 1fr) 236px;
+    align-items: start;
+  }
+  .quiz-question-row {
+    grid-template-columns: minmax(0, 1fr) 236px;
+  }
+}
+@media (min-width: 1024px) {
+  .quiz-manager {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .quiz-manager-panel {
+    height: clamp(460px, calc(100dvh - 260px), 900px);
+  }
+  .quiz-manager-scroll {
+    flex: 1;
+  }
+  .quiz-manager-panel:first-child .quiz-manager-scroll,
+  .quiz-manager-detail .quiz-manager-scroll {
+    max-height: none;
+  }
+}
+@media (max-width: 767px) {
+  .catalogue-orbit {
+    display: none;
+  }
+  .catalogue-hero {
+    min-height: 0;
+  }
+  .catalogue-cover {
+    height: 136px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalogue-orbit-spark,
+  .catalogue-orbit-dot {
+    animation: none;
+  }
 }
 
 .workspace-content > .container-ncap {

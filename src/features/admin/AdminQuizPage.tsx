@@ -1,7 +1,7 @@
 ﻿import { confirmAction } from "@/components/common/ConfirmationPanel";
 import { useInterfaceText } from "@/lib/i18n";
-import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Trash2, Check, Edit3 } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, ContentSkeleton } from "@/components/common/primitives";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
@@ -95,6 +95,7 @@ export function AdminQuizPage() {
   const [editingQuiz, setEditingQuiz] = useState<QuizDefinition | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<AdminQuizQuestion | null>(null);
   const [busy, setBusy] = useState(false);
+  const questionScroll = useRef<HTMLDivElement>(null);
   const quizzes = catalogue.data ?? [];
   const selected = quizzes.find((q) => q.id === chosen) ?? quizzes[0];
   const shownQuestions = (questions.data ?? [])
@@ -103,6 +104,9 @@ export function AdminQuizPage() {
   useEffect(() => {
     if (!chosen && catalogue.data?.[0]) setChosen(catalogue.data[0].id);
   }, [chosen, catalogue.data]);
+  useEffect(() => {
+    if (questionScroll.current) questionScroll.current.scrollTop = 0;
+  }, [selected?.id]);
   async function saveDefinition(event: FormEvent) {
     event.preventDefault();
     if (!editingQuiz) return;
@@ -259,125 +263,166 @@ export function AdminQuizPage() {
           {catalogue.error?.message ?? questions.error?.message}
         </p>
       )}
-      {catalogue.isPending && <ContentSkeleton label={uiText("Loading quizzes…")} />}
-      <div className="mt-7 grid gap-6 lg:grid-cols-[340px_1fr]">
-        <section className="rounded-xl border bg-white p-5">
-          <h2 className="text-lg font-semibold">{uiText("Quizzes")}</h2>
-          <div className="mt-4 grid gap-2">
-            {quizzes.map((quiz) => (
-              <button
-                key={quiz.id}
-                onClick={() => setChosen(quiz.id)}
-                className={`rounded-lg border p-4 text-left text-sm ${selected?.id === quiz.id ? "border-violet bg-violet-soft" : "hover:bg-muted"}`}
-              >
-                <strong className="block">{quiz.title}</strong>
-                <span className="mt-1 block text-muted-foreground">
-                  {quiz.status} · {quiz.availableQuestions} {uiText("published questions")}{" "}
-                </span>
-              </button>
-            ))}
+      <div className="quiz-manager">
+        <section className="quiz-manager-panel">
+          <div className="quiz-manager-heading flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">{uiText("Quizzes")}</h2>
+            <span className="rounded-md bg-muted px-2 py-1 text-xs tabular-nums">
+              {catalogue.isPending ? "—" : quizzes.length}
+            </span>
           </div>
-          {!catalogue.isPending && !quizzes.length && (
-            <p className="mt-4 text-sm text-muted-foreground">{uiText("No quizzes yet.")}</p>
-          )}
-        </section>
-        <section className="rounded-xl border bg-white p-5">
-          {selected ? (
-            <>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-semibold">{selected.title}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{selected.description}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {selected.questionCount} {uiText("questions ·")}{" "}
-                    {Math.ceil(selected.durationSeconds / 60)} {uiText("min · Pass")}{" "}
-                    {selected.passingPercent}% · {selected.maxAttempts ?? "Unlimited"}{" "}
-                    {uiText("attempts")}{" "}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button className={secondary} onClick={() => setEditingQuiz(selected)}>
-                    <Edit3 className="size-4" /> {uiText("Edit")}{" "}
-                  </button>
+          <div
+            className="quiz-manager-scroll"
+            role="region"
+            tabIndex={0}
+            aria-label={uiText("Quiz catalogue")}
+          >
+            {catalogue.isPending ? (
+              <ContentSkeleton label={uiText("Loading quizzes…")} rows={3} />
+            ) : (
+              <div className="grid gap-2">
+                {quizzes.map((quiz) => (
                   <button
-                    className={secondary}
-                    disabled={busy}
-                    onClick={() => void toggleQuiz(selected)}
+                    key={quiz.id}
+                    onClick={() => setChosen(quiz.id)}
+                    aria-pressed={selected?.id === quiz.id}
+                    className={`min-w-0 rounded-lg border p-3 text-left text-sm ${selected?.id === quiz.id ? "border-violet bg-violet-soft" : "hover:bg-muted"}`}
                   >
-                    <Check className="size-4" />{" "}
-                    {selected.status === "Published" ? "Unpublish" : "Publish"}
+                    <strong className="block">{quiz.title}</strong>{" "}
+                    <span className="mt-1 block text-muted-foreground">
+                      {quiz.status} · {quiz.availableQuestions} {uiText("published questions")}{" "}
+                    </span>
                   </button>
-                  <button
-                    className={secondary}
-                    disabled={busy}
-                    onClick={() => void removeQuiz(selected)}
-                    aria-label={uiText("Delete quiz")}
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="mt-8 flex items-center justify-between border-t pt-6">
-                <h3 className="text-lg font-semibold">{uiText("Questions")}</h3>
-                <button
-                  className={primary}
-                  onClick={() =>
-                    setEditingQuestion({
-                      ...blankQuestion(selected),
-                      order: shownQuestions.length + 1,
-                    })
-                  }
-                >
-                  <Plus className="size-4" /> {uiText("Add question")}{" "}
-                </button>
-              </div>
-              {questions.isPending && <ContentSkeleton label={uiText("Loading questions…")} />}
-              <div className="mt-4 grid gap-3">
-                {shownQuestions.map((question) => (
-                  <article key={question.id} className="rounded-lg border p-4">
-                    <div className="flex flex-wrap justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          #{question.order} · {question.topic} · {question.difficulty} ·{" "}
-                          {question.status}
-                        </p>
-                        <h4 className="mt-1 font-semibold">{question.prompt}</h4>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {question.options.length} {uiText("answer choices")}{" "}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className={secondary} onClick={() => setEditingQuestion(question)}>
-                          {uiText("Edit")}{" "}
-                        </button>
-                        <button
-                          className={secondary}
-                          disabled={busy}
-                          onClick={() => void toggleQuestion(question)}
-                        >
-                          {question.status === "Published" ? "Unpublish" : "Publish"}
-                        </button>
-                        <button
-                          className={secondary}
-                          disabled={busy}
-                          onClick={() => void removeQuestion(question)}
-                          aria-label={uiText("Delete question")}
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
                 ))}
               </div>
-              {!shownQuestions.length && (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  {uiText("No questions for this quiz.")}
-                </p>
-              )}
+            )}
+            {!catalogue.isPending && !catalogue.isError && !quizzes.length && (
+              <p className="mt-4 text-sm text-muted-foreground">{uiText("No quizzes yet.")}</p>
+            )}
+          </div>
+        </section>
+        <section className="quiz-manager-panel quiz-manager-detail">
+          {selected ? (
+            <>
+              <div className="quiz-manager-heading">
+                <div className="quiz-manager-summary grid gap-4">
+                  <div className="min-w-0">
+                    <h2 className="break-words text-2xl font-semibold">{selected.title}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{selected.description}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {selected.questionCount} {uiText("questions ·")}{" "}
+                      {Math.ceil(selected.durationSeconds / 60)} {uiText("min · Pass")}{" "}
+                      {selected.passingPercent}% · {selected.maxAttempts ?? "Unlimited"}{" "}
+                      {uiText("attempts")}{" "}
+                    </p>
+                  </div>
+                  <div className="quiz-question-actions max-w-sm">
+                    <button className={secondary} onClick={() => setEditingQuiz(selected)}>
+                      {uiText("Edit")}{" "}
+                    </button>
+                    <button
+                      className={secondary}
+                      disabled={busy}
+                      onClick={() => void toggleQuiz(selected)}
+                    >
+                      {selected.status === "Published" ? "Unpublish" : "Publish"}
+                    </button>
+                    <button
+                      className={dashboardButton.icon}
+                      disabled={busy}
+                      onClick={() => void removeQuiz(selected)}
+                      aria-label={uiText("Delete quiz")}
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                  <h3 className="text-lg font-semibold">
+                    {uiText("Questions")}{" "}
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">
+                      {questions.isPending ? "" : shownQuestions.length}
+                    </span>
+                  </h3>
+                  <button
+                    className={primary}
+                    onClick={() =>
+                      setEditingQuestion({
+                        ...blankQuestion(selected),
+                        order: shownQuestions.length + 1,
+                      })
+                    }
+                  >
+                    <Plus className="size-4" /> {uiText("Add question")}{" "}
+                  </button>
+                </div>
+              </div>
+              <div
+                ref={questionScroll}
+                className="quiz-manager-scroll"
+                role="region"
+                tabIndex={0}
+                aria-label={uiText("Quiz questions")}
+              >
+                {questions.isPending && <ContentSkeleton label={uiText("Loading questions…")} />}
+                {!questions.isPending && (
+                  <div className="quiz-question-list">
+                    {shownQuestions.map((question) => (
+                      <article key={question.id} className="rounded-lg border p-4">
+                        <div className="quiz-question-row">
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground">
+                              #{question.order} · {question.topic} · {question.difficulty} ·{" "}
+                              {question.status}
+                            </p>
+                            <h4 className="mt-1 break-words font-semibold">{question.prompt}</h4>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {question.options.length} {uiText("answer choices")}{" "}
+                            </p>
+                          </div>
+                          <div className="quiz-question-actions">
+                            <button
+                              className={secondary}
+                              onClick={() => setEditingQuestion(question)}
+                            >
+                              {uiText("Edit")}{" "}
+                            </button>
+                            <button
+                              className={secondary}
+                              disabled={busy}
+                              onClick={() => void toggleQuestion(question)}
+                            >
+                              {question.status === "Published" ? "Unpublish" : "Publish"}
+                            </button>
+                            <button
+                              className={dashboardButton.icon}
+                              disabled={busy}
+                              onClick={() => void removeQuestion(question)}
+                              aria-label={uiText("Delete question")}
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                {!questions.isPending && !questions.isError && !shownQuestions.length && (
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    {uiText("No questions for this quiz.")}
+                  </p>
+                )}
+              </div>
             </>
+          ) : catalogue.isPending ? (
+            <div className="p-5">
+              <ContentSkeleton label={uiText("Loading quizzes…")} rows={3} />
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{uiText("Select or create a quiz.")}</p>
+            <p className="p-5 text-sm text-muted-foreground">
+              {uiText("Select or create a quiz.")}
+            </p>
           )}
         </section>
       </div>

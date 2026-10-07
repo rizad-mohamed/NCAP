@@ -19,7 +19,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "page-heading flex flex-col gap-5 border-b border-border/80 pb-7 md:flex-row md:items-end md:justify-between",
+        "page-heading flex flex-col gap-4 border-b border-border/80 pb-5 md:flex-row md:items-end md:justify-between",
         className,
       )}
     >
@@ -34,7 +34,7 @@ export function PageHeader({
           {title}
         </h1>
         {description && (
-          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{description}</p>
+          <p className="mt-2 max-w-2xl text-base leading-6 text-muted-foreground">{description}</p>
         )}
       </div>
       {actions && (
@@ -54,7 +54,7 @@ export function SectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-2xl font-bold md:text-[1.75rem]">{title}</h2>
         {description && (
@@ -89,7 +89,7 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-4 text-3xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
+      <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
       {hint && <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -107,7 +107,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-strong bg-card px-6 py-14 text-center shadow-panel">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-strong bg-card px-6 py-8 text-center shadow-panel">
       {icon && (
         <div className="mb-4 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-6">
           {icon}

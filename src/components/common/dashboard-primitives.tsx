@@ -28,13 +28,13 @@ export function FilterToolbar({
   return (
     <section
       className={cn(
-        "ncap-filter-toolbar mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center",
+        "ncap-filter-toolbar mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:flex-wrap sm:items-end",
         className,
       )}
       aria-label={label}
     >
       <Filter
-        className="hidden size-4 shrink-0 text-muted-foreground md:block"
+        className="mb-3.5 hidden size-4 shrink-0 text-muted-foreground md:block"
         aria-hidden="true"
       />
       {children}
@@ -48,27 +48,54 @@ export function DashboardSearchInput({
   placeholder,
   label = placeholder,
   className,
+  showLabel = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   label?: string;
   className?: string;
+  showLabel?: boolean;
 }) {
   return (
-    <label className={cn("relative min-w-0 flex-1 sm:min-w-56", className)}>
-      <span className="sr-only">{label}</span>
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-        aria-hidden="true"
-      />
-      <input
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`${fieldStyles} pl-10`}
-        placeholder={placeholder}
-      />
+    <label className={cn("min-w-0 flex-1 sm:min-w-56", className)}>
+      <span
+        className={
+          showLabel ? "mb-1.5 block text-xs font-semibold text-muted-foreground" : "sr-only"
+        }
+      >
+        {label}
+      </span>
+      <span className="relative block">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <input
+          type="search"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={`${fieldStyles} pl-10`}
+          placeholder={placeholder}
+        />
+      </span>
+    </label>
+  );
+}
+
+export function FilterField({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={cn("min-w-0 text-sm sm:min-w-36 [&_select]:w-full", className)}>
+      <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>
+      {children}
     </label>
   );
 }

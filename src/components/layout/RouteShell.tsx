@@ -7,6 +7,8 @@ import { useSessionPreferences, useNcap, type Role } from "@/state/ncap-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { PageSkeleton } from "@/components/common/primitives";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
+import { CatalogueSkeleton } from "@/components/common/catalogue";
 
 export function RouteShell({
   children,
@@ -66,7 +68,13 @@ export function RouteShell({
   return (
     <AppShell pathname={pathname}>
       {learningPage && learningPending && !learningError ? (
-        <PageSkeleton label={uiText("Loading learning content…")} />
+        pathname === "/dashboard" ? (
+          <DashboardSkeleton label={uiText("Loading your dashboard…")} />
+        ) : pathname === "/learn" ? (
+          <CatalogueSkeleton label={uiText("Loading learning content…")} />
+        ) : (
+          <PageSkeleton label={uiText("Loading learning content…")} />
+        )
       ) : learningPage && learningError ? (
         <div
           className={learningPending ? "container-ncap min-h-screen py-12" : "container-ncap py-12"}

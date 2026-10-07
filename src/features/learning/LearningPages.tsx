@@ -1,4 +1,12 @@
 import { PageSkeleton } from "@/components/common/primitives";
+import {
+  CatalogueHero,
+  catalogueCard,
+  catalogueGrid,
+  ResourceGridSkeleton,
+} from "@/components/common/catalogue";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
+import { ModuleCover } from "@/components/common/ModuleCover";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -56,7 +64,13 @@ import { cn } from "@/lib/utils";
 import { phoneSchema } from "@/domain/validation";
 import { useRepository } from "@/services/repository-provider";
 import { useRepositoryList } from "@/services/query-hooks";
-import { dashboardButton } from "@/components/common/dashboard-primitives";
+import {
+  dashboardButton,
+  FilterToolbar,
+  DashboardSearchInput,
+  FilterField,
+  dashboardSelect,
+} from "@/components/common/dashboard-primitives";
 import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
 import { updateProfile as updateAccountProfile } from "@/auth/auth.functions";
 import { useAuth } from "@/auth/AuthProvider";
@@ -73,8 +87,10 @@ function useModules() {
 export function LearningCataloguePage() {
   const uiText = useInterfaceText();
 
-  const { completedLessons, bookmarks, toggleBookmark, lessons } = useNcap();
-  const modules = useModules();
+  const { completedLessons, bookmarks, toggleBookmark, lessons, learningPending } = useNcap();
+  const repository = useRepository();
+  const moduleQuery = useRepositoryList(repository, "modules");
+  const modules = useMemo(() => moduleQuery.data ?? [], [moduleQuery.data]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const cards = useMemo(
@@ -105,11 +121,13 @@ export function LearningCataloguePage() {
     [completedLessons, search, filter, lessons, modules],
   );
   return (
-    <div className="container-ncap max-w-7xl py-2">
-      <PageHeader
+    <div className="container-ncap catalogue-page max-w-7xl py-2">
+      <CatalogueHero
         eyebrow={uiText("Learning catalogue · English content")}
         title={uiText("Build practical digital confidence")}
-        description={`${cards.length} published module${cards.length === 1 ? "" : "s"}, each made of short lessons and a related knowledge check.`}
+        description={uiText(
+          "Short lessons, practical skills and related knowledge checks. Build safer habits at your own pace.",
+        )}
         actions={
           <AppLink href="/learn/search" className={outline}>
             <Search />
@@ -117,94 +135,113 @@ export function LearningCataloguePage() {
           </AppLink>
         }
       />
-      <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 lg:flex-row">
-        <label className="relative flex-1">
-          <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
-          <span className="sr-only">{uiText("Search modules")}</span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
-            placeholder={uiText("Search modules or topics…")}
-          />
-        </label>
-        <div
-          className="flex gap-2 overflow-x-auto"
-          role="group"
-          aria-label={uiText("Module filters")}
-        >
-          {["All", "Beginner", "Intermediate", "Completed", "In Progress"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              aria-pressed={filter === f}
-              className={cn(
-                "min-h-11 whitespace-nowrap rounded-lg border px-3 text-sm font-medium",
-                filter === f && "border-primary bg-primary text-white",
-              )}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+      <FilterToolbar label={uiText("Filter modules")}>
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          label={uiText("Search modules")}
+          placeholder={uiText("Search modules or topics…")}
+          showLabel
+        />
+        <FilterField label={uiText("Module filters")}>
+          <select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            className={dashboardSelect}
+          >
+            {["All", "Beginner", "Intermediate", "Completed", "In Progress"].map((value) => (
+              <option key={value} value={value}>
+                {uiText(value)}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </FilterToolbar>
+      <div className="catalogue-results" aria-live="polite">
+        <span>
+          {moduleQuery.isPending || learningPending
+            ? uiText("Loading content")
+            : `${cards.length} modules found`}
+        </span>
+        {(search || filter !== "All") && (
+          <button
+            className={dashboardButton.secondary}
+            onClick={() => {
+              setSearch("");
+              setFilter("All");
+            }}
+          >
+            {uiText("Clear filters")}
+          </button>
+        )}
       </div>
-      {cards.length ? (
-        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {moduleQuery.isPending || learningPending ? (
+        <ResourceGridSkeleton label={uiText("Loading learning modules…")} />
+      ) : moduleQuery.isError ? (
+        <p role="alert" className="mt-5 rounded-xl border p-5">
+          {uiText("Learning content is unavailable. Please try again.")}{" "}
+          <button className={outline} onClick={() => void moduleQuery.refetch()}>
+            {uiText("Try again")}
+          </button>
+        </p>
+      ) : cards.length ? (
+        <div className={catalogueGrid}>
           {cards.map(({ m, lessons: lessonCount, done, progress }) => (
-            <article
-              key={m.id}
-              className="interactive-card flex min-h-[350px] flex-col rounded-xl border bg-white p-6"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="meta text-violet">{m.topic}</span>
-                <button
-                  className="grid size-11 place-items-center rounded-lg hover:bg-muted"
-                  onClick={() => {
-                    const first = lessons.find(
-                      (l) => l.moduleId === m.id && l.status === "Published",
-                    );
-                    if (first) {
-                      void toggleBookmark(first.id)
-                        .then((added) =>
-                          toast.success(added ? "First lesson bookmarked" : "Bookmark removed"),
-                        )
-                        .catch(() => undefined);
-                    }
-                  }}
-                  aria-label={`${bookmarks.some((id) => lessons.find((l) => l.id === id)?.moduleId === m.id) ? "Remove" : "Bookmark"} ${m.title}`}
-                >
-                  <Bookmark
-                    className={cn(
-                      "size-5",
-                      bookmarks.some((id) => lessons.find((l) => l.id === id)?.moduleId === m.id) &&
-                        "fill-violet text-violet",
-                    )}
-                  />
-                </button>
-              </div>
-              <h2 className="mt-5 text-2xl font-semibold">{m.title}</h2>
-              <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{m.description}</p>
-              <div className="mt-6 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span className="rounded-md bg-muted px-2 py-1">{m.difficulty}</span>
-                <span className="rounded-md bg-muted px-2 py-1">
-                  {lessonCount} {uiText("lessons")}
-                </span>
-                <span className="rounded-md bg-muted px-2 py-1">
-                  {m.minutes} {uiText("min")}
-                </span>
-              </div>
-              <div className="mt-auto pt-7">
-                <div className="mb-2 flex justify-between text-xs">
-                  <span>
-                    {done} {uiText("of")} {lessonCount} {uiText("complete")}{" "}
-                  </span>
-                  <span className="font-mono">{progress}%</span>
+            <article key={m.id} className={catalogueCard}>
+              <ModuleCover module={m} />
+              <div className="catalogue-body">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="meta text-violet">{m.topic}</span>
+                  <button
+                    className="grid size-11 place-items-center rounded-lg hover:bg-muted"
+                    onClick={() => {
+                      const first = lessons.find(
+                        (l) => l.moduleId === m.id && l.status === "Published",
+                      );
+                      if (first) {
+                        void toggleBookmark(first.id)
+                          .then((added) =>
+                            toast.success(added ? "First lesson bookmarked" : "Bookmark removed"),
+                          )
+                          .catch(() => undefined);
+                      }
+                    }}
+                    aria-label={`${bookmarks.some((id) => lessons.find((l) => l.id === id)?.moduleId === m.id) ? "Remove" : "Bookmark"} ${m.title}`}
+                  >
+                    <Bookmark
+                      className={cn(
+                        "size-5",
+                        bookmarks.some(
+                          (id) => lessons.find((l) => l.id === id)?.moduleId === m.id,
+                        ) && "fill-violet text-violet",
+                      )}
+                    />
+                  </button>
                 </div>
-                <ProgressMeter value={progress} label={m.title} />
-                <AppLink href={`/learn/modules/${m.id}`} className={cn(primary, "mt-5 w-full")}>
-                  {progress > 0 ? "Continue module" : "View module"}
-                  <ArrowRight />
-                </AppLink>
+                <h2 className="mt-2 text-xl font-semibold">{m.title}</h2>
+                <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{m.description}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <span className="rounded-md bg-muted px-2 py-1">{m.difficulty}</span>
+                  <span className="rounded-md bg-muted px-2 py-1">
+                    {lessonCount} {uiText("lessons")}
+                  </span>
+                  <span className="rounded-md bg-muted px-2 py-1">
+                    {m.minutes} {uiText("min")}
+                  </span>
+                </div>
+                <div className="catalogue-footer">
+                  <div className="mb-2 flex justify-between text-xs">
+                    <span>
+                      {done} {uiText("of")} {lessonCount} {uiText("complete")}{" "}
+                    </span>
+                    <span className="font-mono">{progress}%</span>
+                  </div>
+                  <ProgressMeter value={progress} label={m.title} />
+                  <AppLink href={`/learn/modules/${m.id}`} className={cn(primary, "mt-5 w-full")}>
+                    {progress > 0 ? "Continue module" : "View module"}
+                    <ArrowRight />
+                  </AppLink>
+                </div>
               </div>
             </article>
           ))}
@@ -237,10 +274,13 @@ export function ModuleDetailPage({ moduleId }: { moduleId: string }) {
   const uiText = useInterfaceText();
 
   const { completedLessons, bookmarks, toggleBookmark, lessons } = useNcap();
-  const modules = useModules();
+  const repository = useRepository();
+  const moduleQuery = useRepositoryList(repository, "modules");
+  const modules = moduleQuery.data ?? [];
   const quizCatalogue = useQuizCatalogue();
   const module = modules.find((m) => m.id === moduleId);
   const linkedQuiz = quizCatalogue.data?.find((quiz) => quiz.moduleId === moduleId);
+  if (moduleQuery.isPending) return <PageSkeleton label={uiText("Loading learning content…")} />;
   if (!module || module.status !== "Published") return <Missing />;
   const ls = lessons
     .filter((l) => l.moduleId === module.id && l.status === "Published")
@@ -998,7 +1038,9 @@ export function DashboardPage() {
           completedQuizAttempts.length,
       )
     : 0;
-  const modules = useModules();
+  const repository = useRepository();
+  const moduleQuery = useRepositoryList(repository, "modules");
+  const modules = moduleQuery.data ?? [];
   const stats = {
     overall: dashboard.data?.statistics.overall ?? 0,
     completedCount: dashboard.data?.statistics.completedCount ?? 0,
@@ -1022,10 +1064,15 @@ export function DashboardPage() {
   );
   const next =
     publishedLessons.find((l) => !store.completedLessons.includes(l.id)) ?? publishedLessons[0];
-  if (dashboard.isPending || store.learningPending) {
-    return <PageSkeleton label={uiText("Loading your dashboard…")} />;
+  if (
+    dashboard.isPending ||
+    store.learningPending ||
+    moduleQuery.isPending ||
+    quizHistory.isLoading
+  ) {
+    return <DashboardSkeleton label={uiText("Loading your dashboard…")} />;
   }
-  if (dashboard.isError || store.learningError || quizHistory.isError) {
+  if (dashboard.isError || store.learningError || quizHistory.isError || moduleQuery.isError) {
     return (
       <div className="container-ncap py-8" role="alert">
         {uiText("Your dashboard is unavailable. Please refresh and try again.")}{" "}

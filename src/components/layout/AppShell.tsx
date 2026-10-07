@@ -570,7 +570,7 @@ function WorkspaceShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="workspace-content page-enter mx-auto min-w-0 max-w-[1560px] p-4 md:p-7 lg:p-10"
+          className="workspace-content page-enter mx-auto min-w-0 max-w-[1560px] p-4 md:p-6 lg:p-8"
         >
           {children}
         </main>
@@ -589,7 +589,7 @@ export function PublicFooter({ pathname = "" }: { pathname?: string }) {
       id="social"
       className={cn(
         "no-print bg-primary text-primary-foreground",
-        pathname === "/" ? "mt-0" : "mt-20",
+        pathname === "/" ? "mt-0" : "mt-6",
       )}
     >
       <div className="h-1 bg-violet" aria-hidden="true" />

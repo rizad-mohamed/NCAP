@@ -1,5 +1,6 @@
 import { confirmAction } from "@/components/common/ConfirmationPanel";
 import { ContentSkeleton } from "@/components/common/primitives";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
 import { useInterfaceText } from "@/lib/i18n";
 import { useContentReport, exportFilteredReport } from "@/services/report-hooks";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -101,7 +102,7 @@ export function AdminReportsPage() {
         }
       />
       <section className="no-print mt-7 rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid items-end gap-3 md:grid-cols-4">
           <label className="text-xs font-semibold">
             {uiText("Range")}{" "}
             <select
@@ -159,82 +160,89 @@ export function AdminReportsPage() {
           </button>
         </div>
       </section>
-      {report.isPending && <ContentSkeleton label={uiText("Loading report…")} />}
+      {report.isPending && <DashboardSkeleton header={false} label={uiText("Loading report…")} />}
       {report.isError && (
         <p className="mt-4" role="alert">
           {uiText("Report unavailable. Please try again.")}{" "}
         </p>
       )}
-      <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard label={uiText("Quiz attempts")} value={report.data?.attemptCount ?? 0} />
-        <StatCard
-          label={uiText("Average score")}
-          value={`${report.data?.averageScore ?? 0}%`}
-          tone="violet"
-        />
-        <StatCard
-          label={uiText("Completion rate")}
-          value={`${report.data?.completionRate ?? 0}%`}
-          tone="success"
-        />
-        <StatCard label={uiText("Completed lessons")} value={report.data?.completedLessons ?? 0} />
-        <StatCard
-          label={uiText("Learning hours")}
-          value={Math.round(((report.data?.learningSeconds ?? 0) / 3600) * 10) / 10}
-        />
-        <StatCard
-          label={uiText("Published quizzes")}
-          value={report.data?.publishedQuizzes ?? 0}
-          tone="ember"
-        />
-      </section>
-      <AdminReportCharts
-        quizRows={report.data?.quizRows ?? []}
-        completionRows={report.data?.completionRows ?? []}
-      />
-      <section className="mt-6 overflow-x-auto rounded-xl border bg-white">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <caption className="p-5 text-left text-lg font-semibold">
-            {uiText("Filtered quiz attempts")}
-          </caption>
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-4 py-3">{uiText("Completed")}</th>
-              <th className="px-4 py-3">{uiText("Quiz")}</th>
-              <th className="px-4 py-3">{uiText("Module")}</th>
-              <th className="px-4 py-3">{uiText("Score")}</th>
-              <th className="px-4 py-3">{uiText("Score outcome")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attempts.map((item) => (
-              <tr key={item.id} className="border-t">
-                <td className="px-4 py-3 font-mono text-xs">{item.completedAt}</td>
-                <td className="px-4 py-3 font-semibold">{item.quizTitle}</td>
-                <td className="px-4 py-3">{item.moduleTitle}</td>
-                <td className="px-4 py-3">{item.scorePercent}%</td>
-                <td className="px-4 py-3">
-                  <StatusBadge value={item.passed ? "Target met" : "Below target"} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!attempts.length && (
-          <div className="p-6">
-            <EmptyState
-              title={uiText("No quiz attempts match")}
-              description={uiText("Adjust the report filters and generate the report again.")}
+      {!report.isPending && !report.isError && (
+        <>
+          <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <StatCard label={uiText("Quiz attempts")} value={report.data?.attemptCount ?? 0} />
+            <StatCard
+              label={uiText("Average score")}
+              value={`${report.data?.averageScore ?? 0}%`}
+              tone="violet"
             />
-          </div>
-        )}
-      </section>
-      <DashboardPagination
-        page={attemptPage}
-        pages={Math.max(1, Math.ceil((report.data?.attemptCount ?? 0) / 100))}
-        onPageChange={setAttemptPage}
-        count={report.data?.attemptCount ?? 0}
-      />
+            <StatCard
+              label={uiText("Completion rate")}
+              value={`${report.data?.completionRate ?? 0}%`}
+              tone="success"
+            />
+            <StatCard
+              label={uiText("Completed lessons")}
+              value={report.data?.completedLessons ?? 0}
+            />
+            <StatCard
+              label={uiText("Learning hours")}
+              value={Math.round(((report.data?.learningSeconds ?? 0) / 3600) * 10) / 10}
+            />
+            <StatCard
+              label={uiText("Published quizzes")}
+              value={report.data?.publishedQuizzes ?? 0}
+              tone="ember"
+            />
+          </section>
+          <AdminReportCharts
+            quizRows={report.data?.quizRows ?? []}
+            completionRows={report.data?.completionRows ?? []}
+          />
+          <section className="mt-6 overflow-x-auto rounded-xl border bg-white">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <caption className="p-5 text-left text-lg font-semibold">
+                {uiText("Filtered quiz attempts")}
+              </caption>
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-4 py-3">{uiText("Completed")}</th>
+                  <th className="px-4 py-3">{uiText("Quiz")}</th>
+                  <th className="px-4 py-3">{uiText("Module")}</th>
+                  <th className="px-4 py-3">{uiText("Score")}</th>
+                  <th className="px-4 py-3">{uiText("Score outcome")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attempts.map((item) => (
+                  <tr key={item.id} className="border-t">
+                    <td className="px-4 py-3 font-mono text-xs">{item.completedAt}</td>
+                    <td className="px-4 py-3 font-semibold">{item.quizTitle}</td>
+                    <td className="px-4 py-3">{item.moduleTitle}</td>
+                    <td className="px-4 py-3">{item.scorePercent}%</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge value={item.passed ? "Target met" : "Below target"} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!attempts.length && (
+              <div className="p-6">
+                <EmptyState
+                  title={uiText("No quiz attempts match")}
+                  description={uiText("Adjust the report filters and generate the report again.")}
+                />
+              </div>
+            )}
+          </section>
+          <DashboardPagination
+            page={attemptPage}
+            pages={Math.max(1, Math.ceil((report.data?.attemptCount ?? 0) / 100))}
+            onPageChange={setAttemptPage}
+            count={report.data?.attemptCount ?? 0}
+          />
+        </>
+      )}
     </div>
   );
 }
