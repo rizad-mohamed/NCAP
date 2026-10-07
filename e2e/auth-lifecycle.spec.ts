@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { reloadApp } from "./helpers/navigation";
 import { loadEnv } from "vite";
 import { randomBytes, randomUUID } from "node:crypto";
+import { interfaceText } from "../src/lib/i18n";
 
 // Explicit opt-in: never run privileged fixture creation against a CI/production URL.
 const env = loadEnv("development", process.cwd(), "");
@@ -47,9 +48,13 @@ test("disposable staging account persists profile, switches accounts and loses s
         return input.getAttribute("type");
       })
       .toBe("text");
-    await page.getByLabel("Email address").fill(email);
+    // The authenticated/guest language can differ during account switching.
+    // Identify the existing email control independently of its translated label.
+    await page.locator('input[name="email"]').fill(email);
     await input.fill(password);
-    await page.getByLabel("Remember me on this device").setChecked(remember);
+    const rememberControl = page.getByRole("checkbox");
+    await expect(rememberControl).toHaveCount(1);
+    await rememberControl.setChecked(remember);
     const signInResponse = page.waitForResponse(
       (response) => response.request().method() === "POST",
     );
@@ -108,13 +113,16 @@ test("disposable staging account persists profile, switches accounts and loses s
     await fresh.addCookies(await page.context().cookies());
     const second = await fresh.newPage();
     await second.goto("http://127.0.0.1:4173/profile/edit", { waitUntil: "networkidle" });
-    await expect(second.getByLabel("Full name")).toHaveValue("Persisted Alice");
+    await expect(second.locator("html")).toHaveAttribute("lang", "ta");
+    await expect(second.getByLabel(interfaceText("ta", "Full name"))).toHaveValue(
+      "Persisted Alice",
+    );
     await expect(second.getByLabel("Phone number")).toHaveValue("+94123456789");
     await expect(second.getByLabel("Preferred language")).toHaveValue("ta");
     await fresh.close();
     await page.goto("/profile", { waitUntil: "networkidle" });
     // Mobile and desktop share the sidebar logout control.
-    const logout = page.getByRole("button", { name: "Log out", exact: true });
+    const logout = page.getByRole("button", { name: interfaceText("ta", "Log out"), exact: true });
     if (!(await logout.isVisible())) {
       await page.getByRole("button", { name: "Open workspace navigation", exact: true }).click();
     }
