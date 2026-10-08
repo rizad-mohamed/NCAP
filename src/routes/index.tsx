@@ -1,11 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HomePage } from "@/features/public/home/HomePage";
+import { HomePage, homeHeroImage } from "@/features/public/home/HomePage";
 import { RouteShell } from "@/components/layout/RouteShell";
 
 // The home route inherits shared title, description, Open Graph, and Twitter
 // metadata from __root.tsx.
 export const Route = createFileRoute("/")({
   head: () => ({
+    links: [
+      {
+        rel: "preload",
+        as: "image",
+        href: homeHeroImage.src,
+        imageSrcSet: homeHeroImage.srcSet,
+        imageSizes: homeHeroImage.sizes,
+        fetchPriority: "high",
+      },
+    ],
     meta: [
       { title: "NCAP — Learn safer digital habits" },
       {

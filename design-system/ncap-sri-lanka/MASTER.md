@@ -1,235 +1,116 @@
-# Design System Master File
+﻿# NCAP design system
 
-> **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
-> If that file exists, its rules **override** this Master file.
-> If not, strictly follow the rules below.
+The [consistency refinement](../../docs/UI_CONSISTENCY_AND_MOTION.md) extends
+this system with contextual side panels, common control presets, structured
+skeletons and reduced-motion-aware interactions. New pages must use these.
 
----
+NCAP is a public-service cybersecurity learning platform. Public pages introduce
+learning; learners need focus and a clear next action; administrators need
+readable density and efficient management controls.
 
-**Project:** NCAP Sri Lanka
-**Generated:** 2026-08-30 19:37:25
-**Category:** Government/Public Service
-**Design Dials:** Variance 5/10 (Balanced / Modern) | Motion 4/10 (Standard) | Density 5/10 (Standard)
+Implementation tokens live in `src/styles.css`. See the
+[redesign guide](../../docs/UI_UX_REDESIGN.md) for component and verification
+details. This file supersedes the original generated design suggestions.
 
----
+## Color and surfaces
 
-## Global Rules
+| Purpose                    | Token                             | Value                |
+| -------------------------- | --------------------------------- | -------------------- |
+| Page canvas                | `background`                      | `#f6f8fa`            |
+| Main text                  | `foreground`                      | `#142c40`            |
+| Panels and overlays        | `card`, `popover`                 | white                |
+| Brand navy                 | `primary`                         | `#112e45`            |
+| Interactive blue           | `violet`                          | `#08699b`            |
+| Subtle interactive surface | `primary-soft`                    | `#eaf3f9`            |
+| Secondary text             | `muted-foreground`                | `#475569`            |
+| Hairline separation        | `border`                          | `#dfe6ec`            |
+| Strong separation          | `border-strong`                   | `#cbd5e1`            |
+| Dark-surface highlight     | `signal`                          | `#d7ecac`            |
+| Text on highlight          | `signal-foreground`               | `#203920`            |
+| Success                    | `success`, `success-soft`         | `#047857`, `#ecfdf5` |
+| Warning                    | `warning`, `warning-soft`         | `#a16207`, `#fefce8` |
+| Destructive                | `destructive`, `destructive-soft` | `#dc2626`, `#fef2f2` |
 
-### Color Palette
+The `violet` token name is retained for compatibility; its color is blue. Use
+semantic utilities instead of literals. Signal is a brand highlight, not a
+status color. White rails and statistic cards keep attention on content. Dark
+emphasis belongs on a public hero or resume action, not every panel.
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#334155` | `--color-secondary` |
-| On Secondary | `#FFFFFF` | `--color-on-secondary` |
-| Accent/CTA | `#0369A1` | `--color-accent` |
-| On Accent/CTA | `#FFFFFF` | `--color-on-accent` |
-| Background | `#F8FAFC` | `--color-background` |
-| Foreground | `#020617` | `--color-foreground` |
-| Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#020617` | `--color-card-foreground` |
-| Muted | `#E8ECF1` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#E2E8F0` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#0F172A` | `--color-ring` |
+## Typography and spacing
 
-**Color Notes:** High contrast navy + blue
+Keep Atkinson Hyperlegible for Latin text. Local Noto Sans Sinhala and Noto Sans
+Tamil fonts load on demand. Preserve approved interface dictionaries,
+authored-content fallback and publication governance. Do not invent translations
+or use fixed widths based on English labels.
 
-### Typography
+Use the established 4, 8, 16, 24, 32, 48 and 64px spacing tokens. Public content
+has an editorial rhythm; workspaces use a tighter operational rhythm. Keep
+metadata quiet and body text readable. Use numeric alignment in statistics and
+tables. Distinguish page, section and item heading hierarchy.
 
-- **Heading Font:** Atkinson Hyperlegible
-- **Body Font:** Atkinson Hyperlegible
-- **Mood:** accessible, readable, inclusive, WCAG, dyslexia-friendly, clear
-- **Google Fonts:** [Atkinson Hyperlegible + Atkinson Hyperlegible](https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap)
+Radii are 8, 10, 12, 16 and 20px. Prefer alignment, spacing and borders over
+separate cards around every element. Use `shadow-panel`, `shadow-raised` and
+`shadow-overlay` when elevation communicates purpose.
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
-```
+## Components and navigation
 
-### Spacing Variables
+Reuse the existing common and Radix UI components:
 
-*Density: 5/10 — Standard*
+- `PageHeader`, `SectionHeading`, `StatCard`, `EmptyState`, `ProgressMeter`.
+- `PageSkeleton` and `CardListSkeleton` for stable loading feedback.
+- `CatalogueHero`, `CatalogueCover`, `catalogueCard`, `catalogueGrid` and
+  `ResourceGridSkeleton` for Awareness, Learn and Quizzes. Keep the compact navy
+  hero, 148px media frame, 20px card body and full-width footer actions consistent.
+- `DashboardSkeleton` for initial dashboard/report requests. Replace the metric
+  and chart footprint while pending; never show placeholder zero results beside it.
+- `FilterToolbar`, `DashboardSearchInput`, `ResultCount`, `DashboardPagination`.
+- Use `showLabel` on catalogue/user search and `FilterField` on adjacent selects.
+  All controls share 44px minimum height and align at their bottom edge.
+- `ResponsiveTableContainer` for native tables with contained horizontal scroll.
+- `dashboardButton`, `dashboardField`, `dashboardSelect` and `Button`.
+- Radix dialogs, sheets, dropdowns and popovers for focus and keyboard behavior.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+Buttons and overlay close controls have a 44px minimum target. Keep focus
+visible, primary actions clear, secondary actions quiet and destructive actions
+explicit. Loading, errors, no records and no filtered matches are distinct
+states and need distinct explanations.
 
-### Shadow Depths
+Public navigation switches to a sheet below 1280px; workspaces below 1024px.
+The desktop workspace rail is 248px. Bound page widths on large monitors and
+wrap content safely at 320px, including non-Latin scripts and long authored text.
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+Contextual dialogs and confirmations use the shared right-hand sliding panel,
+following the user's requested Announcements interaction. Retain Radix focus
+containment, Escape and focus return. Keep existing deep-linkable routes for
+complex learning and assessment work, and preserve failed-save and unsaved-change
+handling. Management lists stay on the page; navigation sheets remain responsive.
 
----
+The quiz manager has two named keyboard-reachable scroll regions on desktop:
+quiz catalogue and selected quiz questions. The section headers stay outside the
+scroll regions. At smaller widths the panels stack in document flow and their
+lists stay bounded, so a long catalogue does not push the question manager away.
+Question actions use one three-column grid; a container query places it beside
+the prompt only when the actual detail-panel width can accommodate it.
 
-## Component Specs
+## Motion and assets
 
-### Buttons
+Use CSS transitions with shared 160–220ms motion tokens. Respect reduced motion,
+including programmatic scrolling. Avoid expensive blur, parallax, bouncing
+management cards and new animation dependencies.
 
-```css
-/* Primary Button */
-.btn-primary {
-  background: #0369A1;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
+Reuse NCAP photography, branding and Lucide icons. Optimize photos to sized WebP
+with explicit dimensions, responsive hero sources, high priority for its main
+image and lazy loading below the fold. Avoid decorative images on data-heavy
+management screens.
 
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
+## Verification
 
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
+Run typecheck, lint, existing tests, security checks and the production build.
+Run the browser matrix and distinguish opt-in skips from passes. Check keyboard
+navigation, 320–1920px layouts, 200% text reflow, supported languages and reduced
+motion. Use axe as evidence; retain manual screen-reader and physical-device
+review as release checks.
 
-### Cards
-
-```css
-.card {
-  background: #F8FAFC;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #0F172A;
-  outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
-
----
-
-## Style Guidelines
-
-**Style:** Accessible & Ethical
-
-**Keywords:** Accessible, inclusive interface, high contrast, large text (16px+), keyboard navigation, screen reader friendly, accessibility standards aware, focus state, semantic
-
-**Best For:** Government, healthcare, education, inclusive products, large audience, legal compliance, public
-
-**Key Effects:** Clear focus rings (3-4px), ARIA labels, skip links, responsive design, reduced motion, 44x44px touch targets
-
-### Page Pattern
-
-**Pattern Name:** Minimal Single Column
-
-- **Conversion Strategy:** Single CTA focus. Large typography. Lots of whitespace. No nav clutter. Mobile-first.
-- **CTA Placement:** Center, large CTA button
-- **Section Order:** Hero headline > Short description > Benefit bullets (3 max) > CTA > Footer
-
----
-
-## Motion
-
-**Stagger List** (Standard) — Trigger: load or scroll | Duration: 300-450ms | Easing: `back.out(1.4)`
-
-```js
-gsap.from('.grid-item', { opacity: 0, scale: 0.92, y: 16, duration: 0.4, stagger: { each: 0.06, from: 'start', grid: 'auto' }, ease: 'back.out(1.4)' });
-```
-
-**Framework notes:** grid: 'auto' lets GSAP infer rows/columns from a CSS grid layout for a natural wave stagger; Use matchMedia('(prefers-reduced-motion: reduce)') to skip non-essential motion and render the final state immediately
-
-- ✅ Combine with from: 'center' for a bento-grid layout to draw the eye inward first
-- ❌ Don't use back.out on dense data tables; the overshoot reads as sloppy on informational UI
-- ⚡ Group DOM writes; avoid interleaving layout reads (getBoundingClientRect) between staggered tweens
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Ornate design
-- ❌ Low contrast
-- ❌ Motion effects
-- ❌ AI purple/pink gradients
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
-
----
-
-## Pre-Delivery Checklist
-
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+Measure production Lighthouse before/after and preserve provenance. Verify
+first-render stylesheet references as well as hydrated layout. Never weaken
+authorization, security or content integrity for visual polish.

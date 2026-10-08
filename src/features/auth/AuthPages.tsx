@@ -1,3 +1,5 @@
+import { buttonVariants } from "@/components/ui/button";
+import { fieldStyles } from "@/components/common/control-styles";
 import { useInterfaceText } from "@/lib/i18n";
 import { authAction } from "@/auth/action-result";
 import { useRef, useState, type FormEvent } from "react";
@@ -26,12 +28,9 @@ import {
 } from "@/auth/auth.functions";
 import { safeInternalPath } from "@/auth/redirect";
 
-const inputClass =
-  "mt-1.5 h-12 w-full rounded-xl border bg-white px-4 text-base placeholder:text-muted-foreground focus:border-violet";
-const primary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised disabled:cursor-not-allowed disabled:opacity-50";
-const secondary =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-5 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
+const inputClass = `mt-1.5 ${fieldStyles}`;
+const primary = buttonVariants({ size: "lg" });
+const secondary = buttonVariants({ variant: "outline", size: "lg" });
 type Errors = {
   email?: string;
   password?: string;
@@ -57,13 +56,13 @@ function AuthLayout({
   return (
     <>
       <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[minmax(420px,.9fr)_1.1fr]">
-        <aside className="grid-motif relative hidden min-h-dvh overflow-hidden bg-primary p-10 text-white lg:flex lg:flex-col xl:p-14">
+        <aside className="relative hidden min-h-dvh overflow-hidden bg-primary p-10 text-white lg:flex lg:flex-col xl:p-14">
           <div
-            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-amber-500 to-emerald-500"
+            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-signal to-signal"
             aria-hidden="true"
           />
           <div
-            className="absolute -right-32 top-1/3 size-96 rounded-full bg-sky-500/15 blur-3xl"
+            className="absolute -right-32 top-1/3 size-96 rounded-full border border-white/15"
             aria-hidden="true"
           />
           <Brand inverse />
@@ -71,7 +70,7 @@ function AuthLayout({
             <span className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-white/10 shadow-lg">
               <ShieldCheck className="size-8" />
             </span>
-            <p className="meta mt-8 text-sky-300">{uiText("Your digital safety journey")}</p>
+            <p className="meta mt-8 text-signal">{uiText("Your digital safety journey")}</p>
             <h2 className="mt-3 text-4xl font-bold leading-tight xl:text-5xl">
               {uiText("Build safer habits, one clear step at a time.")}{" "}
             </h2>
@@ -95,8 +94,8 @@ function AuthLayout({
               </li>
             </ul>
           </div>
-          <p className="relative text-xs text-white/50">
-            {uiText("Secure account access powered by Supabase")}{" "}
+          <p className="relative text-xs text-slate-200">
+            {uiText("Designed for accessible learning")}{" "}
           </p>
         </aside>
         <main
@@ -115,7 +114,7 @@ function AuthLayout({
               <ArrowLeft className="size-4" />
               {uiText("Back to NCAP")}{" "}
             </AppLink>
-            <div className="panel p-6 sm:p-9">
+            <div className="rounded-xl border border-border bg-white p-6 shadow-panel sm:p-9">
               <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
               <p className="mt-3 leading-7 text-muted-foreground">{description}</p>
               {children}
@@ -400,6 +399,7 @@ export function RegisterPage() {
           />
           <div
             className="mt-2 flex gap-1"
+            role="group"
             aria-label={`Password strength: ${passwordSchema.safeParse(form.password).success ? "requirements met" : "requirements not met"}`}
           >
             {[

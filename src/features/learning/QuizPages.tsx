@@ -10,8 +10,23 @@ import {
   PageHeader,
   ProgressMeter,
   SectionHeading,
+  PageSkeleton,
 } from "@/components/common/primitives";
-import { dashboardButton } from "@/components/common/dashboard-primitives";
+import {
+  CatalogueHero,
+  CatalogueCover,
+  catalogueCard,
+  catalogueGrid,
+  ResourceGridSkeleton,
+} from "@/components/common/catalogue";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  dashboardButton,
+  FilterToolbar,
+  DashboardSearchInput,
+  FilterField,
+  dashboardSelect,
+} from "@/components/common/dashboard-primitives";
 import { cn } from "@/lib/utils";
 import { useQuizCatalogue, useQuizHistory, unwrapQuiz } from "@/services/quiz-hooks";
 import {
@@ -36,77 +51,154 @@ function Message({ children }: { children: React.ReactNode }) {
 }
 export function QuizzesPage() {
   const uiText = useInterfaceText();
-
   const catalogue = useQuizCatalogue();
   const history = useQuizHistory();
   const repository = useRepository();
   const modules = useRepositoryList(repository, "modules").data ?? [];
-  if (catalogue.isPending) return <Message>{uiText("Loading quizzes…")}</Message>;
-  if (catalogue.error) return <Message>{catalogue.error.message}</Message>;
+  const [search, setSearch] = useState("");
+  const [difficulty, setDifficulty] = useState("All");
+  const filtered = (catalogue.data ?? []).filter(
+    (quiz) =>
+      (difficulty === "All" || quiz.difficulty === difficulty) &&
+      `${quiz.title} ${quiz.description} ${quiz.topic}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase()),
+  );
   return (
-    <div className="container-ncap max-w-7xl py-2">
-      <PageHeader
+    <div className="container-ncap catalogue-page max-w-7xl py-2">
+      <CatalogueHero
         eyebrow={uiText("Knowledge checks")}
         title={uiText("Test what you can apply")}
         description={uiText(
           "Choose a published assessment. Your attempts and results are saved to your account.",
         )}
       />
-      <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {catalogue.data.map((quiz) => {
-          const mine = (history.data ?? []).filter(
-            (a) => a.quizId === quiz.id && a.scorePercent !== null,
-          );
-          const best = Math.max(0, ...mine.map((a) => a.scorePercent ?? 0));
-          return (
-            <article
-              key={quiz.id}
-              className="flex min-h-[310px] flex-col rounded-xl border bg-white p-6"
-            >
-              <div className="flex items-center justify-between">
-                <span className="meta text-violet">{quiz.topic}</span>
-                <span className="rounded-md bg-muted px-2 py-1 text-xs">{quiz.difficulty}</span>
-              </div>
-              <h2 className="mt-6 text-2xl font-semibold">{quiz.title}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{quiz.description}</p>
-              <div className="mt-5 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span>
-                  {quiz.questionCount} {uiText("questions")}
-                </span>
-                <span>
-                  · {Math.ceil(quiz.durationSeconds / 60)} {uiText("min")}
-                </span>
-                <span>· {modules.find((m) => m.id === quiz.moduleId)?.title ?? "Module"}</span>
-              </div>
-              <div className="mt-auto flex items-end justify-between pt-7">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {mine.length ? "Best score" : "Attempt status"}
-                  </p>
-                  <p className="mt-1 font-mono text-xl font-bold">
-                    {mine.length ? `${best}%` : "Not started"}
-                  </p>
-                </div>
-                {quiz.availableQuestions >= quiz.questionCount ? (
-                  <AppLink href={`/quizzes/${quiz.id}`} className={primary}>
-                    {mine.length ? "Try again" : "View quiz"} <ArrowRight />
-                  </AppLink>
-                ) : (
-                  <span className="rounded-lg bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
-                    {uiText("Awaiting questions")}{" "}
-                  </span>
-                )}
-              </div>
-            </article>
-          );
-        })}
+      <FilterToolbar label={uiText("Filter quizzes")}>
+        <DashboardSearchInput
+          value={search}
+          onChange={setSearch}
+          label={uiText("Search quizzes")}
+          placeholder={uiText("Search quizzes or topics…")}
+          showLabel
+        />
+        <FilterField label={uiText("Difficulty")}>
+          <select
+            value={difficulty}
+            onChange={(event) => setDifficulty(event.target.value)}
+            className={dashboardSelect}
+          >
+            {["All", "Beginner", "Intermediate", "Advanced"].map((value) => (
+              <option key={value} value={value}>
+                {uiText(value)}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+      </FilterToolbar>
+      <div className="catalogue-results" aria-live="polite">
+        <span>
+          {catalogue.isPending ? uiText("Loading quizzes…") : `${filtered.length} quizzes found`}
+        </span>
+        {(search || difficulty !== "All") && (
+          <button
+            className={outline}
+            onClick={() => {
+              setSearch("");
+              setDifficulty("All");
+            }}
+          >
+            {uiText("Clear filters")}
+          </button>
+        )}
       </div>
-      {!catalogue.data.length && (
-        <div className="mt-8">
+      {catalogue.isPending ? (
+        <ResourceGridSkeleton label={uiText("Loading quizzes…")} />
+      ) : catalogue.error ? (
+        <div role="alert" className="mt-5 rounded-xl border bg-white p-5">
+          <p>{catalogue.error.message}</p>
+          <button className={outline} onClick={() => void catalogue.refetch()}>
+            {uiText("Try again")}
+          </button>
+        </div>
+      ) : filtered.length ? (
+        <div className={catalogueGrid}>
+          {filtered.map((quiz) => {
+            const mine = (history.data ?? []).filter(
+              (a) => a.quizId === quiz.id && a.scorePercent !== null,
+            );
+            const best = Math.max(0, ...mine.map((a) => a.scorePercent ?? 0));
+            return (
+              <article key={quiz.id} className={catalogueCard}>
+                <CatalogueCover>
+                  <span className="grid size-14 place-items-center rounded-2xl bg-white text-violet shadow-sm">
+                    <Target className="size-7" aria-hidden="true" />
+                  </span>
+                  <span className="rounded-full border border-violet/15 bg-white px-3 py-1 text-xs font-semibold">
+                    {quiz.difficulty}
+                  </span>
+                </CatalogueCover>
+                <div className="catalogue-body">
+                  <span className="meta text-violet">{quiz.topic}</span>
+                  <h2 className="mt-3 font-semibold">{quiz.title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{quiz.description}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-md bg-muted px-2 py-1">
+                      {quiz.questionCount} {uiText("questions")}
+                    </span>
+                    <span className="rounded-md bg-muted px-2 py-1">
+                      {Math.ceil(quiz.durationSeconds / 60)} {uiText("min")}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {modules.find((m) => m.id === quiz.moduleId)?.title ?? quiz.topic}
+                  </p>
+                  <div className="catalogue-footer">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-sm">
+                      <span className="text-muted-foreground">
+                        {uiText(mine.length ? "Best score" : "Attempt status")}
+                      </span>
+                      {history.isLoading ? (
+                        <Skeleton
+                          className="h-5 w-24"
+                          aria-label={uiText("Loading attempt history")}
+                        />
+                      ) : (
+                        <strong className="tabular-nums">
+                          {history.isError
+                            ? uiText("History unavailable")
+                            : mine.length
+                              ? `${best}%`
+                              : uiText("Not started")}
+                        </strong>
+                      )}
+                    </div>
+                    {quiz.availableQuestions >= quiz.questionCount ? (
+                      <AppLink href={`/quizzes/${quiz.id}`} className={primary}>
+                        {uiText(mine.length ? "Try again" : "View quiz")} <ArrowRight />
+                      </AppLink>
+                    ) : (
+                      <span className="flex min-h-11 items-center justify-center rounded-lg bg-muted px-4 text-sm font-semibold text-muted-foreground">
+                        {uiText("Awaiting questions")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-5">
           <EmptyState
             icon={<Target />}
-            title={uiText("No quizzes available")}
-            description={uiText("Published assessments will appear here.")}
+            title={uiText(
+              search || difficulty !== "All" ? "No quizzes match" : "No quizzes available",
+            )}
+            description={uiText(
+              search || difficulty !== "All"
+                ? "Clear the search or choose another difficulty."
+                : "Published assessments will appear here.",
+            )}
           />
         </div>
       )}
@@ -119,7 +211,7 @@ export function QuizInstructionsPage({ quizId }: { quizId: string }) {
   const catalogue = useQuizCatalogue();
   const history = useQuizHistory(quizId);
   const quiz = catalogue.data?.find((item) => item.id === quizId);
-  if (catalogue.isPending) return <Message>{uiText("Loading quiz…")}</Message>;
+  if (catalogue.isPending) return <PageSkeleton label={uiText("Loading quiz…")} />;
   if (!quiz) return <Message>{uiText("Quiz unavailable.")}</Message>;
   const completed = (history.data ?? []).filter((attempt) => attempt.status !== "in_progress");
   const active = (history.data ?? []).find((attempt) => attempt.status === "in_progress");
@@ -257,7 +349,7 @@ export function QuizRunnerPage({ quizId }: { quizId: string }) {
         setBusy(false);
       });
   }, [remaining, attempt, busy, client, navigate, quizId]);
-  if (attemptQuery.isPending) return <Message>{uiText("Preparing your quiz…")}</Message>;
+  if (attemptQuery.isPending) return <PageSkeleton label={uiText("Preparing your quiz…")} />;
   if (attemptQuery.error)
     return (
       <Message>
@@ -471,7 +563,7 @@ export function QuizResultsPage({ quizId }: { quizId: string }) {
   const recommendation =
     publishedLessons.find((l) => l.topic === weakest?.topic) ?? publishedLessons[0];
   if (history.isPending || (latest && result.isPending))
-    return <Message>{uiText("Loading results…")}</Message>;
+    return <PageSkeleton label={uiText("Loading results…")} />;
   if (!attempt || !quiz || !module)
     return (
       <div className="mx-auto max-w-3xl">

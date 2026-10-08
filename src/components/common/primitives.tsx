@@ -19,7 +19,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-5 border-b border-border/80 pb-7 md:flex-row md:items-end md:justify-between",
+        "page-heading flex flex-col gap-4 border-b border-border/80 pb-5 md:flex-row md:items-end md:justify-between",
         className,
       )}
     >
@@ -30,9 +30,11 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="text-3xl font-bold md:text-4xl lg:text-[2.65rem]">{title}</h1>
+        <h1 className="text-3xl font-bold tracking-[-0.035em] md:text-4xl lg:text-[2.65rem]">
+          {title}
+        </h1>
         {description && (
-          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{description}</p>
+          <p className="mt-2 max-w-2xl text-base leading-6 text-muted-foreground">{description}</p>
         )}
       </div>
       {actions && (
@@ -52,7 +54,7 @@ export function SectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-2xl font-bold md:text-[1.75rem]">{title}</h2>
         {description && (
@@ -77,23 +79,17 @@ export function StatCard({
   icon?: ReactNode;
   tone?: "default" | "violet" | "ember" | "success";
 }) {
-  const tones = {
-    default: "bg-card",
-    violet: "bg-violet-soft",
-    ember: "bg-ember-soft",
-    success: "bg-success-soft",
-  } as const;
   return (
-    <div className={cn("panel min-w-0 p-5", tones[tone])}>
+    <div className="metric-card panel min-w-0 p-5" data-tone={tone}>
       <div className="flex items-start justify-between gap-3">
-        <p className="meta text-muted-foreground">{label}</p>
+        <p className="text-sm font-bold leading-5 text-muted-foreground">{label}</p>
         {icon && (
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/75 text-violet shadow-sm [&_svg]:size-5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-violet [&_svg]:size-4">
             {icon}
           </span>
         )}
       </div>
-      <p className="mt-4 font-mono text-3xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
       {hint && <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -111,7 +107,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-strong bg-card px-6 py-14 text-center shadow-panel">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border-strong bg-card px-6 py-8 text-center shadow-panel">
       {icon && (
         <div className="mb-4 grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground [&_svg]:size-6">
           {icon}
@@ -162,6 +158,48 @@ export function CardListSkeleton({ count = 3 }: { count?: number }) {
           <Skeleton className="mt-5 h-9 w-28" />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Reserve a realistic page footprint while route data is being fetched. */
+export function ContentSkeleton({ label, rows = 4 }: { label: string; rows?: number }) {
+  return (
+    <div role="status" aria-busy="true" className="content-skeleton mt-5 space-y-3">
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true" className="space-y-3">
+        {Array.from({ length: rows }, (_, index) => (
+          <div key={index} className="panel p-5">
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="mt-3 h-4 w-3/4" />
+            <Skeleton className="mt-3 h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PageSkeleton({ label }: { label: string }) {
+  return (
+    <div className="container-ncap min-h-[75dvh] py-8" role="status" aria-busy="true">
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true" className="mb-8 border-b pb-7">
+        <Skeleton className="mb-4 h-3 w-32" />
+        <Skeleton className="h-10 w-full max-w-xl" />
+        <Skeleton className="mt-4 h-5 w-full max-w-2xl" />
+      </div>
+      <div aria-hidden="true" className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map((item) => (
+          <div key={item} className="panel min-h-64 p-6">
+            <Skeleton className="size-11 rounded-lg" />
+            <Skeleton className="mt-6 h-6 w-3/4" />
+            <Skeleton className="mt-4 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-2/3" />
+            <Skeleton className="mt-7 h-10 w-32" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

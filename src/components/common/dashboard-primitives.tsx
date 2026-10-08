@@ -1,23 +1,20 @@
 import { useInterfaceText } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { fieldStyles } from "./control-styles";
 import { cn } from "@/lib/utils";
 
 export const dashboardButton = {
-  primary:
-    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
-  secondary:
-    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-4 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
-  icon: "grid size-11 shrink-0 place-items-center rounded-xl border border-border-strong bg-white shadow-sm hover:border-violet hover:bg-accent hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4",
-  destructive:
-    "inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-sm font-bold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  primary: buttonVariants(),
+  secondary: buttonVariants({ variant: "outline" }),
+  icon: buttonVariants({ variant: "outline", size: "icon" }),
+  destructive: buttonVariants({ variant: "destructive" }),
 } as const;
 
-export const dashboardField =
-  "mt-1.5 h-11 w-full min-w-0 rounded-lg border border-input bg-white px-3 text-base sm:text-sm";
+export const dashboardField = `mt-1.5 ${fieldStyles}`;
 
-export const dashboardSelect =
-  "h-11 w-full min-w-0 rounded-lg border border-input bg-white px-3 text-base sm:w-auto sm:text-sm";
+export const dashboardSelect = `${fieldStyles} sm:w-auto`;
 
 export function FilterToolbar({
   children,
@@ -31,13 +28,13 @@ export function FilterToolbar({
   return (
     <section
       className={cn(
-        "mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-3 sm:flex-row sm:flex-wrap sm:items-center",
+        "ncap-filter-toolbar mt-5 flex min-w-0 flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:flex-wrap sm:items-end",
         className,
       )}
       aria-label={label}
     >
       <Filter
-        className="hidden size-4 shrink-0 text-muted-foreground md:block"
+        className="mb-3.5 hidden size-4 shrink-0 text-muted-foreground md:block"
         aria-hidden="true"
       />
       {children}
@@ -51,27 +48,54 @@ export function DashboardSearchInput({
   placeholder,
   label = placeholder,
   className,
+  showLabel = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   label?: string;
   className?: string;
+  showLabel?: boolean;
 }) {
   return (
-    <label className={cn("relative min-w-0 flex-1 sm:min-w-56", className)}>
-      <span className="sr-only">{label}</span>
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-        aria-hidden="true"
-      />
-      <input
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full min-w-0 rounded-lg border border-input bg-background pl-10 pr-3 text-base sm:text-sm"
-        placeholder={placeholder}
-      />
+    <label className={cn("min-w-0 flex-1 sm:min-w-56", className)}>
+      <span
+        className={
+          showLabel ? "mb-1.5 block text-xs font-semibold text-muted-foreground" : "sr-only"
+        }
+      >
+        {label}
+      </span>
+      <span className="relative block">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <input
+          type="search"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={`${fieldStyles} pl-10`}
+          placeholder={placeholder}
+        />
+      </span>
+    </label>
+  );
+}
+
+export function FilterField({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={cn("min-w-0 text-sm sm:min-w-36 [&_select]:w-full", className)}>
+      <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>
+      {children}
     </label>
   );
 }
@@ -165,7 +189,7 @@ export function ResponsiveTableContainer({
   return (
     <div
       className={cn(
-        "app-scrollbar mt-4 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border bg-white",
+        "data-table app-scrollbar mt-4 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border bg-white",
         className,
       )}
       role="region"

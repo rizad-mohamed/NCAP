@@ -1,3 +1,4 @@
+import { fieldStyles } from "@/components/common/control-styles";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 import { Film, Link2, LoaderCircle, Trash2, Upload } from "lucide-react";
@@ -119,7 +120,7 @@ export function LessonVideoField({
                 value={value.url}
                 maxLength={2048}
                 onChange={(event) => onChange({ ...value, url: event.target.value })}
-                className="h-11 w-full rounded-lg border bg-white pl-10 pr-3"
+                className={cn(fieldStyles, "pl-10")}
                 placeholder="https://www.youtube.com/watch?v=…"
               />
             </span>

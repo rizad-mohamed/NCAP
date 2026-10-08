@@ -1,3 +1,4 @@
+import { ConfirmationPanel } from "@/components/common/ConfirmationPanel";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -147,6 +148,7 @@ function RootComponent() {
       <I18nProvider>
         <AuthProvider state={auth}>
           <AuthenticatedApplication />
+          <ConfirmationPanel key={auth.user?.id ?? "anonymous"} />
         </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>

@@ -149,6 +149,7 @@ try {
   });
   for (const [route, name] of [
     ["/", "home"],
+    ["/awareness", "awareness-hub"],
     ["/awareness/articles", "awareness"],
     ["/learn", "learning"],
   ])

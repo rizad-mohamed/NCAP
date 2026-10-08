@@ -1,3 +1,18 @@
+import { buttonVariants } from "@/components/ui/button";
+import {
+  FilterToolbar,
+  DashboardSearchInput,
+  dashboardSelect,
+  FilterField,
+} from "@/components/common/dashboard-primitives";
+import {
+  CatalogueHero,
+  CatalogueCover,
+  catalogueCard,
+  catalogueGrid,
+  ResourceGridSkeleton,
+  CatalogueSkeleton,
+} from "@/components/common/catalogue";
 import { useInterfaceText } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -44,10 +59,8 @@ import { AwarenessMediaService } from "@/services/awareness-media";
 
 export { HomePage } from "@/features/public/home/HomePage";
 
-const btn =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-sm hover:bg-violet hover:shadow-raised";
-const btnOutline =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border-strong bg-white px-6 text-sm font-bold shadow-sm hover:border-violet hover:bg-accent hover:text-primary";
+const btn = buttonVariants({ size: "lg" });
+const btnOutline = buttonVariants({ variant: "outline", size: "lg" });
 export function AwarenessHubPage() {
   const uiText = useInterfaceText();
 
@@ -108,8 +121,8 @@ export function AwarenessHubPage() {
     ],
   ] as const;
   return (
-    <div className="container-ncap py-12">
-      <PageHeader
+    <div className="container-ncap catalogue-page py-2">
+      <CatalogueHero
         eyebrow={uiText("Awareness hub")}
         title={uiText("Know the signs. Take the safer next step.")}
         description={uiText(
@@ -122,32 +135,25 @@ export function AwarenessHubPage() {
           </AppLink>
         }
       />
-      <section className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map(([Icon, title, text, href, count], index) => (
+      <section className="stagger-grid mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {categories.map(([Icon, title, text, href, count]) => (
           <AppLink
             key={href}
             href={href}
-            className="group interactive-card overflow-hidden rounded-xl border bg-white"
+            className="group interactive-card flex min-w-0 flex-col rounded-xl border bg-white p-5"
           >
-            <div
-              className={cn(
-                "grid h-28 place-items-center border-b",
-                index % 3 === 0 && "bg-sky-50 text-sky-800",
-                index % 3 === 1 && "bg-amber-50 text-amber-800",
-                index % 3 === 2 && "bg-emerald-50 text-emerald-800",
-              )}
-            >
-              <span className="grid size-14 place-items-center rounded-2xl border border-current/15 bg-white/80 shadow-sm">
-                <Icon className="size-7" aria-hidden="true" />
+            <div className="flex items-center justify-between gap-3 text-violet">
+              <span className="grid size-12 place-items-center rounded-xl border border-current/15 bg-background">
+                <Icon className="size-6" strokeWidth={1.6} aria-hidden="true" />
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {count} {uiText("published")}
               </span>
             </div>
-            <div className="p-6">
-              <h2 className="text-xl font-semibold">{title}</h2>
-              <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">{text}</p>
-              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                {count} {uiText("published")}{" "}
-              </p>
-              <span className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-primary">
+            <div className="mt-4 flex flex-1 flex-col">
+              <h2 className="text-lg font-semibold">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
+              <span className="mt-auto inline-flex min-h-11 items-center pt-3 text-sm font-semibold text-primary">
                 {uiText("Explore")}{" "}
                 <ArrowRight
                   className="ml-2 size-4 transition-transform group-hover:translate-x-1"
@@ -158,16 +164,19 @@ export function AwarenessHubPage() {
           </AppLink>
         ))}
       </section>
-      <section className="mt-16">
+      <section className="mt-7">
         <SectionHeading title={uiText("Featured resource")} />
         <div className="grid overflow-hidden rounded-xl border bg-white lg:grid-cols-[.7fr_1.3fr]">
-          <div className="grid-motif grid min-h-64 place-items-center bg-primary-soft p-8">
+          <div className="grid-motif grid min-h-48 place-items-center bg-primary-soft p-6">
             <span className="grid size-28 place-items-center rounded-full bg-white text-primary shadow-raised">
               <ShieldCheck className="size-12" />
             </span>
           </div>
-          <div className="p-8">
-            <p className="meta text-violet">{uiText("Featured · 7 min read")}</p>
+          <div className="p-6">
+            <p className="meta text-violet">
+              {uiText("Featured resource")}
+              {featured && ` · ${featured.readingMinutes} min read`}
+            </p>
             <h2 className="mt-3 text-3xl font-semibold">
               {featured?.title ?? "Practical cybersecurity guidance"}
             </h2>
@@ -193,39 +202,55 @@ function FilterBar({
   topic,
   setTopic,
   topics,
+  sort,
+  setSort,
 }: {
   search: string;
   setSearch: (s: string) => void;
   topic: string;
   setTopic: (s: string) => void;
   topics: string[];
+  sort?: string;
+  setSort?: (value: string) => void;
 }) {
   const uiText = useInterfaceText();
 
   return (
-    <div className="mt-8 flex flex-col gap-3 rounded-xl border bg-white p-3 md:flex-row">
-      <label className="relative flex-1">
-        <span className="sr-only">{uiText("Search resources")}</span>
-        <Search className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-11 w-full rounded-lg border bg-background pl-10 pr-3"
-          placeholder={uiText("Search by title or keyword…")}
-        />
-      </label>
-      <select
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-        className="h-11 rounded-lg border bg-white px-3"
-        aria-label={uiText("Filter by topic")}
-      >
-        {topics.map((x) => (
-          <option key={x}>{x}</option>
-        ))}
-      </select>
-    </div>
+    <FilterToolbar label={uiText("Filter resources")}>
+      <DashboardSearchInput
+        value={search}
+        onChange={setSearch}
+        label={uiText("Search resources")}
+        placeholder={uiText("Search by title or keyword…")}
+        showLabel
+      />
+      <FilterField label={uiText("Topic")}>
+        <select
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          className={dashboardSelect}
+          aria-label={uiText("Filter by topic")}
+        >
+          {topics.map((x) => (
+            <option key={x} value={x}>
+              {x === "All" ? uiText("All topics") : x}
+            </option>
+          ))}
+        </select>
+      </FilterField>
+      {setSort && (
+        <FilterField label={uiText("Sort")}>
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value)}
+            className={dashboardSelect}
+          >
+            <option value="Newest">{uiText("Newest")}</option>
+            <option value="Title">{uiText("Title")}</option>
+          </select>
+        </FilterField>
+      )}
+    </FilterToolbar>
   );
 }
 
@@ -250,7 +275,7 @@ export function ArticlesPage() {
   return (
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: "Articles" }]} />
-      <PageHeader
+      <CatalogueHero
         eyebrow={uiText("Awareness · Articles")}
         title={uiText("Read, understand, act")}
         description={uiText(
@@ -263,30 +288,22 @@ export function ArticlesPage() {
         topic={topic}
         setTopic={setTopic}
         topics={articleTopics}
+        sort={sort}
+        setSort={setSort}
       />
-      <div className="mt-4 flex justify-between text-sm text-muted-foreground">
+      <div className="catalogue-results" aria-live="polite">
         <span>
-          {query.data?.total ?? 0} {uiText("article")}
+          {query.isPending ? uiText("Loading content") : (query.data?.total ?? 0)}{" "}
+          {uiText("article")}
           {query.data?.total === 1 ? "" : "s"}
         </span>
-        <label>
-          {uiText("Sort")}{" "}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="ml-2 rounded-md border bg-white p-2"
-          >
-            <option>{uiText("Newest")}</option>
-            <option>{uiText("Title")}</option>
-          </select>
-        </label>
       </div>
       {query.isPending || query.error ? (
-        <AwarenessQueryState query={query} />
+        <AwarenessQueryState query={query} inline />
       ) : filtered.length ? (
-        <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((a, i) => (
-            <ArticleCard key={a.id} article={a} accent={i === 0} />
+        <div className={catalogueGrid}>
+          {filtered.map((a) => (
+            <ArticleCard key={a.id} article={a} />
           ))}
         </div>
       ) : (
@@ -314,25 +331,29 @@ export function ArticlesPage() {
   );
 }
 
-function ArticleCard({ article, accent = false }: { article: Article; accent?: boolean }) {
+function ArticleCard({ article }: { article: Article }) {
   const uiText = useInterfaceText();
 
   return (
-    <article
-      className={cn(
-        "interactive-card flex flex-col overflow-hidden rounded-xl border bg-white",
-        accent && "border-violet/40 bg-violet-soft/40",
+    <article className={catalogueCard}>
+      {article.image || article.imageUrl ? (
+        <MediaImage
+          asset={article.image}
+          fallback={article.imageUrl}
+          alt={article.image?.altText ?? article.title}
+          className="catalogue-cover"
+        />
+      ) : (
+        <CatalogueCover>
+          <span className="grid size-11 place-items-center rounded-xl bg-white text-primary shadow-sm">
+            <FileText className="size-5" aria-hidden="true" />
+          </span>
+          <span className="rounded-full border bg-white/90 px-3 py-1 text-xs font-bold text-primary">
+            {uiText("Practical guide")}{" "}
+          </span>
+        </CatalogueCover>
       )}
-    >
-      <div className="grid-motif flex h-24 items-center justify-between border-b bg-primary-soft px-5">
-        <span className="grid size-11 place-items-center rounded-xl bg-white text-primary shadow-sm">
-          <FileText className="size-5" aria-hidden="true" />
-        </span>
-        <span className="rounded-full border bg-white/90 px-3 py-1 text-xs font-bold text-primary">
-          {uiText("Practical guide")}{" "}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-5">
+      <div className="catalogue-body">
         <div className="flex items-center justify-between gap-3">
           <span className="meta text-violet">{article.category}</span>
           <span className="shrink-0 text-xs text-muted-foreground">
@@ -347,11 +368,11 @@ function ArticleCard({ article, accent = false }: { article: Article; accent?: b
         <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
           {article.summary}
         </p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-6 text-xs text-muted-foreground">
-          <span>{article.publishedAt}</span>
+        <div className="catalogue-footer">
+          <p className="mb-3 text-xs text-muted-foreground">{article.publishedAt}</p>
           <AppLink
             href={`/awareness/articles/${article.slug}`}
-            className="inline-flex min-h-10 items-center font-semibold text-primary"
+            className={buttonVariants({ variant: "outline" })}
           >
             {uiText("Read article")} <ArrowRight className="ml-1 size-4" aria-hidden="true" />
           </AppLink>
@@ -516,155 +537,152 @@ export function ResourceListingPage({
   return (
     <ContentContainer>
       <PageCrumbs items={[{ label: "Awareness", href: "/awareness" }, { label: title }]} />
-      <PageHeader eyebrow={uiText("Awareness resources")} title={title} description={description} />
-      <div className="mt-8 rounded-2xl border bg-white p-3 shadow-panel sm:p-4">
-        <label className="relative block">
-          <span className="sr-only">
-            {uiText("Search")} {title.toLowerCase()}
-          </span>
-          <Search
-            className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="h-12 w-full rounded-xl border bg-background pl-12 pr-4 text-base"
-            placeholder={`Search ${title.toLowerCase()}…`}
-          />
-        </label>
-        {kind !== "news" && (
-          <div
-            className="mt-3 flex flex-wrap gap-2"
-            role="group"
-            aria-label={uiText("Topic filter")}
+      <CatalogueHero
+        eyebrow={uiText("Awareness resources")}
+        title={uiText(title)}
+        description={uiText(description)}
+      />
+      <FilterBar
+        search={search}
+        setSearch={setSearch}
+        topic={topic}
+        setTopic={setTopic}
+        topics={availableTopics}
+      />
+      <div className="catalogue-results" aria-live="polite">
+        <span>
+          {query.isPending
+            ? uiText("Loading content")
+            : `${query.data?.total ?? 0} ${query.data?.total === 1 ? "resource" : "resources"} found`}
+        </span>
+        {(search || topic !== "All") && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setTopic("All");
+            }}
+            className={buttonVariants({ variant: "ghost" })}
           >
-            {availableTopics.map((x) => (
-              <button
-                key={x}
-                onClick={() => setTopic(x)}
-                aria-pressed={topic === x}
-                className={cn(
-                  "min-h-11 rounded-xl border bg-white px-4 text-sm font-medium",
-                  topic === x && "border-primary bg-primary text-white",
-                )}
-              >
-                {x}
-              </button>
-            ))}
-          </div>
+            {uiText("Clear filters")}
+          </button>
         )}
-        <div
-          className="mt-3 flex min-h-10 flex-wrap items-center justify-between gap-2 border-t pt-3 text-sm text-muted-foreground"
-          aria-live="polite"
-        >
-          <span>
-            {query.data?.total ?? 0} {query.data?.total === 1 ? "resource" : "resources"}{" "}
-            {uiText("found")}{" "}
-          </span>
-          {(search || topic !== "All") && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setTopic("All");
-              }}
-              className="min-h-10 rounded-lg px-3 font-semibold text-primary hover:bg-primary-soft"
-            >
-              {uiText("Clear filters")}{" "}
-            </button>
-          )}
-        </div>
       </div>
       {query.isPending || query.error ? (
-        <AwarenessQueryState query={query} />
+        <AwarenessQueryState query={query} inline />
       ) : items.length > 0 ? (
-        <div className="stagger-grid mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className={catalogueGrid}>
           {items.map((raw) => {
             if (kind === "tips") {
               const item = raw as CyberTip;
               return (
-                <article key={item.id} className="interactive-card rounded-xl border bg-white p-5">
-                  <span className="grid size-11 place-items-center rounded-xl bg-amber-50 text-amber-800">
-                    <Lightbulb className="size-5" aria-hidden="true" />
-                  </span>
-                  <span className="meta mt-5 block text-muted-foreground">{item.topic}</span>
-                  <h2 className="mt-2 text-xl font-semibold">{item.title}</h2>
-                  <p className="mt-2 text-muted-foreground">{item.text}</p>
+                <article key={item.id} className={catalogueCard}>
+                  <CatalogueCover>
+                    <span className="grid size-14 place-items-center rounded-2xl border border-white bg-white text-violet shadow-sm">
+                      <Lightbulb className="size-7" aria-hidden="true" />
+                    </span>
+                    <span className="meta text-violet">{uiText("Cyber tips")}</span>
+                  </CatalogueCover>
+                  <div className="catalogue-body">
+                    <span className="meta block text-violet">{item.topic}</span>
+                    <h2 className="mt-2 text-xl font-semibold">{item.title}</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.text}</p>
+                  </div>
                 </article>
               );
             }
             if (kind === "news") {
               const item = raw as NewsUpdate;
               return (
-                <article key={item.id} className="interactive-card rounded-xl border bg-white p-5">
-                  <div className="flex items-center justify-between">
+                <article key={item.id} className={catalogueCard}>
+                  <CatalogueCover>
+                    <span className="grid size-14 place-items-center rounded-2xl bg-white text-violet shadow-sm">
+                      <Newspaper className="size-7" aria-hidden="true" />
+                    </span>
                     <DemoTag label={uiText("NCAP Demo Update")} />
-                    <span className="text-xs text-muted-foreground">{item.date}</span>
+                  </CatalogueCover>
+                  <div className="catalogue-body">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="meta text-violet">{uiText("Demo updates")}</span>
+                      <span className="text-xs text-muted-foreground">{item.date}</span>
+                    </div>
+                    <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.summary}</p>
+                    <div className="catalogue-footer">
+                      <details className="rounded-lg border bg-background px-4 text-sm">
+                        <summary className="cursor-pointer font-semibold">
+                          {uiText("Read more")}
+                        </summary>
+                        {(item.body?.length
+                          ? item.body
+                          : ["This demonstration update is not a report of a real-world incident."]
+                        ).map((paragraph, index) => (
+                          <p
+                            key={`${item.id}-${index}`}
+                            className="mb-3 mt-2 text-muted-foreground"
+                          >
+                            {paragraph}
+                          </p>
+                        ))}
+                      </details>
+                    </div>
                   </div>
-                  <h2 className="mt-6 text-xl font-semibold">{item.title}</h2>
-                  <p className="mt-2 text-muted-foreground">{item.summary}</p>
-                  <details className="mt-5 rounded-lg bg-muted p-4 text-sm">
-                    <summary className="cursor-pointer font-semibold">
-                      {uiText("Read more")}
-                    </summary>
-                    {(item.body?.length
-                      ? item.body
-                      : ["This demonstration update is not a report of a real-world incident."]
-                    ).map((paragraph, index) => (
-                      <p key={`${item.id}-${index}`} className="mt-2 text-muted-foreground">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </details>
                 </article>
               );
             }
             if (kind === "best-practices") {
               const item = raw as BestPractice;
               return (
-                <article key={item.id} className="interactive-card rounded-xl border bg-white p-5">
-                  <span className="meta text-violet">{item.topic}</span>
-                  <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
-                  <ol className="mt-5 grid gap-3">
-                    {item.steps.map((s, i) => (
-                      <li key={s} className="flex gap-3 text-sm">
-                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-success-soft font-mono text-xs font-bold text-success">
-                          {i + 1}
-                        </span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ol>
+                <article key={item.id} className={catalogueCard}>
+                  <CatalogueCover>
+                    <span className="grid size-14 place-items-center rounded-2xl bg-white text-violet shadow-sm">
+                      <ListChecks className="size-7" aria-hidden="true" />
+                    </span>
+                    <span className="meta text-violet">
+                      {item.steps.length} {uiText("steps")}
+                    </span>
+                  </CatalogueCover>
+                  <div className="catalogue-body">
+                    <span className="meta text-violet">{item.topic}</span>
+                    <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
+                    <ol className="mt-4 grid gap-3">
+                      {item.steps.map((s, i) => (
+                        <li key={s} className="flex gap-3 text-sm">
+                          <span className="grid size-6 shrink-0 place-items-center rounded-full bg-success-soft font-mono text-xs font-bold text-success">
+                            {i + 1}
+                          </span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 </article>
               );
             }
             if (kind === "posters") {
               const item = raw as Poster;
               return (
-                <article
-                  key={item.id}
-                  className="interactive-card overflow-hidden rounded-xl border bg-white"
-                >
+                <article key={item.id} className={catalogueCard}>
                   <MediaImage
                     asset={item.image}
                     fallback={item.file}
                     alt={item.image?.altText ?? `${item.title} awareness poster preview`}
-                    className="aspect-[4/3] w-full bg-primary-soft object-cover"
+                    className="catalogue-cover bg-primary-soft object-contain"
                   />
-                  <div className="p-5">
+                  <div className="catalogue-body">
                     <span className="meta text-violet">
                       {item.topic} · {item.format}
                     </span>
                     <h2 className="mt-2 text-xl font-semibold">{item.title}</h2>
                     <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
-                    <MediaDownloadLink
-                      asset={item.image}
-                      fallback={item.file}
-                      label={`Download ${item.format}`}
-                      className={cn(btnOutline, "mt-5 w-full")}
-                    />
+                    <div className="catalogue-footer">
+                      <MediaDownloadLink
+                        asset={item.image}
+                        fallback={item.file}
+                        label={`Download ${item.format}`}
+                        className={buttonVariants({ variant: "outline" })}
+                      />
+                    </div>
                   </div>
                 </article>
               );
@@ -672,34 +690,35 @@ export function ResourceListingPage({
             if (kind === "infographics") {
               const item = raw as Infographic;
               return (
-                <article key={item.id} className="interactive-card rounded-xl border bg-white p-5">
+                <article key={item.id} className={catalogueCard}>
                   <MediaImage
                     asset={item.image}
                     fallback={item.file}
                     alt={item.image?.altText ?? item.alt}
-                    className="aspect-[16/9] w-full rounded-lg bg-primary-soft object-cover"
+                    className="catalogue-cover bg-primary-soft object-contain"
                   />
-                  <span className="meta mt-5 block text-violet">{item.category}</span>
-                  <h2 className="mt-2 text-xl font-semibold">{item.title}</h2>
-                  <button
-                    onClick={() => setSelected(item.id)}
-                    className={cn(btnOutline, "mt-5 w-full")}
-                  >
-                    <Eye />
-                    {uiText("Open infographic")}{" "}
-                  </button>
+                  <div className="catalogue-body">
+                    <span className="meta block text-violet">{item.category}</span>
+                    <h2 className="mt-2 text-xl font-semibold">{item.title}</h2>
+                    <div className="catalogue-footer">
+                      <button
+                        onClick={() => setSelected(item.id)}
+                        className={buttonVariants({ variant: "outline" })}
+                      >
+                        <Eye />
+                        {uiText("Open infographic")}{" "}
+                      </button>
+                    </div>
+                  </div>
                 </article>
               );
             }
             const item = raw as VideoResource;
             return (
-              <article
-                key={item.id}
-                className="interactive-card overflow-hidden rounded-xl border bg-white"
-              >
+              <article key={item.id} className={catalogueCard}>
                 <button
                   onClick={() => setSelected(item.id)}
-                  className="group relative block aspect-video w-full bg-primary text-white"
+                  className="catalogue-cover group relative block bg-primary text-white"
                   aria-label={`${item.sourceUrl || item.video ? "Open video" : "Open transcript preview"} ${item.title}`}
                 >
                   {(item.poster || item.posterUrl) && (
@@ -720,8 +739,8 @@ export function ResourceListingPage({
                     {item.durationLabel}
                   </span>
                 </button>
-                <div className="p-5">
-                  <div className="flex items-center justify-between">
+                <div className="catalogue-body">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="meta text-violet">{item.category}</span>
                     <DemoTag
                       label={item.sourceUrl || item.video ? "Video" : "Transcript preview"}
@@ -729,13 +748,15 @@ export function ResourceListingPage({
                   </div>
                   <h2 className="mt-3 text-xl font-semibold">{item.title}</h2>
                   <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
-                  <button
-                    onClick={() => setSelected(item.id)}
-                    className="mt-4 inline-flex min-h-10 items-center font-semibold text-primary"
-                  >
-                    {item.sourceUrl || item.video ? "Open video" : "Read transcript"}{" "}
-                    <ArrowRight className="ml-2 size-4" />
-                  </button>
+                  <div className="catalogue-footer">
+                    <button
+                      onClick={() => setSelected(item.id)}
+                      className={buttonVariants({ variant: "outline" })}
+                    >
+                      {item.sourceUrl || item.video ? "Open video" : "Read transcript"}{" "}
+                      <ArrowRight className="ml-2 size-4" />
+                    </button>
+                  </div>
                 </div>
               </article>
             );
@@ -1039,19 +1060,33 @@ function ContentContainer({
   narrow?: boolean;
 }) {
   return (
-    <div className={cn("container-ncap py-10 md:py-14", narrow && "max-w-5xl")}>{children}</div>
+    <div className={cn("container-ncap catalogue-page py-2", narrow && "max-w-5xl")}>
+      {children}
+    </div>
   );
 }
 
 export function AwarenessQueryState({
   query,
+  inline = false,
 }: {
+  inline?: boolean;
   query: { isPending: boolean; error: Error | null; refetch: () => unknown };
 }) {
   const uiText = useInterfaceText();
 
+  if (query.isPending && !query.error)
+    return inline ? (
+      <ResourceGridSkeleton label={uiText("Loading Awareness resources…")} />
+    ) : (
+      <CatalogueSkeleton label={uiText("Loading Awareness resources…")} />
+    );
+
   return (
-    <div className="container-ncap py-8" role={query.error ? "alert" : "status"}>
+    <div
+      className={inline ? "mt-5 rounded-xl border bg-white p-5" : "container-ncap py-8"}
+      role={query.error ? "alert" : "status"}
+    >
       <p>{query.error ? query.error.message : "Loading Awareness resources…"}</p>
       {query.error && (
         <button className={btnOutline} onClick={() => void query.refetch()}>

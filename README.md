@@ -11,6 +11,8 @@ NCAP is not an official incident-reporting channel or a substitute for approved 
 
 Application communications/localization changes and staging operations are documented in [Announcements, notifications, localization and media](supabase/COMMUNICATIONS_LOCALIZATION.md).
 
+The frontend uses the approved NCAP UI/UX design system across public, learner and administrator screens. Its implementation and release verification are documented in [Catalogue and workspace refinement](docs/CATALOGUE_UI_REFINEMENT.md) and [UI/UX release verification](docs/UI_UX_RELEASE.md). This frontend promotion does not change the production-readiness status below.
+
 ## Project status
 
 **As of 7 October 2026: production release is BLOCKED.** Core features and backend migrations have staging verification; public production deployment has not been performed or certified by the current release evidence.

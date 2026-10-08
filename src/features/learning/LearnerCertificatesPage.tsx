@@ -1,3 +1,4 @@
+import { ContentSkeleton } from "@/components/common/primitives";
 import { useInterfaceText } from "@/lib/i18n";
 import { useState } from "react";
 import { Award, LockKeyhole } from "lucide-react";
@@ -23,11 +24,7 @@ export function LearnerCertificatesPage() {
           "Eligibility requires full module completion and a best quiz score of at least 80%. Eligible certificates are issued by an administrator.",
         )}
       />
-      {registry.isPending && (
-        <p role="status" className="mt-4">
-          {uiText("Loading certificates…")}{" "}
-        </p>
-      )}
+      {registry.isPending && <ContentSkeleton label={uiText("Loading certificates…")} />}
       {registry.isError && (
         <p role="alert" className="mt-4">
           {uiText("Certificates unavailable. Please refresh.")}{" "}
