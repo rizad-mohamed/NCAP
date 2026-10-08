@@ -13,9 +13,11 @@ Application communications/localization changes and staging operations are docum
 
 The frontend uses the approved NCAP UI/UX design system across public, learner and administrator screens. Its implementation and release verification are documented in [Catalogue and workspace refinement](docs/CATALOGUE_UI_REFINEMENT.md) and [UI/UX release verification](docs/UI_UX_RELEASE.md). This frontend promotion does not change the production-readiness status below.
 
+Application cleanup, measured optimizations, regression evidence and unresolved security-audit limits are documented in [Application hardening](docs/APPLICATION_HARDENING.md).
+
 ## Project status
 
-**As of 7 October 2026: production release is BLOCKED.** Core features and backend migrations have staging verification; public production deployment has not been performed or certified by the current release evidence.
+**As of 8 October 2026: production release is BLOCKED.** Core features and backend migrations have staging verification; public production deployment has not been performed or certified by the current release evidence.
 
 - **Backend:** Supabase staging, with Auth, profiles, Awareness, Learning, Quiz, Dashboard, Users, Reports, Certificates and Announcements persistence.
 - **Application:** Nitro Cloudflare Worker build exercised locally against staging. Remote public HTTPS hosting and deployed-origin checks remain outstanding.
@@ -34,7 +36,7 @@ These are **engineering estimates**, not measured coverage, certification or pro
 | Production / operations readiness         |      35% | Worker target, staging migrations and cleanup are present; public hosting, SMTP, monitoring and proven recovery are unverified.                                            |
 | **Overall Foundation Release completion** |  **84%** | Weighted estimate: features 35%, backend 30%, security/testing 20%, operations 15%; weighted total 84%.                                                                    |
 
-Estimates derive from current source/service paths, 24 versioned migrations through `202610040006`, test infrastructure and the latest verification records. Operational gates remain mandatory regardless of the overall percentage.
+Estimates derive from current source/service paths, 25 versioned migrations through `202610080001`, test infrastructure and the latest verification records. Operational gates remain mandatory regardless of the overall percentage.
 
 ## Feature and module status
 
@@ -110,7 +112,7 @@ Sessions use server-managed cookies. Normal session/profile/domain requests use 
 
 ## Technology stack
 
-The versions below are resolved versions from the committed [package-lock.json](package-lock.json), verified on 4 October 2026. [package.json](package.json) declares dependency ranges and scripts; ranges can differ from resolved versions. Supabase-managed PostgreSQL/Auth/Storage and Cloudflare services do not have application dependency versions in this lockfile.
+The versions below are resolved versions from the committed [package-lock.json](package-lock.json), verified against the hardening lockfile on 8 October 2026; retained package versions were unchanged. [package.json](package.json) declares dependency ranges and scripts; ranges can differ from resolved versions. Supabase-managed PostgreSQL/Auth/Storage and Cloudflare services do not have application dependency versions in this lockfile.
 
 ### Frontend and full-stack framework
 
@@ -129,7 +131,7 @@ The versions below are resolved versions from the committed [package-lock.json](
 | TanStack Query          | 5.102.8                                 | Server-data fetching, caching and mutations                  |
 | Tailwind CSS            | 4.3.3                                   | Styling and responsive layouts                               |
 | Radix UI / Lucide React | Component-specific versions in lockfile | Accessible UI primitives and icons                           |
-| React Hook Form / Zod   | 7.87.0 / 3.25.76                        | Form handling and input validation                           |
+| Zod                     | 3.25.76                                 | Input validation; forms use React state                      |
 | Recharts                | 2.15.4                                  | Administrator charts                                         |
 
 ### Backend, build and hosting
@@ -301,12 +303,12 @@ Issued signed URLs remain usable until expiry after unpublishing; CDN-cached res
 
 ## Testing and quality
 
-The communications verification records **268 passing unit/integration tests and two opt-in hosted Awareness tests skipped** on 7 October 2026; the two hosted tests also passed separately on staging. Counts are a dated run result, not total coverage; use fresh output for later changes. Older module counts describe earlier revisions.
+The final local hardening run passed **319 unit/integration tests with two opt-in hosted tests skipped**; the two hosted Awareness tests passed separately on staging. Final validation and earlier failed-run dispositions are recorded in [Application hardening](docs/APPLICATION_HARDENING.md). Counts are dated run results, not exhaustive coverage; opt-in skips do not represent passing hosted coverage. Older module counts describe earlier revisions.
 
 - **Unit/component/integration:** Vitest and Testing Library cover rules, safe errors, query behavior, Auth actions, media and PDFs.
 - **Database/RLS:** PGlite applies production PostgreSQL migrations to test ownership, grants, RPCs, transactions, scoring, account safeguards and audit. Live staging tests cover hosted Auth/Storage behavior PGlite cannot fully emulate.
 - **Browser:** Playwright tests built Workers across Chromium, Firefox, WebKit, Mobile Chrome and Mobile Safari. Authenticated workflows use disposable staging accounts; traces are disabled for the Auth credential lifecycle. Default skips are not passing live coverage.
-- **Accessibility/performance:** axe, viewport/reflow checks and Lighthouse lab review. Full-stack evidence records accessibility 100 on seven audited routes, but homepage mobile-lab LCP remained 8.83 s; this is not a production SLA or complete manual accessibility audit.
+- **Accessibility/performance:** axe, viewport/reflow checks and Lighthouse lab review. The final hardening lab run records accessibility 100, best practices 100 and CLS 0 on eight routes; homepage mobile-lab LCP was 3.85 s, with material variation across repeated runs. Historical 8.83 s belongs to an earlier revision. These are not production SLAs or complete manual accessibility audits.
 - **Security:** authorization/IDOR and active-account regressions, repository/history/build secret scans and npm dependency audit.
 
 ```sh
@@ -327,7 +329,7 @@ Sessions are validated server-side against Supabase Auth and active authoritativ
 
 Shared attempt counters are atomic, service-only and keyed with HMAC digests rather than raw identities/IPs. Source and action/identity bounds fail closed; native Auth limits govern direct Supabase calls. Deployers must review trusted ingress, upstream limits and proxy egress behavior. Private objects require authorized signing; safe errors omit database details.
 
-Refresh-token revocation does not instantly invalidate every issued JWT; suspended-account checks block application/Data API use, but the request hook does not cover Storage or Realtime. Future private policies there must enforce active status. CSP still permits inline scripts/styles; MFA and nonce-based CSP are future hardening. Announcements lack dedicated audit history, and centralized durable denied-action/export events are absent. Define retention/export policy before privileged account deletion cascades dependent records. No formal security certification is claimed.
+Refresh-token revocation does not instantly invalidate every issued JWT; suspended-account checks block application/Data API use, but the request hook does not cover Storage or Realtime. Future private policies there must enforce active status. CSP still permits inline scripts/styles; MFA and nonce-based CSP are future hardening. Announcement mutations and content translations have dedicated audit history; centralized durable denied-action/export events remain absent. Define retention/export policy before privileged account deletion cascades dependent records. No formal security certification is claimed.
 
 For responsible disclosure, contact the repository maintainer privately through the [maintainer profile](https://github.com/rizad-mohamed). Do not publish credentials, personal data or actionable vulnerability details in public issues. No formal security-response SLA is currently defined.
 
