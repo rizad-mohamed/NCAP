@@ -1,13 +1,20 @@
 import { expect, test } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
+import { axeForPage } from "./helpers/accessibility";
+import { loginAs, waitForAuthHydration } from "./helpers/auth";
 
 test("authentication forms validate locally and expose no demo access bypass", async ({ page }) => {
-  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await page.goto("/login", { waitUntil: "networkidle" });
+  await waitForAuthHydration(page);
   await expect(page.getByRole("button", { name: /Continue as/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page.getByRole("alert")).toHaveCount(2);
 
-  await page.goto("/register", { waitUntil: "domcontentloaded" });
+  await page.goto("/register", { waitUntil: "networkidle" });
+  await waitForAuthHydration(page);
+  const registrationAudit = await axeForPage(page)
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(registrationAudit.violations).toEqual([]);
   await expect(page.getByRole("button", { name: /demo/i })).toHaveCount(0);
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page.getByRole("alert")).toHaveCount(4);

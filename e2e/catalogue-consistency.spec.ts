@@ -1,5 +1,6 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { axeForPage } from "./helpers/accessibility";
+import { installPublicCatalogueFixtures } from "./helpers/public-catalogue";
 
 const routes = [
   "/awareness",
@@ -19,6 +20,7 @@ for (const width of [390, 1440]) {
     page,
   }, testInfo) => {
     test.setTimeout(300000);
+    await installPublicCatalogueFixtures(page);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
@@ -42,7 +44,7 @@ for (const width of [390, 1440]) {
             Math.max(...controls.map((c) => c.bottom)) - Math.min(...controls.map((c) => c.bottom)),
           ).toBeLessThanOrEqual(1);
       }
-      const axe = await new AxeBuilder({ page })
+      const axe = await axeForPage(page)
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
         .analyze();
       expect(axe.violations).toEqual([]);
@@ -61,7 +63,11 @@ for (const width of [390, 1440]) {
 }
 
 test("quiz search and difficulty can be combined and cleared", async ({ page }) => {
+  await installPublicCatalogueFixtures(page);
   await page.goto("/quizzes", { waitUntil: "networkidle" });
+  await expect(
+    page.getByRole("heading", { name: "Digital Safety Fundamentals", exact: true }),
+  ).toBeVisible();
   const search = page.getByRole("searchbox", { name: "Search quizzes" });
   await search.fill("No assessment matches this search");
   await page.getByRole("combobox", { name: "Difficulty" }).selectOption("Beginner");

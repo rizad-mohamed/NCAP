@@ -16,6 +16,24 @@ const credentials = {
   },
 } as const;
 
+export async function waitForAuthHydration(page: Page) {
+  const password = page.locator('input[name="password"]');
+  // An interactive client-only state change proves hydration has completed;
+  // network-idle alone can precede hydration on the Windows WebKit profile.
+  await expect
+    .poll(
+      async () => {
+        if ((await password.getAttribute("type")) === "password")
+          await page.getByRole("button", { name: "Show password", exact: true }).first().click();
+        return password.getAttribute("type");
+      },
+      { timeout: 20000 },
+    )
+    .toBe("text");
+  await page.getByRole("button", { name: "Hide password", exact: true }).first().click();
+  await expect(password).toHaveAttribute("type", "password");
+}
+
 export async function loginAs(page: Page, role: TestRole) {
   const account = credentials[role];
   test.skip(
@@ -24,24 +42,10 @@ export async function loginAs(page: Page, role: TestRole) {
   );
 
   await page.context().clearCookies();
-  // The SSR form is visible before hydration; wait for its initial session request
-  // to settle so React does not replace values entered into the unhydrated form.
+  // The SSR form is visible before hydration; prove its handlers are ready.
   await page.goto("/login", { waitUntil: "networkidle" });
+  await waitForAuthHydration(page);
   const password = page.locator('input[name="password"]');
-  // An interactive client-only state change proves hydration has completed;
-  // network-idle alone can precede hydration on the Windows WebKit profile.
-  await expect
-    .poll(
-      async () => {
-        if ((await password.getAttribute("type")) === "password")
-          await page.getByRole("button", { name: "Show password", exact: true }).click();
-        return password.getAttribute("type");
-      },
-      { timeout: 20000 },
-    )
-    .toBe("text");
-  await page.getByRole("button", { name: "Hide password", exact: true }).click();
-  await expect(password).toHaveAttribute("type", "password");
   await page.getByLabel("Email address").fill(account.email!);
   await password.fill(account.password!);
   await page.getByRole("button", { name: "Log in" }).click();

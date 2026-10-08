@@ -67,7 +67,9 @@ of this follow-up. Local role fixtures use actual components and synthetic
 data, and do not replace live staging CRUD/authorization checks.
 
 No staging writes, GitHub publishing, merge or deployment occurred in this
-follow-up. The previous external authorization blocks remain unresolved.
+follow-up. External authorization remained unresolved at that review handoff.
+The subsequently approved promotion is tracked in
+[UI/UX release verification](./UI_UX_RELEASE.md).
 
 The full unit/integration suite passed: **298 tests passed, two skipped**;
 43 test files passed and one skipped. Five new regression tests cover explicit

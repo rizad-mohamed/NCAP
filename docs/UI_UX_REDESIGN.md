@@ -1,9 +1,10 @@
 # NCAP frontend redesign
 
-The redesign is developed on `feat/ui-ux-redesign`, based on main commit
-`c3491f8702f7c324d2c8260de6ad8a25a3b4667c`. The original checkout remains on main.
-The feature branch is for review; it must not be merged or deployed without a
-subsequent release decision.
+The redesign was developed on `feat/ui-ux-redesign`, based on main commit
+`c3491f8702f7c324d2c8260de6ad8a25a3b4667c`, with the original checkout protected.
+This document records that design review. The subsequent approved promotion is
+tracked in [UI/UX release verification](./UI_UX_RELEASE.md); production deployment
+remains a separate decision.
 
 ## Critical interpretation of the brief
 
@@ -152,7 +153,9 @@ then run `npm run dev` to review the feature branch. Run `npm run check`,
 `npm run test:e2e` for the standard checks. Authenticated tests need the existing
 disposable staging setup; do not use personal accounts for mutating tests.
 
-To abandon the redesign, return to the original main checkout. No main branch
-reset, cherry-pick or database rollback is required. No production deployment
-is part of this task. Human visual review, physical-device checks and manual
-screen-reader review remain release considerations.
+Before promotion, the original main checkout retained the previous interface.
+After promotion, the pre-redesign commit above remains the rollback reference;
+use an ordinary reviewed revert if rollback is required, preserving published
+history. These frontend changes do not require a database rollback. No production
+deployment is part of this design review or its promotion. Physical-device and
+manual screen-reader review remain production release considerations.

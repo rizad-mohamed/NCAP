@@ -6,20 +6,22 @@ dialog coverage, controls, skeletons and motion, with its own verification.
 The October 8 [catalogue and workspace refinement](./CATALOGUE_UI_REFINEMENT.md)
 unifies public catalogues and fixes dashboard loading, user details and quiz layouts.
 
-## Delivery status
+## Initial review handoff
 
-The local redesign is ready for design review on `feat/ui-ux-redesign` in
-`C:/Users/HARSHANA/Desktop/NCAP/ncap-redesign`. The original checkout
-`C:/Users/HARSHANA/Desktop/NCAP/ncap_v1.0` remains clean on main at
-`c3491f8702f7c324d2c8260de6ad8a25a3b4667c`. Returning to that checkout restores
-the original experience without resetting Git or rolling back the database.
+At the initial review handoff, the redesign was isolated on `feat/ui-ux-redesign`
+in a separate worktree. The original checkout remained clean on main at
+`c3491f8702f7c324d2c8260de6ad8a25a3b4667c`. That commit remains the pre-redesign
+reference for review or a subsequent ordinary revert; no database rollback is
+required for these frontend changes.
 
-Remote publishing, the draft PR, feature-branch GitHub Actions, and disposable
-authenticated staging verification are pending explicit external-destination
+At that handoff, remote publishing, a PR, feature-branch GitHub Actions, and
+disposable authenticated staging verification awaited external-destination
 authorization. Automatic approval review rejected both the GitHub push and the
 guarded staging test command before they executed. No source was pushed, no
 draft PR was created, and no staging fixture was written during this review.
-No merge or production deployment was performed.
+No merge or production deployment was performed during the design review.
+The approved branch's subsequent promotion is tracked in
+[UI/UX release verification](./UI_UX_RELEASE.md).
 
 The design is substantially refined, but an award or a monetary value cannot
 be objectively certified. Human design acceptance remains necessary.

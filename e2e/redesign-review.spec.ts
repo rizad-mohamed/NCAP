@@ -1,9 +1,10 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
+import { axeForPage } from "./helpers/accessibility";
+import { installPublicCatalogueFixtures } from "./helpers/public-catalogue";
 
 async function audit(page: Page) {
-  const result = await new AxeBuilder({ page })
+  const result = await axeForPage(page)
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
   expect(
@@ -105,6 +106,7 @@ test("resource previews slide from the right, trap focus and reflow on phones", 
   page,
 }) => {
   test.setTimeout(120000);
+  await installPublicCatalogueFixtures(page);
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/awareness/videos", { waitUntil: "networkidle" });

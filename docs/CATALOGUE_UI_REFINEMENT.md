@@ -2,8 +2,9 @@
 
 This iteration addresses the October 8 review of Awareness, its seven content
 areas, Learn, Quizzes, News & Updates, dashboard loading, Users and quiz management.
-It lives in the isolated `feat/ui-ux-redesign` worktree. Main remains at
-`c3491f8702f7c324d2c8260de6ad8a25a3b4667c`.
+It was developed in the isolated `feat/ui-ux-redesign` worktree. The pre-redesign
+main reference is `c3491f8702f7c324d2c8260de6ad8a25a3b4667c`. Subsequent promotion
+of the approved interface is tracked in [UI/UX release verification](./UI_UX_RELEASE.md).
 
 ## Findings and changes
 

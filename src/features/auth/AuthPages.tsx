@@ -399,6 +399,7 @@ export function RegisterPage() {
           />
           <div
             className="mt-2 flex gap-1"
+            role="group"
             aria-label={`Password strength: ${passwordSchema.safeParse(form.password).success ? "requirements met" : "requirements not met"}`}
           >
             {[
