@@ -155,17 +155,26 @@ test.describe("disposable full-stack staging workflows", () => {
     await gotoApp(page, "/admin/users");
     await page.getByRole("searchbox").fill(process.env.E2E_SECOND_EMAIL!);
     await page.getByRole("combobox", { name: "Sort", exact: true }).selectOption("email");
-    const row = page.getByRole("row").filter({ hasText: process.env.E2E_SECOND_EMAIL! });
+    const row = page
+      .getByRole("row", { includeHidden: true })
+      .filter({ hasText: process.env.E2E_SECOND_EMAIL! });
     await expect(row).toHaveCount(1);
     await row.getByRole("button", { name: "View", exact: true }).click();
-    const details = page.getByRole("region", { name: "User details" });
+    const details = page.getByRole("dialog", { name: "User details" });
     await expect(details).toContainText(process.env.E2E_SECOND_EMAIL!);
+    await expect(details.getByRole("region", { name: "Learning summary" })).not.toContainText(
+      "undefined",
+    );
     await details.getByRole("combobox", { name: "Role", exact: true }).selectOption("super_admin");
     await details.getByRole("button", { name: "Update role", exact: true }).click();
-    await expect(row.getByRole("cell", { name: "Super Admin", exact: true })).toBeVisible();
+    await expect(
+      row.getByRole("cell", { name: "Super Admin", exact: true, includeHidden: true }),
+    ).toBeVisible();
     await details.getByRole("combobox", { name: "Role", exact: true }).selectOption("learner");
     await details.getByRole("button", { name: "Update role", exact: true }).click();
-    await expect(row.getByRole("cell", { name: "Learner", exact: true })).toBeVisible();
+    await expect(
+      row.getByRole("cell", { name: "Learner", exact: true, includeHidden: true }),
+    ).toBeVisible();
     await expect(details.getByLabel("Reason", { exact: true })).toHaveValue("");
     for (const status of ["suspended", "active", "disabled", "active"]) {
       await details.getByRole("combobox", { name: "Status", exact: true }).selectOption(status);

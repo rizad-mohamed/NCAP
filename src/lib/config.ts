@@ -11,7 +11,6 @@ export const NCAP_CONFIG = {
   quizLowTimeWarningSeconds: 60,
   passingScorePercent: 70,
   certificateThresholdPercent: CERTIFICATE_POLICY.minimumBestQuizScore,
-  mockLatencyMs: 320,
   pageSize: 8,
   adminPageSize: 8,
 } as const;

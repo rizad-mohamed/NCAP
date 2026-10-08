@@ -80,17 +80,19 @@ export async function getResource(
   )[0]!;
 }
 export async function summary(client: AwarenessClient) {
-  const { data, error } = await client.rpc("awareness_summary");
+  const [{ data, error }, { data: rows, error: featuredError }] = await Promise.all([
+    client.rpc("awareness_summary"),
+    client
+      .from("awareness_resources")
+      .select("*")
+      .eq("kind", "articles")
+      .eq("status", "Published")
+      .order("featured", { ascending: false })
+      .order("display_order")
+      .order("id")
+      .limit(1),
+  ]);
   databaseError(error);
-  const { data: rows, error: featuredError } = await client
-    .from("awareness_resources")
-    .select("*")
-    .eq("kind", "articles")
-    .eq("status", "Published")
-    .order("featured", { ascending: false })
-    .order("display_order")
-    .order("id")
-    .limit(1);
   databaseError(featuredError);
   return {
     kinds: data as Partial<Record<AwarenessKind, { count: number; topics: string[] }>>,

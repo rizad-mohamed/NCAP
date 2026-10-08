@@ -2,6 +2,7 @@ import { gotoApp } from "./helpers/navigation";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { loginAs } from "./helpers/auth";
+import { confirmDialog } from "./helpers/confirmation";
 
 const enabled = process.env.ADMIN_MODULES_E2E === "1";
 const moduleId = process.env.E2E_MODULE_ID ?? "";
@@ -54,8 +55,8 @@ test.describe("live administrator content, reports and certificates", () => {
     await page.getByRole("button", { name: `Unpublish ${editedLessonTitle}` }).click();
     await expect(page.getByRole("button", { name: `Publish ${editedLessonTitle}` })).toBeVisible();
     await expect(page.getByRole("button", { name: `Delete ${editedLessonTitle}` })).toBeEnabled();
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: `Delete ${editedLessonTitle}` }).click();
+    await confirmDialog(page, "Delete this lesson and its saved progress?");
     await expect(page.getByText("Lesson deleted", { exact: true })).toBeVisible();
     await expect(page.getByText(editedLessonTitle, { exact: true })).toHaveCount(0);
 
@@ -81,8 +82,11 @@ test.describe("live administrator content, reports and certificates", () => {
       .locator("xpath=ancestor::article");
     await questionCard.getByRole("button", { name: "Unpublish" }).click();
     await expect(questionCard.getByRole("button", { name: "Publish" })).toBeVisible();
-    page.once("dialog", (dialog) => dialog.accept());
     await questionCard.getByRole("button", { name: "Delete question" }).click();
+    await confirmDialog(
+      page,
+      "Delete this question? Existing attempts keep their original snapshot.",
+    );
     await expect(page.getByText(questionText, { exact: true })).toHaveCount(0);
   });
 
@@ -174,13 +178,17 @@ test.describe("live administrator content, reports and certificates", () => {
     await loginAs(page, "admin");
     await gotoApp(page, "/admin/certificates");
     await page.getByPlaceholder("Search learners or modules…").fill(learnerName);
-    page.once("dialog", (dialog) => dialog.accept("Disposable live verification complete"));
     await page
       .getByRole("row")
       .filter({ hasText: learnerName })
       .filter({ hasText: moduleTitle })
       .getByRole("button", { name: "Revoke" })
       .click();
+    await confirmDialog(
+      page,
+      "Reason for revoking this certificate:",
+      "Disposable live verification complete",
+    );
     await expect(page.getByText("Certificate revoked")).toBeVisible();
     await gotoApp(page, `/verify-certificate?reference=${reference}`);
     await expect(

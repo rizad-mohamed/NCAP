@@ -12,7 +12,7 @@ test("accessibility scanner detects a real violation across repeated scans", asy
     </head><body><main><h1>Accessibility scanner control</h1>
     <img id="accessibility-positive-control" width="24" height="24" alt="Accessible test marker"
       style="position:fixed;top:16px;right:16px" src="${source}">
-    <ul>${Array.from({ length: 120 }, (_, index) => `<li><h2>Resource ${index + 1}</h2><p>Readable fixture content.</p><button type="button">Review resource ${index + 1}</button></li>`).join("")}</ul>
+    <ul>${Array.from({ length: 120 }, (_, index) => `<li><h2>Resource ${index + 1}</h2><p>Readable fixture content. සිංහල தமிழ்</p><button type="button">Review resource ${index + 1}</button></li>`).join("")}</ul>
     </main></body></html>`);
   const image = page.locator("#accessibility-positive-control");
   await expect(image).toBeVisible();

@@ -6,7 +6,7 @@ import { authAction } from "@/auth/action-result";
 import { useCertificates, useCertificateTemplate } from "@/services/certificate-hooks";
 import { CertificatePreview } from "@/components/common/CertificatePreview";
 import { ContentTranslationEditor } from "@/components/admin/ContentTranslationEditor";
-import { LessonBlockView } from "@/features/learning/LearningPages";
+import { LessonBlockView } from "@/components/learning/LessonBlockView";
 import { LessonVideoPlayer } from "@/components/learning/LessonVideoPlayer";
 import type { StoredCertificateTemplate } from "@/domain/certificates";
 import { useAwarenessSummary } from "@/services/awareness-hooks";
@@ -114,9 +114,6 @@ import {
 
 const AdminDashboardCharts = lazy(() =>
   import("./AdminCharts").then((module) => ({ default: module.AdminDashboardCharts })),
-);
-const AdminReportCharts = lazy(() =>
-  import("./AdminCharts").then((module) => ({ default: module.AdminReportCharts })),
 );
 
 const primary = dashboardButton.primary;
@@ -1516,6 +1513,7 @@ export function AdminCertificatesPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const registry = useCertificates((page - 1) * 20, moduleId || null, search);
   const settings = useCertificateTemplate();
+  const certificatesPending = registry.isPending || settings.isPending;
   const [template, setTemplate] = useState<StoredCertificateTemplate>({
     title: "",
     subtitle: "",
@@ -1589,7 +1587,7 @@ export function AdminCertificatesPage() {
           </div>
         }
       />
-      {(registry.isPending || settings.isPending) && (
+      {view === "template" && certificatesPending && (
         <ContentSkeleton label={uiText("Loading certificates…")} />
       )}
       {(registry.isError || settings.isError) && (
@@ -1648,61 +1646,69 @@ export function AdminCertificatesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={`${r.user.id}:${r.module.id}`} className="border-t">
-                  <td className="px-4 py-4 font-semibold">{r.user.name}</td>
-                  <td className="px-4 py-4">{r.module.title}</td>
-                  <td className="px-4 py-4">
-                    <StatusBadge value={r.eligibility.eligible ? "Eligible" : "Not eligible"} />
-                  </td>
-                  <td className="px-4 py-4 text-xs">
-                    <span className="block">
-                      {uiText("Lessons:")} {r.eligibility.completionPercent}%
-                    </span>
-                    <span className="block">
-                      {uiText("Best quiz:")} {r.eligibility.bestScore}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <StatusBadge value={r.record?.status ?? "Pending"} />
-                  </td>
-                  <td className="px-4 py-4">{r.record?.issuedAt ?? "—"}</td>
-                  <td className="px-4 py-4 font-mono text-xs">{r.record?.reference ?? "—"}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        className={outline}
-                        disabled={!r.record}
-                        onClick={() => setPreview(r.record?.id ?? null)}
-                      >
-                        <Eye />
-                        {uiText("Preview")}{" "}
-                      </button>
-                      {r.record?.status === "Issued" ? (
-                        <button
-                          className={cn(outline, "text-destructive")}
-                          disabled={registry.revoke.isPending}
-                          onClick={() => void revoke(r.record!.id)}
-                        >
-                          {uiText("Revoke")}{" "}
-                        </button>
-                      ) : (
-                        <button
-                          className={primary}
-                          disabled={
-                            !r.eligibility.eligible ||
-                            registry.issue.isPending ||
-                            registry.isFetching
-                          }
-                          onClick={() => void issue(r.user.id, r.module.id)}
-                        >
-                          {uiText("Mark issued")}{" "}
-                        </button>
-                      )}
-                    </div>
+              {certificatesPending ? (
+                <tr>
+                  <td colSpan={8} className="p-4">
+                    <ContentSkeleton label={uiText("Loading certificates…")} />
                   </td>
                 </tr>
-              ))}
+              ) : (
+                rows.map((r) => (
+                  <tr key={`${r.user.id}:${r.module.id}`} className="border-t">
+                    <td className="px-4 py-4 font-semibold">{r.user.name}</td>
+                    <td className="px-4 py-4">{r.module.title}</td>
+                    <td className="px-4 py-4">
+                      <StatusBadge value={r.eligibility.eligible ? "Eligible" : "Not eligible"} />
+                    </td>
+                    <td className="px-4 py-4 text-xs">
+                      <span className="block">
+                        {uiText("Lessons:")} {r.eligibility.completionPercent}%
+                      </span>
+                      <span className="block">
+                        {uiText("Best quiz:")} {r.eligibility.bestScore}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge value={r.record?.status ?? "Pending"} />
+                    </td>
+                    <td className="px-4 py-4">{r.record?.issuedAt ?? "—"}</td>
+                    <td className="px-4 py-4 font-mono text-xs">{r.record?.reference ?? "—"}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          className={outline}
+                          disabled={!r.record}
+                          onClick={() => setPreview(r.record?.id ?? null)}
+                        >
+                          <Eye />
+                          {uiText("Preview")}{" "}
+                        </button>
+                        {r.record?.status === "Issued" ? (
+                          <button
+                            className={cn(outline, "text-destructive")}
+                            disabled={registry.revoke.isPending}
+                            onClick={() => void revoke(r.record!.id)}
+                          >
+                            {uiText("Revoke")}{" "}
+                          </button>
+                        ) : (
+                          <button
+                            className={primary}
+                            disabled={
+                              !r.eligibility.eligible ||
+                              registry.issue.isPending ||
+                              registry.isFetching
+                            }
+                            onClick={() => void issue(r.user.id, r.module.id)}
+                          >
+                            {uiText("Mark issued")}{" "}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           {!registry.isPending && !rows.length && (

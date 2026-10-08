@@ -16,7 +16,6 @@ import type {
   TopicRecord,
   VideoResource,
 } from "@/data/types";
-import { NCAP_CONFIG } from "@/lib/config";
 
 export type RepositoryErrorCode =
   | "cancelled"
@@ -112,24 +111,3 @@ export const repositoryKeys = {
   record: (name: keyof NcapRepository, id: string) => ["repository", name, id] as const,
   reports: (filters: Record<string, string>) => ["repository", "reports", filters] as const,
 };
-
-export const delay = <T>(
-  value: T,
-  ms: number = NCAP_CONFIG.mockLatencyMs,
-  signal?: AbortSignal,
-): Promise<T> =>
-  new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new RepositoryError("cancelled", "The request was cancelled."));
-      return;
-    }
-    const timer = window.setTimeout(() => resolve(value), ms);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        window.clearTimeout(timer);
-        reject(new RepositoryError("cancelled", "The request was cancelled."));
-      },
-      { once: true },
-    );
-  });

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { HomePage, homeHeroImage } from "@/features/public/home/HomePage";
+import { HomePage } from "@/features/public/home/HomePage";
+import { homeHeroImage } from "@/features/public/home/home-hero-image";
 import { RouteShell } from "@/components/layout/RouteShell";
 
 // The home route inherits shared title, description, Open Graph, and Twitter

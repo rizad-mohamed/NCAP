@@ -78,7 +78,50 @@ describe("administrator users database contracts", () => {
     await db.exec(
       await readFile("supabase/migrations/202610040003_profile_avatar_constraints.sql", "utf8"),
     );
+    await db.exec(
+      await readFile("supabase/migrations/202610080001_admin_user_detail_summary.sql", "utf8"),
+    );
   }, 60000);
+  it("detail summary excludes draft lessons and handles an empty published catalogue", async () => {
+    await db.exec("begin");
+    try {
+      await query(
+        "insert into public.learning_topics(id,name,slug,status) values('t-detail','Safety','detail-safety','Active')",
+      );
+      await query(
+        "insert into public.learning_modules(id,topic_id,title,description,difficulty,minutes,display_order,status) values('m-detail','t-detail','Safe accounts','Accounts','Beginner',10,1,'Published')",
+      );
+      await query(
+        "insert into public.learning_lessons(id,module_id,topic_id,title,summary,difficulty,minutes,display_order,status) values('l-detail','m-detail','t-detail','Published','Published','Beginner',10,1,'Published'),('l-detail-draft','m-detail','t-detail','Draft','Draft','Beginner',10,2,'Draft')",
+      );
+      await query(
+        "insert into public.learning_completions(user_id,lesson_id) values($1,'l-detail'),($1,'l-detail-draft')",
+        [alice],
+      );
+      await as(admin);
+      const detail = async () =>
+        (
+          await query<{
+            result: { completedLessons: number; completedModules: number; progressPercent: number };
+          }>("select public.admin_user_details($1) result", [alice])
+        )[0]!.result;
+      expect(await detail()).toMatchObject({
+        completedLessons: 2,
+        completedModules: 1,
+        progressPercent: 100,
+      });
+      await db.exec("reset role");
+      await query("delete from public.learning_lessons where id='l-detail'");
+      await as(admin);
+      expect(await detail()).toMatchObject({
+        completedLessons: 1,
+        completedModules: 0,
+        progressPercent: 0,
+      });
+    } finally {
+      await db.exec("rollback; reset role");
+    }
+  });
   afterAll(async () => {
     await db.close();
   });
@@ -131,13 +174,25 @@ describe("administrator users database contracts", () => {
         attempts: 1,
       });
       const detail = (
-        await query<{ result: { email: string; modules: { completed: number; total: number }[] } }>(
-          "select public.admin_user_details($1) result",
-          [alice],
-        )
+        await query<{
+          result: {
+            email: string;
+            completedModules: number;
+            progressPercent: number;
+            modules: { completed: number; total: number }[];
+          };
+        }>("select public.admin_user_details($1) result", [alice])
       )[0]!.result;
       expect(detail.email).toBe("alice@test.invalid");
+      expect(detail).toMatchObject({ completedModules: 1, progressPercent: 100 });
       expect(detail.modules[0]).toMatchObject({ completed: 1, total: 1 });
+      const emptyDetail = (
+        await query<{ result: { completedModules: number; progressPercent: number } }>(
+          "select public.admin_user_details($1) result",
+          [bob],
+        )
+      )[0]!.result;
+      expect(emptyDetail).toMatchObject({ completedModules: 0, progressPercent: 0 });
       await as(alice);
       await expect(query("select public.admin_users_list() result")).rejects.toMatchObject({
         code: "42501",

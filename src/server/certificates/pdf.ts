@@ -60,25 +60,29 @@ export async function renderCertificatePdf(record: Certificate, logo?: Uint8Arra
   const regularBytes = bytes(regularFont);
   const regular = await pdf.embedFont(regularBytes, { subset: true });
   const bold = await pdf.embedFont(bytes(boldFont), { subset: true });
+  const sinhalaRegularBytes = bytes(sinhalaRegular);
+  const sinhalaBoldBytes = bytes(sinhalaBold);
+  const tamilRegularBytes = bytes(tamilRegular);
+  const tamilBoldBytes = bytes(tamilBold);
   const fallback = {
     latinExt: [
       await pdf.embedFont(bytes(extendedRegular), { subset: true }),
       await pdf.embedFont(bytes(extendedBold), { subset: true }),
     ],
     sinhala: [
-      await pdf.embedFont(bytes(sinhalaRegular), { subset: true }),
-      await pdf.embedFont(bytes(sinhalaBold), { subset: true }),
+      await pdf.embedFont(sinhalaRegularBytes, { subset: true }),
+      await pdf.embedFont(sinhalaBoldBytes, { subset: true }),
     ],
     tamil: [
-      await pdf.embedFont(bytes(tamilRegular), { subset: true }),
-      await pdf.embedFont(bytes(tamilBold), { subset: true }),
+      await pdf.embedFont(tamilRegularBytes, { subset: true }),
+      await pdf.embedFont(tamilBoldBytes, { subset: true }),
     ],
   };
   const shapers = new Map<PDFFont, Font>([
-    [fallback.sinhala[0]!, fontkit.create(bytes(sinhalaRegular))],
-    [fallback.sinhala[1]!, fontkit.create(bytes(sinhalaBold))],
-    [fallback.tamil[0]!, fontkit.create(bytes(tamilRegular))],
-    [fallback.tamil[1]!, fontkit.create(bytes(tamilBold))],
+    [fallback.sinhala[0]!, fontkit.create(sinhalaRegularBytes)],
+    [fallback.sinhala[1]!, fontkit.create(sinhalaBoldBytes)],
+    [fallback.tamil[0]!, fontkit.create(tamilRegularBytes)],
+    [fallback.tamil[1]!, fontkit.create(tamilBoldBytes)],
   ]);
   const widthOfRun = (text: string, font: PDFFont, size: number) => {
     const shaper = shapers.get(font);
