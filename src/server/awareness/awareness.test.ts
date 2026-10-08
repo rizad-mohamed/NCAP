@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AwarenessClient } from "./authorization";
 import { requireAwarenessAdmin } from "./authorization";
-import { listResources, getResource } from "./queries";
+import { listResources, getResource, summary } from "./queries";
 import { saveResource, deleteResource } from "./service";
 import { awarenessResult, databaseError } from "./errors";
 import { cleanupMedia, prepareMedia, retireMedia, finishMedia, mediaUrl } from "./media";
@@ -60,6 +60,38 @@ function mockClient(replies: Record<string, Reply[]> = {}, role = "super_admin")
   return { client: client as unknown as AwarenessClient, raw: client, calls, storage };
 }
 describe("Awareness reads and authorization", () => {
+  it("starts the featured read while the summary RPC is pending and preserves its result", async () => {
+    const featuredReplies: Reply[] = [{ data: [], error: null }];
+    const { client, raw, calls } = mockClient({ awareness_resources: featuredReplies });
+    let resolveRpc!: (value: { data: unknown; error: null }) => void;
+    raw.rpc.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRpc = resolve;
+        }),
+    );
+    const pending = summary(client);
+    expect(calls).toContainEqual(["awareness_resources", "eq", ["status", "Published"]]);
+    expect(calls).toContainEqual(["awareness_resources", "limit", [1]]);
+    // Prove the PostgREST thenable was consumed, rather than merely constructed.
+    await vi.waitFor(() => expect(featuredReplies).toHaveLength(0));
+    const kinds = { articles: { count: 3, topics: ["MFA"] } };
+    resolveRpc({ data: kinds, error: null });
+    await expect(pending).resolves.toEqual({ kinds, featured: null });
+  });
+  it("keeps summary RPC errors authoritative when both reads fail", async () => {
+    const { client, raw } = mockClient({
+      awareness_resources: [{ error: { code: "XX000" } }],
+    });
+    raw.rpc.mockResolvedValueOnce({ data: null, error: { code: "PT409" } });
+    await expect(summary(client)).rejects.toMatchObject({ code: "conflict" });
+  });
+  it("normalizes featured-read errors after a successful summary RPC", async () => {
+    const { client } = mockClient({
+      awareness_resources: [{ error: { code: "XX000" } }],
+    });
+    await expect(summary(client)).rejects.toMatchObject({ code: "server" });
+  });
   it("explicitly excludes drafts in public lists even for an administrator", async () => {
     const { client, calls } = mockClient();
     await listResources(client, {
