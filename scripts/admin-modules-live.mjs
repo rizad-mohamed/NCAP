@@ -28,6 +28,7 @@ for (const name of [
   if (!env[name]) throw new Error(`Missing ${name}.`);
 const ref = new URL(env.SUPABASE_URL).hostname.split(".")[0];
 const stagingFlag = `--staging-project=${ref}`;
+const verifyAccountAudit = process.argv.includes("--verify-account-audit");
 if (!process.argv.slice(2).includes(stagingFlag))
   throw new Error(
     "Provide the explicit staging project reference before running disposable authenticated tests.",
@@ -48,7 +49,10 @@ if (
   throw new Error("Invalid recovery manifest.");
 const playwrightArgs = process.argv
   .slice(2)
-  .filter((arg) => arg !== stagingFlag && !arg.startsWith("--recover="));
+  .filter(
+    (arg) =>
+      arg !== stagingFlag && arg !== "--verify-account-audit" && !arg.startsWith("--recover="),
+  );
 if (playwrightArgs.filter((arg) => arg.startsWith("--project")).length > 1)
   throw new Error(
     "Run one browser profile per invocation so every profile receives fresh disposable fixtures.",
@@ -471,7 +475,7 @@ try {
       testEnv,
     );
     console.log("Selected authenticated administrator and learner browser workflows passed.");
-    if (!playwrightArgs.some((arg) => arg.startsWith("--grep"))) {
+    if (verifyAccountAudit || !playwrightArgs.some((arg) => arg.startsWith("--grep"))) {
       const accountAudit = await sql(
         `select action from public.admin_user_audit where actor_id='${adminId}' and target_id='${outsiderId}' order by id`,
         true,

@@ -1,6 +1,7 @@
 import { expect as baseExpect, test, type Page } from "@playwright/test";
 const expect = baseExpect.configure({ timeout: 20000 });
 import { loginAs } from "./helpers/auth";
+import { confirmDialog } from "./helpers/confirmation";
 import { gotoApp, reloadApp } from "./helpers/navigation";
 const enabled = process.env.COMMUNICATIONS_E2E === "1";
 const prefix = process.env.E2E_COMM_PREFIX ?? "";
@@ -50,8 +51,8 @@ test.describe("Persistent communications staging workflows", () => {
     await expect(
       page.getByRole("button", { name: `Activate ${title}`, exact: true }),
     ).toBeEnabled();
-    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
+    await confirmDialog(page, "Delete this announcement?");
     await expect(page.getByRole("heading", { name: title })).toHaveCount(0);
   });
   test("learner notifications, unread counts and persistent read state across devices", async ({

@@ -21,8 +21,10 @@ test("public pages share the Home desktop navigation structure", async ({ page }
   await page.setViewportSize({ width: 1440, height: 900 });
 
   for (const route of ["/", "/awareness", "/awareness/articles", "/awareness/news"]) {
-    await page.goto(route, { waitUntil: "networkidle" });
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(route);
     const navigation = page.getByRole("navigation", { name: "Primary navigation" });
+    await expect(navigation).toBeVisible();
     const topLevelLinks = navigation.locator(":scope > a, :scope > div > a");
     await expect(topLevelLinks).toHaveCount(desktopNavigation.length);
     await expect(page.locator('[title="Sri Lanka"]').first()).toBeVisible();
@@ -41,8 +43,23 @@ test("public pages share the Home mobile navigation structure", async ({ page })
   let homeNames: string[] = [];
 
   for (const route of ["/", "/awareness", "/awareness/articles"]) {
-    await page.goto(route, { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(route);
+    // The modal hides its background from accessibility queries once open.
+    const menuButton = page.getByRole("button", {
+      name: "Open navigation menu",
+      includeHidden: true,
+    });
+    await expect(menuButton).toBeVisible();
+    // The SSR button can precede its client handlers. Prove an interactive
+    // open using the existing expanded state before inspecting menu contents.
+    await expect
+      .poll(async () => {
+        if ((await menuButton.getAttribute("aria-expanded")) !== "true")
+          await menuButton.click();
+        return menuButton.getAttribute("aria-expanded");
+      })
+      .toBe("true");
     const navigation = page.getByRole("navigation", { name: "Mobile navigation" });
     await expect(navigation.getByRole("link", { name: "Awareness hub" })).toBeVisible();
     const names = await accessibleLinkNames(navigation);

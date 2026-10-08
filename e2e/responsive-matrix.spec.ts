@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-const widths = [320, 375, 390, 768, 1024, 1366, 1440, 1920];
+const widths = [320, 360, 375, 390, 430, 768, 1024, 1366, 1440, 1920];
 
 const learnerRoutes = [
   "/dashboard",
