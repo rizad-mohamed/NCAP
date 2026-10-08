@@ -126,7 +126,8 @@ test("resource previews slide from the right, trap focus and reflow on phones", 
       .toBeLessThanOrEqual(1);
     const box = await panel.boundingBox();
     expect(box?.height).toBe(900);
-    if (width === 390) expect(box?.width).toBe(390);
+    // Browser transforms can add subpixel rounding to a full-width drawer.
+    if (width === 390) expect(box?.width).toBeCloseTo(390, 3);
     await page.keyboard.press("Tab");
     expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
     await audit(page);

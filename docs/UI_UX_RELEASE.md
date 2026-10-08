@@ -169,3 +169,21 @@ accounts and are explicitly unmeasured.
 The [Frontend checks workflow](https://github.com/rizad-mohamed/NCAP/actions/workflows/ci.yml)
 records the feature, pull-request and final-main CI gates. A green CI run covers
 the normal configured suite, not privileged staging scenarios or production hosting.
+
+
+## Post-merge browser measurement correction
+
+The initial main merge's GitHub workflow succeeded with 101 passes, two flaky
+cases that passed on retry and 332 guarded skips. Both flakes were the same
+strict drawer-width assertion in Firefox and Mobile Safari: measured widths
+were `390.00001525878906`, `390.00000722147524` and `389.99999386817217` CSS
+pixels instead of exactly `390`. The source tree matched the verified feature,
+and the local post-merge smoke run passed all 45 cases without retries.
+
+A focused follow-up PR changes only that numeric measurement to require 390px
+to three decimal places (less than 0.0005px error), preserving full-width reflow,
+right-edge alignment, height, focus trap/restoration, axe scans and every staging
+guard. No application or backend code changes. All five drawer profiles are
+rerun locally, and the complete GitHub checks gate the correction and final main.
+The initial flaky run remains in Actions history; it is not described as an
+uninterrupted clean matrix.
