@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
+import { gotoApp } from "./helpers/navigation";
 
 test.describe("public Learning backend", () => {
   test.skip(
@@ -7,20 +8,20 @@ test.describe("public Learning backend", () => {
     "Requires the deployed, seeded Learning backend.",
   );
   test("catalogue, module and search render published backend content", async ({ page }) => {
-    await page.goto("/learn");
+    await gotoApp(page, "/learn");
     await expect(
       page.getByRole("heading", { name: "Digital Safety Fundamentals", exact: true }),
     ).toBeVisible();
-    await page.locator('a[href="/learn/modules/m-fundamentals"]').first().click();
+    await gotoApp(page, "/learn/modules/m-fundamentals");
     await expect(
-      page.getByRole("heading", { name: "Digital Safety Fundamentals", exact: true }),
+      page.getByRole("heading", { name: "Digital Safety Fundamentals", level: 1, exact: true }),
     ).toBeVisible();
     await expect(page.locator('a[href="/learn/lessons/l-what-is-risk"]').first()).toBeVisible();
-    await page.goto("/learn/search?q=risk");
+    await gotoApp(page, "/learn/search?q=risk");
     await expect(
       page.getByRole("link", { name: /What online risk really looks like/ }).first(),
     ).toBeVisible();
-    await page.goto("/learn/lessons/l-what-is-risk");
+    await gotoApp(page, "/learn/lessons/l-what-is-risk");
     await expect(page.getByRole("heading", { name: "Sign in required" })).toBeVisible();
   });
 });
