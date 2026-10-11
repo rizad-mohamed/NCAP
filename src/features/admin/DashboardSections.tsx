@@ -198,7 +198,11 @@ export function AdminReportsPage() {
             quizRows={report.data?.quizRows ?? []}
             completionRows={report.data?.completionRows ?? []}
           />
-          <section className="mt-6 overflow-x-auto rounded-xl border bg-white">
+          <section
+            className="mt-6 overflow-x-auto rounded-xl border bg-white"
+            aria-label={uiText("Filtered quiz attempts")}
+            tabIndex={0}
+          >
             <table className="w-full min-w-[760px] text-left text-sm">
               <caption className="p-5 text-left text-lg font-semibold">
                 {uiText("Filtered quiz attempts")}

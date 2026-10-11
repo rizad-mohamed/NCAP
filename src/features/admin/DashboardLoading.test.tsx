@@ -1,4 +1,5 @@
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminDashboardPage } from "./AdminPages";
 import { AdminReportsPage } from "./DashboardSections";
@@ -144,6 +145,15 @@ describe("dashboard loading states", () => {
     expect(screen.queryByText("Average score")).not.toBeInTheDocument();
     expect(screen.queryByText("Report charts")).not.toBeInTheDocument();
     expect(screen.queryByText("No quiz attempts match")).not.toBeInTheDocument();
+  });
+  it("lets keyboard users reach the report table even when it has no interactive rows", async () => {
+    const user = userEvent.setup();
+    render(<AdminReportsPage />);
+    const region = screen.getByRole("region", { name: "Filtered quiz attempts" });
+    for (let step = 0; step < 20 && document.activeElement !== region; step++) {
+      await user.tab();
+    }
+    expect(region).toHaveFocus();
   });
   it.each(["modulePending", "historyPending"] as const)(
     "keeps the learner dashboard loading until %s resolves",
