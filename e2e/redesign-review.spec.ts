@@ -78,6 +78,16 @@ for (const role of ["learner", "admin"] as const) {
       for (const route of routes) {
         await page.goto(route, { waitUntil: "networkidle" });
         await audit(page);
+        if (route === "/admin/reports" && width === 390) {
+          const attempts = page.getByRole("region", { name: "Filtered quiz attempts" });
+          await attempts.focus();
+          await expect(attempts).toBeFocused();
+          const beforeScroll = await attempts.evaluate((element) => element.scrollLeft);
+          await page.keyboard.press("ArrowRight");
+          await expect
+            .poll(() => attempts.evaluate((element) => element.scrollLeft))
+            .toBeGreaterThan(beforeScroll);
+        }
         await page.screenshot({
           path: testInfo.outputPath(`${width}-${route.replaceAll("/", "-")}.png`),
           fullPage: true,

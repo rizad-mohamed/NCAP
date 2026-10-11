@@ -719,37 +719,39 @@ export function AdminQuizPage() {
                       </label>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    className={secondary}
-                    disabled={editingQuestion.options.length >= 10}
-                    onClick={() =>
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        options: [...editingQuestion.options, ""],
-                      })
-                    }
-                  >
-                    {uiText("Add answer")}{" "}
-                  </button>
-                  {editingQuestion.options.length > 2 && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       className={secondary}
+                      disabled={editingQuestion.options.length >= 10}
                       onClick={() =>
                         setEditingQuestion({
                           ...editingQuestion,
-                          options: editingQuestion.options.slice(0, -1),
-                          correctIndex: Math.min(
-                            editingQuestion.correctIndex,
-                            editingQuestion.options.length - 2,
-                          ),
+                          options: [...editingQuestion.options, ""],
                         })
                       }
                     >
-                      {uiText("Remove last answer")}{" "}
+                      {uiText("Add answer")}{" "}
                     </button>
-                  )}
+                    {editingQuestion.options.length > 2 && (
+                      <button
+                        type="button"
+                        className={secondary}
+                        onClick={() =>
+                          setEditingQuestion({
+                            ...editingQuestion,
+                            options: editingQuestion.options.slice(0, -1),
+                            correctIndex: Math.min(
+                              editingQuestion.correctIndex,
+                              editingQuestion.options.length - 2,
+                            ),
+                          })
+                        }
+                      >
+                        {uiText("Remove last answer")}{" "}
+                      </button>
+                    )}
+                  </div>
                 </fieldset>
                 <label className="text-sm font-semibold">
                   {uiText("Explanation")}{" "}
