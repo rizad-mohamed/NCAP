@@ -1,5 +1,6 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
+import { gotoApp } from "./helpers/navigation";
 
 const desktopNavigation = [
   "Awareness",
@@ -43,7 +44,7 @@ test("public pages share the Home mobile navigation structure", async ({ page })
   let homeNames: string[] = [];
 
   for (const route of ["/", "/awareness", "/awareness/articles"]) {
-    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await gotoApp(page, route);
     await expect(page).toHaveURL(route);
     // The modal hides its background from accessibility queries once open.
     const menuButton = page.getByRole("button", {
@@ -55,8 +56,7 @@ test("public pages share the Home mobile navigation structure", async ({ page })
     // open using the existing expanded state before inspecting menu contents.
     await expect
       .poll(async () => {
-        if ((await menuButton.getAttribute("aria-expanded")) !== "true")
-          await menuButton.click();
+        if ((await menuButton.getAttribute("aria-expanded")) !== "true") await menuButton.click();
         return menuButton.getAttribute("aria-expanded");
       })
       .toBe("true");
